@@ -1,8 +1,12 @@
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+
 class Plotter:
     '''New class for data visualisation of data from pyxpcm
-        ds: dataset including PCM results'''
-    
-    import matplotlib.pyplot as plt
+        ds: dataset including PCM results'''        
         
     def __init__(self, ds, m, data_type):
         
@@ -38,9 +42,9 @@ class Plotter:
         
         # check if gridded or profiles data
         if self.data_type == 'profiles':
-            sc = ax.scatter(self.ds[co['longitude']], self.ds[co['latitude']], s=3, c=self.ds['PCM_LABELS'], cmap=kmap, transform=proj, vmin=0, vmax=m.K)
+            sc = ax.scatter(self.ds[co['longitude']], self.ds[co['latitude']], s=3, c=self.ds['PCM_LABELS'], cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
         if self.data_type == 'gridded':
-            sc = ax.pcolormesh(self.ds[co['longitude']], self.ds[co['latitude']], s=3, c=self.ds['PCM_LABELS'], cmap=kmap, transform=proj, vmin=0, vmax=m.K)
+            sc = ax.pcolormesh(self.ds[co['longitude']], self.ds[co['latitude']], self.ds['PCM_LABELS'], cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
         
         cl = self.m.plot.colorbar(ax=ax) # TODO: function already in pyxpcm
         gl = self.m.plot.latlongrid(ax, dx=10) # TODO: function already in pyxpcm
@@ -72,15 +76,14 @@ class Plotter:
                 sc = ax[k].scatter(self.ds[co['longitude']], self.ds[co['latitude']], s=3, c=self.ds['PCM_POST'].sel(pcm_class=k),
                            cmap=cmap, transform=proj, vmin=0, vmax=1)
             if self.data_type == 'gridded':
-                sc = ax[k].pcolormesh(self.ds[co['longitude']], self.ds[co['latitude']], s=3, c=self.ds['PCM_POST'].sel(pcm_class=k),
-                           cmap=cmap, transform=proj, vmin=0, vmax=1)
+                sc = ax[k].pcolormesh(self.ds[co['longitude']], self.ds[co['latitude']], self.ds['PCM_POST'].sel(pcm_class=k), cmap=cmap, transform=proj, vmin=0, vmax=1)
             
             cl = plt.colorbar(sc, ax=ax[k], fraction=0.03)
             gl = self.m.plot.latlongrid(ax[k], fontsize=8, dx=20, dy=10)
         
             ax[k].add_feature(cfeature.LAND)
             ax[k].add_feature(cfeature.COASTLINE)
-            ax[k].set_title('PCM Posteriors k=%i' % k)
+            ax[k].set_title('PCM Posteriors for k=%i' % k)
             
             # saving figure outside??
             #plt.savefig('ArgoMed_posteriors_EX.png')
@@ -99,7 +102,7 @@ class Plotter:
                         
         # data to be plot
         # TODO: is it the best way??
-        pcm_labels = dsi['PCM_LABELS']
+        pcm_labels = self.ds['PCM_LABELS']
        
         if time_bins == 'month':
             xaxis_labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dic']
@@ -121,14 +124,14 @@ class Plotter:
                 counts_k = counts_k/sum(counts_k)
             
             if time_bins == 'month':
-                bar_plot_k = ax.bar(counts_k.month - (m.K/2-cl)*width, counts_k, width, label = ['K =' + str(cl)])
+                bar_plot_k = ax.bar(counts_k.month - (self.m.K/2-cl)*width, counts_k, width, label = ['K =' + str(cl)])
             if time_bins == 'season':
                 x_ticks_k = []
                 for i in range(len(counts_k.season)):
                     x_ticks_k.append(list(seasons_dict.values()).index(counts_k.season[i])+1)
                     # print(x_ticks_k)
                 #plot
-                bar_plot_k = ax.bar(np.array(x_ticks_k) - (m.K/2-cl)*width, counts_k, width, label = ['K =' + str(cl)])
+                bar_plot_k = ax.bar(np.array(x_ticks_k) - (self.m.K/2-cl)*width, counts_k, width, label = ['K =' + str(cl)])
             
     
         # format
