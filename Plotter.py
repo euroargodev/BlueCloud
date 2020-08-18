@@ -5,7 +5,7 @@ import seaborn as sns
 import numpy as np
 
 class Plotter:
-    '''New class for data visualisation of data from pyxpcm
+    '''New class for visualisation of data from pyxpcm
         ds: dataset including PCM results'''        
         
     def __init__(self, ds, m, data_type):
@@ -24,7 +24,7 @@ class Plotter:
         '''Plot vertical structure of each class
            q_variable: quantile variable calculated with pyxpcm.quantile function (inplace=True option)'''
         
-        # TODO: check if data is profile
+        # TODO: check if data is profile: difference between profiles, gridded profiles and gridded
         # TODO: try with other k values
         # TODO: Plot function already in pyxpcm
         fig, ax = self.m.plot.quantile(self.ds[q_variable], maxcols=4, figsize=(10, 8), sharey=True)
@@ -44,7 +44,10 @@ class Plotter:
         if self.data_type == 'profiles':
             sc = ax.scatter(self.ds[co['longitude']], self.ds[co['latitude']], s=3, c=self.ds['PCM_LABELS'], cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
         if self.data_type == 'gridded':
-            sc = ax.pcolormesh(self.ds[co['longitude']], self.ds[co['latitude']], self.ds['PCM_LABELS'], cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
+            # TODO: if time series make subplots
+            # for t in np.arange(len(self.ds.time)):
+            sc = ax.pcolormesh(self.ds[co['longitude']], self.ds[co['latitude']], self.ds['PCM_LABELS'].isel(time=0), 
+                               cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
         
         cl = self.m.plot.colorbar(ax=ax) # TODO: function already in pyxpcm
         gl = self.m.plot.latlongrid(ax, dx=10) # TODO: function already in pyxpcm
@@ -76,7 +79,11 @@ class Plotter:
                 sc = ax[k].scatter(self.ds[co['longitude']], self.ds[co['latitude']], s=3, c=self.ds['PCM_POST'].sel(pcm_class=k),
                            cmap=cmap, transform=proj, vmin=0, vmax=1)
             if self.data_type == 'gridded':
-                sc = ax[k].pcolormesh(self.ds[co['longitude']], self.ds[co['latitude']], self.ds['PCM_POST'].sel(pcm_class=k), cmap=cmap, transform=proj, vmin=0, vmax=1)
+                # TODO: if time series 
+                # for t in np.arange(len(ds.time)):
+                sc = ax[k].pcolormesh(self.ds[co['longitude']], self.ds[co['latitude']], self.ds['PCM_POST'].isel(time=0, pcm_class=k),
+                                      cmap=cmap, transform=proj, vmin=0, vmax=1)
+                    
             
             cl = plt.colorbar(sc, ax=ax[k], fraction=0.03)
             gl = self.m.plot.latlongrid(ax[k], fontsize=8, dx=20, dy=10)
