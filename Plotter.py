@@ -26,7 +26,11 @@ class Plotter:
         # types: profiles, gridded, timeseries in the future??
         # look for latitude and longitude variables inside functions?
         
-        # TODO: get information about dataset
+        # TODO: get information about dataset 
+        # ds['latitude'].attrs
+        #l = ds.coords
+        #l.keys
+        #ds.indexes.keys
         
         # check if dataset should include PCM variables
         assert ("PCM_LABELS" in self.ds), "Dataset should include PCM_LABELS varible to be plotted. Use pyxpcm.predict function with inplace=True option"
@@ -86,7 +90,7 @@ class Plotter:
         
         # TODO: add dataset information (function)
         
-        plt.show()
+        #plt.show()
         
         
     def plot_posteriors(self, proj, extent, co):
@@ -179,8 +183,8 @@ class Plotter:
             else:
                 #counts_k = xr.concat([counts_k, pcm_labels_k.groupby(time_variable + '.' + time_bins).count()], "k")
                 counts_k = xr.concat([counts_k, pcm_labels_k.groupby(time_variable + '.' + time_bins).count(...)], "k")
-            print(counts_k)
-        print(sum(counts_k))
+            #print(counts_k)
+        #print(sum(counts_k))
         
         if pond == 'rel':
             counts_k = counts_k/sum(counts_k)
@@ -220,7 +224,7 @@ class Plotter:
         # TODO: add dataset information (function)
         
 
-        plt.show()
+        #plt.show()
         
         
         
