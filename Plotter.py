@@ -2,8 +2,11 @@ import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import matplotlib.pyplot as plt
 import seaborn as sns
+
 import numpy as np
 import xarray as xr
+
+from PIL import Image, ImageFont, ImageDraw
 
 class Plotter:
     '''New class for visualisation of data from pyxpcm
@@ -21,19 +24,31 @@ class Plotter:
         self.ds = ds
         self.m = m
         self.data_type = data_type
-        # check coordinates in dataset and assign a data type
-        
-        # types: profiles, gridded, timeseries in the future??
-        # look for latitude and longitude variables inside functions?
-        
-        # TODO: get information about dataset 
-        # ds['latitude'].attrs
-        #l = ds.coords
-        #l.keys
-        #ds.indexes.keys
         
         # check if dataset should include PCM variables
         assert ("PCM_LABELS" in self.ds), "Dataset should include PCM_LABELS varible to be plotted. Use pyxpcm.predict function with inplace=True option"
+        
+        # creates dictionary with coordinates
+        coords_list = list(self.ds.coords.keys())
+        coords_dict = {}
+        for c in coords_list:
+            axis_at = self.ds[c].attrs.get('axis')
+            #print(axis_at)
+            if axis_at == 'Y':
+                coords_dict.update({'latitude': c})
+            if axis_at == 'X':
+                coords_dict.update({'longitude': c})
+            if axis_at == 'T':
+                coords_dict.update({'time': c})
+                
+        self.coords_dict = coords_dict
+
+        # TODO: assign a data type
+        # types: profiles, gridded, timeseries in the future??
+        
+        # TODO: get information about dataset 
+        
+
         
         
     def vertical_structure(self,q_variable):
@@ -87,6 +102,9 @@ class Plotter:
         ax.add_feature(cfeature.LAND)
         ax.add_feature(cfeature.COASTLINE)
         ax.set_title('LABELS of the training set')
+        fig.canvas.draw()
+        fig.tight_layout()
+        plt.margins(0.1)
         
         # TODO: add dataset information (function)
         
@@ -178,13 +196,10 @@ class Plotter:
             pcm_labels_k = pcm_labels.where(pcm_labels == cl)
                        
             if cl == 0:
-                #counts_k = pcm_labels_k.groupby(time_variable + '.' + time_bins).count()
                 counts_k = pcm_labels_k.groupby(time_variable + '.' + time_bins).count(...)
             else:
-                #counts_k = xr.concat([counts_k, pcm_labels_k.groupby(time_variable + '.' + time_bins).count()], "k")
                 counts_k = xr.concat([counts_k, pcm_labels_k.groupby(time_variable + '.' + time_bins).count(...)], "k")
-            #print(counts_k)
-        #print(sum(counts_k))
+
         
         if pond == 'rel':
             counts_k = counts_k/sum(counts_k)
@@ -228,9 +243,105 @@ class Plotter:
         
         
         
-    # def function which adds dataset information to the plot
+    # TODO: def function which adds dataset information to the plot
+    
+    def add_lowerband(self, mfname, outfname, band_height = 50, color=(255, 255, 255, 255)):
+        """ Add lowerband to a figure
+    
+            Parameters
+            ----------
+            mfname : string
+                source figure file
+            outfname : string
+                output figure file
+        """
+        #TODO: do I need to use self here?
+        image = Image.open(mfname, 'r')
+        image_size = image.size
+        width = image_size[0]
+        height = image_size[1]
+        background = Image.new('RGBA', (width, height + band_height), color)
+        background.paste(image, (0, 0))
+        background.save(outfname)    
         
-    #def save_figure(self, time_variable, time_bins, pond): #function which saves figure a add logos
-        # plt.savefig('ArgoMed_months_hist_EX.png')
+        
+    def add_2logo(self, mfname, outfname, logo_height=50, txt_color=(0, 0, 0, 255), data_src='CMEMS'):
+        """ Add 2 logos and text to a figure
+    
+            Parameters
+            ----------
+            mfname : string
+                source figure file
+            outfname : string
+                output figure file
+        """
+        font_path = "logos/Calibri_Regular.ttf"
+        lfname2 = "logos/Blue-cloud_compact_color.png"
+        lfname1 = "logos/Logo-LOPS_transparent.png"
+
+        mimage = Image.open(mfname)
+
+        # Open logo images:
+        limage1 = Image.open(lfname1)
+        limage2 = Image.open(lfname2)
+
+        # Resize logos to match the requested logo_height:
+        aspect_ratio = limage1.size[1]/limage1.size[0] # height/width
+        simage1 = limage1.resize((int(logo_height/aspect_ratio), logo_height) )
+
+        aspect_ratio = limage2.size[1]/limage2.size[0] # height/width
+        simage2 = limage2.resize((int(logo_height/aspect_ratio), logo_height) )
+
+        # Paste logos along the lower white band of the main figure:
+        box = (0, mimage.size[1]-logo_height)
+        mimage.paste(simage1, box)
+
+        box = (simage1.size[0], mimage.size[1]-logo_height)
+        mimage.paste(simage2, box)
+
+        # Add copyright text:
+        #txtA = ("© 2017-2019, SOMOVAR Project, %s") % (__author__)
+        txtA = "Dataset information:"
+        fontA = ImageFont.truetype(font_path, 14)
+
+        txtB = "%s\n Source: %s" % (self.ds.attrs.get('title'), self.ds.attrs.get('credit'))
+        fontB = ImageFont.truetype(font_path, 12)
+
+        txtsA = fontA.getsize_multiline(txtA)
+        txtsB = fontB.getsize_multiline(txtB)
+
+        xoffset = 5 + simage1.size[0] + simage2.size[0]
+        if 0:  # Align text to the top of the band:
+            posA = (xoffset, mimage.size[1]-logo_height - 1)
+            posB = (xoffset, mimage.size[1]-logo_height + txtsA[1])
+        else:  # Align text to the bottom of the band:
+            posA = (xoffset, mimage.size[1]-txtsA[1]-txtsB[1]-5)
+            posB = (xoffset, mimage.size[1]-txtsB[1]-5)
+
+        # Print
+        drawA = ImageDraw.Draw(mimage)
+        drawA.text(posA, txtA, txt_color, font=fontA)
+        drawB = ImageDraw.Draw(mimage)
+        drawB.text(posB, txtB, txt_color, font=fontB)
+
+        # Final save
+        mimage.save(outfname)
+        
+    def save_BlueCloud(self, out_name): #function which saves figure and add logos
+        
+        #save image
+        plt.margins(0.1)
+        plt.savefig(out_name, bbox_inches='tight', pad_inches = 0)
+        
+        #add lower band
+        #self.add_lowerband(out_name, out_name, band_height = 120, color=(255, 255, 255, 255))
+        self.add_lowerband(out_name, out_name)
+        
+        #add logo
+        #self.add_2logo(out_name, out_name, logo_height=120, txt_color=(0, 0, 0, 255), data_src='CMEMS')
+        self.add_2logo(out_name, out_name)
+        
+        
+
         
     pass
