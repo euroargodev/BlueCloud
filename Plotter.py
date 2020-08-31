@@ -1,6 +1,7 @@
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 import seaborn as sns
 
 import numpy as np
@@ -26,7 +27,7 @@ class Plotter:
         self.data_type = data_type
         
         # check if dataset should include PCM variables
-        assert ("PCM_LABELS" in self.ds), "Dataset should include PCM_LABELS varible to be plotted. Use pyxpcm.predict function with inplace=True option"
+        assert ("PCM_LABELS" in self.ds), "Dataset should include PCM_LABELS variable to be plotted. Use pyxpcm.predict function with inplace=True option"
         
         # creates dictionary with coordinates
         coords_list = list(self.ds.coords.keys())
@@ -49,24 +50,134 @@ class Plotter:
         # TODO: get information about dataset 
         
 
+    @staticmethod
+    def cmap_discretize(name, K):
+        """Return a discrete colormap from a quantitative or continuous colormap name
+
+            name: name of the colormap, eg 'Paired' or 'jet'
+            K: number of colors in the final discrete colormap
+        """
+        if name in ['Set1', 'Set2', 'Set3', 'Pastel1', 'Pastel2', 'Paired', 'Dark2', 'Accent']:
+            # Segmented (or quantitative) colormap:
+            N_ref = {'Set1':9,'Set2':8,'Set3':12,'Pastel1':9,'Pastel2':8,'Paired':12,'Dark2':8,'Accent':8}
+            N = N_ref[name]
+            cmap = plt.get_cmap(name=name)
+            colors_i = np.concatenate((np.linspace(0, 1., N), (0., 0., 0., 0.)), axis=0)
+            cmap = cmap(colors_i) # N x 4
+            n = np.arange(0, N)
+            new_n = n.copy()
+            if K > N:
+                for k in range(N,K):
+                    r = np.roll(n,-k)[0][np.newaxis]
+                    new_n = np.concatenate((new_n, r), axis=0)
+            new_cmap = cmap.copy()
+            new_cmap = cmap[new_n,:]
+            new_cmap = mcolors.LinearSegmentedColormap.from_list(name + "_%d" % K, colors = new_cmap, N=K)
+        else:
+            # Continuous colormap:
+            N = K
+            cmap = plt.get_cmap(name=name)
+            colors_i = np.concatenate((np.linspace(0, 1., N), (0., 0., 0., 0.)))
+            colors_rgba = cmap(colors_i) # N x 4
+            indices = np.linspace(0, 1., N + 1)
+            cdict = {}
+            for ki, key in enumerate(('red', 'green', 'blue')):
+                cdict[key] = [(indices[i], colors_rgba[i - 1, ki], colors_rgba[i, ki])
+                              for i in np.arange(N + 1)]
+            # Return colormap object.
+            new_cmap = mcolors.LinearSegmentedColormap(cmap.name + "_%d" % N, cdict, N)
+        return new_cmap
         
-        
-    def vertical_structure(self,q_variable):
+    def vertical_structure(self,q_variable,
+                           xlim=None,
+                           classdimname='pcm_class',
+                           quantdimname = 'quantile',
+                           maxcols=3, cmap=None,
+                           ylabel='depth (m)',
+                           ylim='auto',
+                           **kwargs):
         '''Plot vertical structure of each class
         
            Parameters
            ----------
                q_variable: quantile variable calculated with pyxpcm.quantile function (inplace=True option)
                
+               classdimname
+
+               quantdimname
+
+               maxcols
+               
+               ylim
+
+               Returns
+               
+               
            Returns
-           -------
-           
+           ------
+               fig : :class:`matplotlib.pyplot.figure.Figure`
+
+               ax : :class:`matplotlib.axes.Axes` object or array of Axes objects.
+                    *ax* can be either a single :class:`matplotlib.axes.Axes` object or an
+                    array of Axes objects if more than one subplot was created.  The
+                    dimensions of the resulting array can be controlled with the squeeze
+                    keyword.
+          
                '''
+        # copy of fig, ax = self.m.plot.quantile(self.ds[q_variable], maxcols=4, figsize=(10, 8), sharey=True)
+        
+        
+        # Check if the PCM is trained:
+        # validation.check_is_fitted(m, 'fitted')
+        da = self.ds[q_variable]
+        
+        #TODO: adapt to automatique detection of coordinates 
+        ###########################################################################
+        # da must be 3D with a dimension for: CLASS, QUANTILES and a vertical axis
+        # The QUANTILES dimension is called "quantile"
+        # The CLASS dimension is identified as the one matching m.K length.
+        if classdimname in da.dims:
+            CLASS_DIM = classdimname
+        elif (np.argwhere(np.array(da.shape) == m.K).shape[0] > 1):
+            raise ValueError("Can't distinguish the class dimension from the others")
+        else:
+            CLASS_DIM = da.dims[np.argwhere(np.array(da.shape) == self.m.K)[0][0]]
+        QUANT_DIM = quantdimname
+        VERTICAL_DIM = list(set(da.dims) - set([CLASS_DIM]) - set([QUANT_DIM]))[0]
+        ############################################################################
+
+        nQ = len(da[QUANT_DIM]) # Nb of quantiles
+       
+        cmapK = self.m.plot.cmap() # cmap_discretize(plt.cm.get_cmap(name='Paired'), m.K)
+        if not cmap:
+            cmap = self.cmap_discretize(plt.cm.get_cmap(name='brg'), nQ)
+        defaults =  {'figsize':(10, 8), 'dpi':80, 'facecolor':'w', 'edgecolor':'k'}
+        fig, ax = self.m.plot.subplots(maxcols=maxcols, **{**defaults, **kwargs})  # TODO: function in pyxpcm
+        
+        if not xlim:
+            xlim = np.array([0.9 * da.min(), 1.1 * da.max()])
+        for k in self.m:
+            Qk = da.loc[{CLASS_DIM:k}]
+            for (iq, q) in zip(np.arange(nQ), Qk[QUANT_DIM]):
+                Qkq = Qk.loc[{QUANT_DIM:q}]
+                ax[k].plot(Qkq.values.T, da[VERTICAL_DIM], label=("%0.2f") % (Qkq[QUANT_DIM]), color=cmap(iq))
+            ax[k].set_title(("Component: %i") % (k), color=cmapK(k))
+            ax[k].legend(loc='lower right')
+            ax[k].set_xlim(xlim)
+            if isinstance(ylim, str):
+                ax[k].set_ylim(np.array([da[VERTICAL_DIM].min(), da[VERTICAL_DIM].max()]))
+            else:
+                ax[k].set_ylim(ylim)
+            # ax[k].set_xlabel(Q.units)
+            if k == 0: ax[k].set_ylabel(ylabel)
+            ax[k].grid(True)
+        plt.subplots_adjust(top=0.90)
+        fig.suptitle(r"$\bf{"'Vertical'"}$ $\bf{"'distribution'"}$ $\bf{"'of'"}$ $\bf{"'classes'"}$" + ' \n (features:' + str(list(self.m.features.keys())) + ')')
+        #plt.tight_layout()
+
         
         # TODO: check if data is profile: difference between profiles, gridded profiles and gridded
         # TODO: try with other k values
-        # TODO: Plot function already in pyxpcm
-        fig, ax = self.m.plot.quantile(self.ds[q_variable], maxcols=4, figsize=(10, 8), sharey=True)
         # TODO: add dataset information (function)
         
     def spatial_distribution(self, proj, extent, co):
@@ -245,7 +356,8 @@ class Plotter:
         
     # TODO: def function which adds dataset information to the plot
     
-    def add_lowerband(self, mfname, outfname, band_height = 50, color=(255, 255, 255, 255)):
+    @staticmethod
+    def add_lowerband(mfname, outfname, band_height = 50, color=(255, 255, 255, 255)):
         """ Add lowerband to a figure
     
             Parameters
@@ -265,6 +377,7 @@ class Plotter:
         background.save(outfname)    
         
         
+ 
     def add_2logo(self, mfname, outfname, logo_height=50, txt_color=(0, 0, 0, 255), data_src='CMEMS'):
         """ Add 2 logos and text to a figure
     
@@ -276,8 +389,8 @@ class Plotter:
                 output figure file
         """
         font_path = "logos/Calibri_Regular.ttf"
-        lfname2 = "logos/Blue-cloud_compact_color.png"
-        lfname1 = "logos/Logo-LOPS_transparent.png"
+        lfname2 = "logos/Blue-cloud_compact_color_W.jpg"
+        lfname1 = "logos/Logo-LOPS_transparent_W.jpg"
 
         mimage = Image.open(mfname)
 
@@ -303,8 +416,17 @@ class Plotter:
         #txtA = ("© 2017-2019, SOMOVAR Project, %s") % (__author__)
         txtA = "Dataset information:"
         fontA = ImageFont.truetype(font_path, 14)
+        
+        #time extent
+        if len(self.ds["time"]) > 1:
+            time_extent = [min(self.ds["time"].dt.strftime("%Y/%m/%d")), max(self.ds["time"].dt.strftime("%Y/%m/%d"))]
+            time_string = 'from %s to %s' %(time_extent[0].values, time_extent[1].values)
+        else:
+            time_extent = self.ds["time"].dt.strftime("%Y/%m/%d %H:%M")
+            time_string = 'time step: %s' % time_extent.values
+        
 
-        txtB = "%s\n Source: %s" % (self.ds.attrs.get('title'), self.ds.attrs.get('credit'))
+        txtB = "%s\n%s\nSource: %s" % (self.ds.attrs.get('title'), time_string, self.ds.attrs.get('credit'))
         fontB = ImageFont.truetype(font_path, 12)
 
         txtsA = fontA.getsize_multiline(txtA)
@@ -330,8 +452,8 @@ class Plotter:
     def save_BlueCloud(self, out_name): #function which saves figure and add logos
         
         #save image
-        plt.margins(0.1)
-        plt.savefig(out_name, bbox_inches='tight', pad_inches = 0)
+        #plt.margins(0.1)
+        plt.savefig(out_name, bbox_inches='tight', pad_inches = 0.1)
         
         #add lower band
         #self.add_lowerband(out_name, out_name, band_height = 120, color=(255, 255, 255, 255))
@@ -340,6 +462,8 @@ class Plotter:
         #add logo
         #self.add_2logo(out_name, out_name, logo_height=120, txt_color=(0, 0, 0, 255), data_src='CMEMS')
         self.add_2logo(out_name, out_name)
+        
+        print('Figure saved in %s' % out_name)
         
         
 
