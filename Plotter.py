@@ -172,13 +172,13 @@ class Plotter:
             if k == 0: ax[k].set_ylabel(ylabel)
             ax[k].grid(True)
         plt.subplots_adjust(top=0.90)
-        fig.suptitle(r"$\bf{"'Vertical'"}$ $\bf{"'distribution'"}$ $\bf{"'of'"}$ $\bf{"'classes'"}$" + ' \n (features:' + str(list(self.m.features.keys())) + ')')
+        fig.suptitle(r"$\bf{"'Vertical'"}$"+' '+ r"$\bf{"'structure'"}$"+' '+r"$\bf{"'of'"}$"+' '+r"$\bf{"'classes'"}$" 
+                     + ' \n (features: ' + '%s' % ', '.join(map(str, list(self.m.features.keys()))) + ')')
         #plt.tight_layout()
 
         
         # TODO: check if data is profile: difference between profiles, gridded profiles and gridded
         # TODO: try with other k values
-        # TODO: add dataset information (function)
         
     def spatial_distribution(self, proj, extent, co):
         '''Plot spatial distribution of classes
@@ -212,7 +212,8 @@ class Plotter:
         gl = self.m.plot.latlongrid(ax, dx=10) # TODO: function already in pyxpcm
         ax.add_feature(cfeature.LAND)
         ax.add_feature(cfeature.COASTLINE)
-        ax.set_title('LABELS of the training set')
+        ax.set_title(r"$\bf{"'Spatial'"}$"+' '+ r"$\bf{"'ditribution'"}$"+' '+r"$\bf{"'of'"}$"+' '+r"$\bf{"'classes'"}$" 
+                     + ' \n (features: ' + '%s' % ', '.join(map(str, list(self.m.features.keys()))) + ')')
         fig.canvas.draw()
         fig.tight_layout()
         plt.margins(0.1)
@@ -260,7 +261,7 @@ class Plotter:
             ax[k].add_feature(cfeature.COASTLINE)
             ax[k].set_title('PCM Posteriors for k=%i' % k)
             
-            
+        plt.subplots_adjust(wspace=0.1, hspace=0.1)   
         fig.suptitle(r"$\bf{"'PCM  Posteriors'"}$" + ' \n (probability of a profile to belong to a class k)')
         fig.canvas.draw()
         fig.tight_layout()
@@ -418,12 +419,13 @@ class Plotter:
         fontA = ImageFont.truetype(font_path, 14)
         
         #time extent
-        if len(self.ds["time"]) > 1:
-            time_extent = [min(self.ds["time"].dt.strftime("%Y/%m/%d")), max(self.ds["time"].dt.strftime("%Y/%m/%d"))]
-            time_string = 'from %s to %s' %(time_extent[0].values, time_extent[1].values)
-        else:
+        if len(self.ds.time.sizes) == 0:
+            # TODO: when using isel hours information is lost
             time_extent = self.ds["time"].dt.strftime("%Y/%m/%d %H:%M")
             time_string = 'time step: %s' % time_extent.values
+        else:
+            time_extent = [min(self.ds["time"].dt.strftime("%Y/%m/%d")), max(self.ds["time"].dt.strftime("%Y/%m/%d"))]
+            time_string = 'from %s to %s' %(time_extent[0].values, time_extent[1].values)
         
 
         txtB = "%s\n%s\nSource: %s" % (self.ds.attrs.get('title'), time_string, self.ds.attrs.get('credit'))
