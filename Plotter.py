@@ -243,7 +243,8 @@ class Plotter:
         
         cmap = sns.light_palette("blue", as_cmap=True)
         subplot_kw={'projection': proj, 'extent': extent}
-        fig, ax = self.m.plot.subplots(figsize=(10,22), maxcols=2, subplot_kw=subplot_kw)# TODO: function already in pyxpcm
+        #fig, ax = self.m.plot.subplots(figsize=(10,22), maxcols=2, subplot_kw=subplot_kw)# TODO: function already in pyxpcm
+        fig, ax = self.m.plot.subplots(figsize=(10,14), maxcols=2, subplot_kw=subplot_kw)# TODO: function already in pyxpcm
 
         for k in self.m:
             if self.data_type == 'profiles':
@@ -261,10 +262,11 @@ class Plotter:
             ax[k].add_feature(cfeature.COASTLINE)
             ax[k].set_title('PCM Posteriors for k=%i' % k)
             
-        plt.subplots_adjust(wspace=0.1, hspace=0.1)   
-        fig.suptitle(r"$\bf{"'PCM  Posteriors'"}$" + ' \n (probability of a profile to belong to a class k)')
-        fig.canvas.draw()
-        fig.tight_layout()
+        #plt.subplots_adjust(wspace=0.1, hspace=0.1)   
+        fig.suptitle(r"$\bf{"'PCM  Posteriors'"}$" + ' \n probability of a profile to belong to a class k'
+                    + ' \n (features: ' + '%s' % ', '.join(map(str, list(self.m.features.keys()))) + ')')
+        #fig.canvas.draw()
+        #fig.tight_layout()
         #fig.subplots_adjust(top=0.95)
             
            # TODO: add dataset information (function)
@@ -291,6 +293,7 @@ class Plotter:
         # data to be plot
         # TODO: is it the best way??
         pcm_labels = self.ds['PCM_LABELS']
+        kmap = self.m.plot.cmap()
        
         if time_bins == 'month':
             xaxis_labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -314,29 +317,31 @@ class Plotter:
 
         
         if pond == 'rel':
-            counts_k = counts_k/sum(counts_k)
+            counts_k = counts_k/sum(counts_k)*100
             
         #loop for plotting
         for cl in range(self.m.K): 
             
             if time_bins == 'month':
-                bar_plot_k = ax.bar(counts_k.month - (self.m.K/2-cl)*width, counts_k.isel(k=cl), width, label = 'K =' + str(cl))
+                bar_plot_k = ax.bar(counts_k.month - (self.m.K/2-cl)*width, counts_k.isel(k=cl), width, label = 'K=' + str(cl),
+                                   color=kmap(cl))
             if time_bins == 'season':
                 x_ticks_k = []
                 for i in range(len(counts_k.season)):
                     x_ticks_k.append(list(seasons_dict.values()).index(counts_k.season[i])+1)
                     # print(x_ticks_k)
                 #plot
-                bar_plot_k = ax.bar(np.array(x_ticks_k) - (self.m.K/2-cl)*width, counts_k.isel(k=cl), width, label = 'K =' + str(cl))
-                #cmap=kmap
-            
+                bar_plot_k = ax.bar(np.array(x_ticks_k) - (self.m.K/2-cl)*width, counts_k.isel(k=cl), width, label = 'K=' + str(cl),
+                                   color=kmap(cl))
+
+                
     
         # format
         title_string = r'Number of profiles in each class by $\bf{' + time_bins + '}$'
         ylabel_string = 'Number of profiles'
         if pond == 'rel':
-            title_string = title_string + '\n (divided by total number of profiles in each bin)'
-            ylabel_string = 'Relative number of profiles'
+            title_string = title_string + '\n (% of profiles in each bin)'
+            ylabel_string = '% of profiles'
         
         
         ax.set_xticks(np.arange(1,len(xaxis_labels)+1))
