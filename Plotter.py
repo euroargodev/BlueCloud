@@ -49,7 +49,9 @@ class Plotter:
         # types: profiles, gridded, timeseries in the future??
 
         # TODO: get information about dataset
-
+        # Check if the PCM is trained:
+        # validation.check_is_fitted(m, 'fitted')
+        # TODO: get colormap
 
     @staticmethod
     def cmap_discretize(name, K):
@@ -132,7 +134,6 @@ class Plotter:
                '''
         # copy of fig, ax = self.m.plot.quantile(self.ds[q_variable], maxcols=4, figsize=(10, 8), sharey=True)
 
-        
         # Check if the PCM is trained:
         # validation.check_is_fitted(m, 'fitted')
         da = self.ds[q_variable]
@@ -157,7 +158,8 @@ class Plotter:
 
         nQ = len(da[QUANT_DIM])  # Nb of quantiles
 
-        cmapK = self.m.plot.cmap()  # cmap_discretize(plt.cm.get_cmap(name='Paired'), m.K)
+        #cmapK = self.m.plot.cmap()  # cmap_discretize(plt.cm.get_cmap(name='Paired'), m.K)
+        cmapK = self.cmap_discretize(plt.cm.get_cmap(name='Accent'), self.m.K)
         if not cmap:
             cmap = self.cmap_discretize(plt.cm.get_cmap(name='brg'), nQ)
         defaults = {'figsize': (10, 8), 'dpi': 80,
@@ -186,15 +188,110 @@ class Plotter:
                 ax[k].set_ylabel(ylabel)
             ax[k].grid(True)
         plt.subplots_adjust(top=0.90)
-        fig.suptitle(r"$\bf{"'Vertical'"}$"+' ' + r"$\bf{"'structure'"}$"+' '+r"$\bf{"'of'"}$"+' '+r"$\bf{"'classes'"}$"
-                     + ' \n (features: ' + '%s' % ', '.join(map(str, list(self.m.features.keys()))) + ')')
+        fig.suptitle(r"$\bf{"'Vertical'"}$"+' ' + r"$\bf{"'structure'"}$"+' '+r"$\bf{"'of'"}$"+' '+r"$\bf{"'classes'"}$")
         #plt.tight_layout()
 
-        
         # TODO: check if data is profile: difference between profiles, gridded profiles and gridded
         # TODO: try with other k values
 
-    def spatial_distribution(self, proj, extent, co):
+    def vertical_structure_comp(self, q_variable,
+                           xlim=None,
+                           classdimname='pcm_class',
+                           quantdimname='quantile',
+                           maxcols=3, cmap=None,
+                           ylabel='depth (m)',
+                           ylim='auto',
+                           **kwargs):
+        '''Plot vertical structure of each class
+        
+           Parameters
+           ----------
+               q_variable: quantile variable calculated with pyxpcm.quantile function (inplace=True option)
+               
+               classdimname
+
+               quantdimname
+
+               maxcols
+               
+               ylim
+
+               Returns
+               
+               
+           Returns
+           ------
+               fig : :class:`matplotlib.pyplot.figure.Figure`
+
+               ax : :class:`matplotlib.axes.Axes` object or array of Axes objects.
+                    *ax* can be either a single :class:`matplotlib.axes.Axes` object or an
+                    array of Axes objects if more than one subplot was created.  The
+                    dimensions of the resulting array can be controlled with the squeeze
+                    keyword.
+          
+               '''
+        
+        # copy of fig, ax = self.m.plot.quantile(self.ds[q_variable], maxcols=4, figsize=(10, 8), sharey=True)
+
+        # Check if the PCM is trained:
+        # validation.check_is_fitted(m, 'fitted')
+        da = self.ds[q_variable]
+
+        #TODO: adapt to automatique detection of coordinates
+        ###########################################################################
+        # da must be 3D with a dimension for: CLASS, QUANTILES and a vertical axis
+        # The QUANTILES dimension is called "quantile"
+        # The CLASS dimension is identified as the one matching m.K length.
+        if classdimname in da.dims:
+            CLASS_DIM = classdimname
+        elif (np.argwhere(np.array(da.shape) == self.m.K).shape[0] > 1):
+            raise ValueError(
+                "Can't distinguish the class dimension from the others")
+        else:
+            CLASS_DIM = da.dims[np.argwhere(
+                np.array(da.shape) == self.m.K)[0][0]]
+        QUANT_DIM = quantdimname
+        VERTICAL_DIM = list(
+            set(da.dims) - set([CLASS_DIM]) - set([QUANT_DIM]))[0]
+        ############################################################################
+
+        nQ = len(da[QUANT_DIM])  # Nb of quantiles
+
+        cmapK = self.m.plot.cmap()  # cmap_discretize(plt.cm.get_cmap(name='Paired'), m.K)
+        #cmapK = self.cmap_discretize(plt.cm.get_cmap(name='Accent'), self.m.K)
+        if not cmap:
+            cmap = self.cmap_discretize(plt.cm.get_cmap(name='brg'), nQ)
+        fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(10, 8), facecolor='w', edgecolor='k',sharey=True)
+
+        if not xlim:
+            xlim = np.array([0.9 * da.min(), 1.1 * da.max()])
+        for q in np.arange(0,nQ):
+            Qq = da.loc[{QUANT_DIM: da[QUANT_DIM].values[q]}]
+            for k in self.m:
+                Qqk = Qq.loc[{CLASS_DIM: k}]
+                ax[q].plot(Qqk.values.T, da[VERTICAL_DIM], label=(
+            "K=%i") % (Qqk[CLASS_DIM]),color=cmapK(k))
+            ax[q].set_title(("quantile: %.2f") % (da[QUANT_DIM].values[q]), color=cmap(q))
+            ax[q].legend(loc='lower right')
+            ax[q].set_xlim(xlim)
+            if isinstance(ylim, str):
+                ax[q].set_ylim(
+                    np.array([da[VERTICAL_DIM].min(), da[VERTICAL_DIM].max()]))
+            else:
+                ax[q].set_ylim(ylim)
+            # ax[k].set_xlabel(Q.units)
+            if k == 0:
+                ax[q].set_ylabel(ylabel)
+            ax[q].grid(True)
+        plt.subplots_adjust(top=0.90)
+        fig.suptitle(r"$\bf{"'Vertical'"}$"+' ' + r"$\bf{"'structure'"}$"+' '+r"$\bf{"'of'"}$"+' '+r"$\bf{"'classes'"}$")
+        fig.text(0.04, 0.5, 'depth (m)', va='center', rotation='vertical')
+        #plt.tight_layout()
+
+        # TODO: check if data is profile: difference between profiles, gridded profiles and gridded
+        # TODO: try with other k values
+
+    def spatial_distribution(self, proj, extent, co, time_slice=0):
         '''Plot spatial distribution of classes
         
            Parameters
@@ -202,7 +299,7 @@ class Plotter:
                proj: projection
                extent: map extent
                co: coordinates names co={'longitude':'LONGITUDE', 'latitude':'LATITUDE'}
-               Input dataset should have only one time step
+               time_slice: time snapshot to be plot (default 0)
                
            Returns
            -------
@@ -210,37 +307,36 @@ class Plotter:
                '''
 
         #TODO: if finally we use k-means instead of GMM with huge datsets, we can not plot posteriors
+        #TODO: check if time variable exits if not error
+        #TODO: make default values for projection and extent (dataset extent)
+
+        dsp = self.ds.isel(time = time_slice)
 
         subplot_kw = {'projection': proj, 'extent': extent}
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(
             5, 5), dpi=120, facecolor='w', edgecolor='k', subplot_kw=subplot_kw)
-        kmap = self.m.plot.cmap()  # TODO: function already in pyxpcm
+        #kmap = self.m.plot.cmap()
+        kmap = self.m.plot.cmap(name='Accent') # TODO: function already in pyxpcm
 
         # check if gridded or profiles data
         if self.data_type == 'profiles':
-            ax.scatter(self.ds[co['longitude']], self.ds[co['latitude']], s=3,
+            ax.scatter(dsp[co['longitude']], dsp[co['latitude']], s=3,
                             c=self.ds['PCM_LABELS'], cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
         if self.data_type == 'gridded':
-            ax.pcolormesh(self.ds[co['longitude']], self.ds[co['latitude']], self.ds['PCM_LABELS'],
+            ax.pcolormesh(dsp[co['longitude']], dsp[co['latitude']], dsp['PCM_LABELS'],
                                cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
 
-        self.m.plot.colorbar(ax=ax)  # TODO: function already in pyxpcm
-        # TODO: function already in pyxpcm
-        self.m.plot.latlongrid(ax, dx=10)
+        self.m.plot.colorbar(ax=ax, cmap='Accent')  # TODO: function already in pyxpcm
+        self.m.plot.latlongrid(ax, dx=10)  # TODO: function already in pyxpcm
         ax.add_feature(cfeature.LAND)
         ax.add_feature(cfeature.COASTLINE)
         ax.set_title(r"$\bf{"'Spatial'"}$"+' ' + r"$\bf{"'ditribution'"}$"+' '+r"$\bf{"'of'"}$"+' '+r"$\bf{"'classes'"}$"
-                     + ' \n (features: ' + '%s' % ', '.join(map(str, list(self.m.features.keys()))) + ')')
+                     + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')')
         fig.canvas.draw()
         fig.tight_layout()
         plt.margins(0.1)
 
-        # TODO: add dataset information (function)
-
-        #plt.show()
-
-        
-    def plot_posteriors(self, proj, extent, co):
+    def plot_posteriors(self, proj, extent, co, time_slice=0):
         '''Plot posteriors in a map
         
            Parameters
@@ -254,9 +350,11 @@ class Plotter:
            -------
            
            '''
+        
+        dsp = self.ds.isel(time = time_slice)
 
         # check if PCM_POST variable exists
-        assert ("PCM_POST" in self.ds), "Dataset should include PCM_POST varible to be plotted. Use pyxpcm.predict_proba function with inplace=True option"
+        assert ("PCM_POST" in dsp), "Dataset should include PCM_POST varible to be plotted. Use pyxpcm.predict_proba function with inplace=True option"
 
         cmap = sns.light_palette("blue", as_cmap=True)
         subplot_kw = {'projection': proj, 'extent': extent}
@@ -267,32 +365,28 @@ class Plotter:
 
         for k in self.m:
             if self.data_type == 'profiles':
-                sc = ax[k].scatter(self.ds[co['longitude']], self.ds[co['latitude']], s=3, c=self.ds['PCM_POST'].sel(pcm_class=k),
+                sc = ax[k].scatter(dsp[co['longitude']], self.ds[co['latitude']], s=3, c=dsp['PCM_POST'].sel(pcm_class=k),
                                    cmap=cmap, transform=proj, vmin=0, vmax=1)
             if self.data_type == 'gridded':
-                sc = ax[k].pcolormesh(self.ds[co['longitude']], self.ds[co['latitude']], self.ds['PCM_POST'].sel(pcm_class=k),
+                sc = ax[k].pcolormesh(dsp[co['longitude']], dsp[co['latitude']], dsp['PCM_POST'].sel(pcm_class=k),
                                       cmap=cmap, transform=proj, vmin=0, vmax=1)
 
             plt.colorbar(sc, ax=ax[k], fraction=0.03)
             self.m.plot.latlongrid(ax[k], fontsize=8, dx=20, dy=10)
 
-            cl = plt.colorbar(sc, ax=ax[k], fraction=0.03)
-            gl = self.m.plot.latlongrid(ax[k], fontsize=8, dx=20, dy=10)
-        
             ax[k].add_feature(cfeature.LAND)
             ax[k].add_feature(cfeature.COASTLINE)
             ax[k].set_title('PCM Posteriors for k=%i' % k)
 
         #plt.subplots_adjust(wspace=0.1, hspace=0.1)
         fig.suptitle(r"$\bf{"'PCM  Posteriors'"}$" + ' \n probability of a profile to belong to a class k'
-                     + ' \n (features: ' + '%s' % ', '.join(map(str, list(self.m.features.keys()))) + ')')
+                     + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')')
         #fig.canvas.draw()
         #fig.tight_layout()
         #fig.subplots_adjust(top=0.95)
 
         # TODO: add dataset information (function)
 
-        
     def temporal_distribution(self, time_variable, time_bins, pond):
         '''Plot temporal distribution of classes by moth or by season
         
@@ -307,7 +401,6 @@ class Plotter:
             
         '''
 
-        
         # check if more than one temporal step
         assert (len(self.ds[time_variable]) >
                 1), "Length of time variable should be > 1"
@@ -325,7 +418,7 @@ class Plotter:
             xaxis_labels = ['DJF', 'MAM', 'JJA', 'SON']
 
         width = 0.8/(self.m.K)  # the width of the bars
-        fig, ax = plt.subplots(figsize=(18, 10))
+        fig, ax = plt.subplots(figsize=(10, 6))
         kmap = self.m.plot.cmap()  # TODO: function already in pyxpcm
 
         #loop in k for counting
@@ -340,7 +433,6 @@ class Plotter:
                 counts_k = xr.concat([counts_k, pcm_labels_k.groupby(
                     time_variable + '.' + time_bins).count(...)], "k")
 
-        
         if pond == 'rel':
             counts_k = counts_k/sum(counts_k)*100
 
@@ -370,23 +462,16 @@ class Plotter:
         ax.set_xticks(np.arange(1, len(xaxis_labels)+1))
         ax.set_xticklabels(xaxis_labels, fontsize=12)
         plt.yticks(fontsize=12)
-        ax.legend(fontsize=12)
+        ax.legend(fontsize=12, bbox_to_anchor=(1.01, 1), loc='upper left')
+        ax.set_xticks(np.arange(0.5,len(xaxis_labels)+1.5), minor=True)
+        ax.grid(axis='x', which='minor', alpha=0.5, ls='--')
         ax.set_ylabel(ylabel_string, fontsize=12)
         ax.set_title(title_string, fontsize=14)
         fig.tight_layout()
-        # TODO: same colors for each class in all figures
 
-        # TODO: add dataset information (function)
-
-
-        #plt.show()
-
-        
-        
-    # TODO: def function which adds dataset information to the plot
 
     @staticmethod
-    def add_lowerband(mfname, outfname, band_height=50, color=(255, 255, 255, 255)):
+    def add_lowerband(mfname, outfname, band_height=70, color=(255, 255, 255, 255)):
         """ Add lowerband to a figure
     
             Parameters
@@ -405,9 +490,7 @@ class Plotter:
         background.paste(image, (0, 0))
         background.save(outfname)
 
-        
- 
-    def add_2logo(self, mfname, outfname, logo_height=50, txt_color=(0, 0, 0, 255), data_src='CMEMS'):
+    def add_2logo(self, mfname, outfname, logo_height=70, txt_color=(0, 0, 0, 255), data_src='CMEMS'):
         """ Add 2 logos and text to a figure
     
             Parameters
@@ -417,6 +500,16 @@ class Plotter:
             outfname : string
                 output figure file
         """
+        def pcm1liner(this_pcm):
+            prtval = lambda x: "%0.2f" % x    
+            getrge = lambda x: [np.max(x), np.min(x)]
+            prtrge = lambda x: "[%s:%s]" % (prtval(getrge(x)[0]), prtval(getrge(x)[1]))
+            prtfeatures = lambda p: "{%s}" % ", ".join(["'%s':%s" % (k, prtrge(v)) for k, v in p.features.items()])
+            return "PCM model information: K:%i, F:%i%s, %s" % (this_pcm.K, 
+                                        this_pcm.F, 
+                                        prtfeatures(this_pcm), 
+                                        this_pcm._props['with_classifier'].upper())
+
         font_path = "logos/Calibri_Regular.ttf"
         lfname2 = "logos/Blue-cloud_compact_color_W.jpg"
         lfname1 = "logos/Logo-LOPS_transparent_W.jpg"
@@ -441,42 +534,33 @@ class Plotter:
         box = (simage1.size[0], mimage.size[1]-logo_height)
         mimage.paste(simage2, box)
 
-        # Add copyright text:
-        #txtA = ("© 2017-2019, SOMOVAR Project, %s") % (__author__)
-        txtA = "Dataset information:"
-        fontA = ImageFont.truetype(font_path, 14)
-
-        #time extent
+        # Add dataset and model information
+        # time extent
         if len(self.ds.time.sizes) == 0:
             # TODO: when using isel hours information is lost
             time_extent = self.ds["time"].dt.strftime("%Y/%m/%d %H:%M")
-            time_string = 'time step: %s' % time_extent.values
+            time_string = 'Extracted periode: %s' % time_extent.values
         else:
             time_extent = [min(self.ds["time"].dt.strftime(
                 "%Y/%m/%d")), max(self.ds["time"].dt.strftime("%Y/%m/%d"))]
-            time_string = 'from %s to %s' % (
+            time_string = 'Extracted periode: from %s to %s' % (
                 time_extent[0].values, time_extent[1].values)
 
-        txtB = "%s\n%s\nSource: %s" % (self.ds.attrs.get(
-            'title'), time_string, self.ds.attrs.get('credit'))
-        fontB = ImageFont.truetype(font_path, 12)
+        txtA = "Dataset extracted from:\n   %s\n   %s\nSource: %s\n%s" % (self.ds.attrs.get(
+            'title'), time_string, self.ds.attrs.get('credit'), pcm1liner(self.m))
+        fontA = ImageFont.truetype(font_path, 12)
 
         txtsA = fontA.getsize_multiline(txtA)
-        txtsB = fontB.getsize_multiline(txtB)
 
         xoffset = 5 + simage1.size[0] + simage2.size[0]
         if 0:  # Align text to the top of the band:
             posA = (xoffset, mimage.size[1]-logo_height - 1)
-            posB = (xoffset, mimage.size[1]-logo_height + txtsA[1])
         else:  # Align text to the bottom of the band:
-            posA = (xoffset, mimage.size[1]-txtsA[1]-txtsB[1]-5)
-            posB = (xoffset, mimage.size[1]-txtsB[1]-5)
+            posA = (xoffset, mimage.size[1]-txtsA[1]-5)
 
         # Print
         drawA = ImageDraw.Draw(mimage)
         drawA.text(posA, txtA, txt_color, font=fontA)
-        drawB = ImageDraw.Draw(mimage)
-        drawB.text(posB, txtB, txt_color, font=fontB)
 
         # Final save
         mimage.save(outfname)
@@ -497,7 +581,4 @@ class Plotter:
 
         print('Figure saved in %s' % out_name)
 
-    pass
-
-        
     pass
