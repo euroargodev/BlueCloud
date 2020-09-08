@@ -21,37 +21,51 @@ class Plotter:
            
            '''
 
-    def __init__(self, ds, m, data_type):
+    def __init__(self, ds, m, coords_dict=None):
 
         self.ds = ds
         self.m = m
-        self.data_type = data_type
 
         # check if dataset should include PCM variables
+        # TODO: PCM_LABELS is an option in pyxpcm
         assert ("PCM_LABELS" in self.ds), "Dataset should include PCM_LABELS variable to be plotted. Use pyxpcm.predict function with inplace=True option"
 
-        # creates dictionary with coordinates
-        coords_list = list(self.ds.coords.keys())
-        coords_dict = {}
-        for c in coords_list:
-            axis_at = self.ds[c].attrs.get('axis')
-            #print(axis_at)
-            if axis_at == 'Y':
-                coords_dict.update({'latitude': c})
-            if axis_at == 'X':
-                coords_dict.update({'longitude': c})
-            if axis_at == 'T':
-                coords_dict.update({'time': c})
+        if coords_dict == None:
+            # creates dictionary with coordinates
+            coords_list = list(self.ds.coords.keys())
+            coords_dict = {}
+            for c in coords_list:
+                axis_at = self.ds[c].attrs.get('axis')
+                #print(axis_at)
+                if axis_at == 'Y':
+                    coords_dict.update({'latitude': c})
+                if axis_at == 'X':
+                    coords_dict.update({'longitude': c})
+                if axis_at == 'T':
+                    coords_dict.update({'time': c})
 
-        self.coords_dict = coords_dict
+            self.coords_dict = coords_dict
 
-        # TODO: assign a data type
-        # types: profiles, gridded, timeseries in the future??
+            if 'latitude' not in coords_dict or 'longitude' not in coords_dict:
+                raise ValueError('Coordinates not found in dataset. Please, define coordinates using coord_dict input')
 
-        # TODO: get information about dataset
+        else:
+            self.coords_dict = coords_dict
+
+        # assign a data type
+        # types: profiles, gridded, timeseries in the future
+        dims_dict = list(ds.dims.keys())
+        dims_dict = [e for e in dims_dict if e not in ('quantile', 'pcm_class')]
+        if len(dims_dict) > 2:
+            self.data_type = 'gridded'
+        else:
+            self.data_type = 'profile'    
+
         # Check if the PCM is trained:
         # validation.check_is_fitted(m, 'fitted')
         # TODO: get colormap
+        # TODO: check if it works with profiles type
+        # TODO: DEPTH DIM
 
     @staticmethod
     def cmap_discretize(name, K):
@@ -139,6 +153,7 @@ class Plotter:
         da = self.ds[q_variable]
 
         #TODO: adapt to automatique detection of coordinates
+        #TODO: detection of quantile dimension
         ###########################################################################
         # da must be 3D with a dimension for: CLASS, QUANTILES and a vertical axis
         # The QUANTILES dimension is called "quantile"
@@ -291,14 +306,13 @@ class Plotter:
         # TODO: check if data is profile: difference between profiles, gridded profiles and gridded
         # TODO: try with other k values
 
-    def spatial_distribution(self, proj, extent, co, time_slice=0):
+    def spatial_distribution(self, proj, extent, time_slice=0):
         '''Plot spatial distribution of classes
         
            Parameters
            ----------
                proj: projection
                extent: map extent
-               co: coordinates names co={'longitude':'LONGITUDE', 'latitude':'LATITUDE'}
                time_slice: time snapshot to be plot (default 0)
                
            Returns
@@ -320,10 +334,10 @@ class Plotter:
 
         # check if gridded or profiles data
         if self.data_type == 'profiles':
-            ax.scatter(dsp[co['longitude']], dsp[co['latitude']], s=3,
+            ax.scatter(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], s=3,
                             c=self.ds['PCM_LABELS'], cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
         if self.data_type == 'gridded':
-            ax.pcolormesh(dsp[co['longitude']], dsp[co['latitude']], dsp['PCM_LABELS'],
+            ax.pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp['PCM_LABELS'],
                                cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
 
         self.m.plot.colorbar(ax=ax, cmap='Accent')  # TODO: function already in pyxpcm
@@ -336,7 +350,7 @@ class Plotter:
         fig.tight_layout()
         plt.margins(0.1)
 
-    def plot_posteriors(self, proj, extent, co, time_slice=0):
+    def plot_posteriors(self, proj, extent, time_slice=0):
         '''Plot posteriors in a map
         
            Parameters
@@ -365,10 +379,10 @@ class Plotter:
 
         for k in self.m:
             if self.data_type == 'profiles':
-                sc = ax[k].scatter(dsp[co['longitude']], self.ds[co['latitude']], s=3, c=dsp['PCM_POST'].sel(pcm_class=k),
+                sc = ax[k].scatter(dsp[self.coords_dict.get('longitude')], self.ds[self.coords_dict.get('latitude')], s=3, c=dsp['PCM_POST'].sel(pcm_class=k),
                                    cmap=cmap, transform=proj, vmin=0, vmax=1)
             if self.data_type == 'gridded':
-                sc = ax[k].pcolormesh(dsp[co['longitude']], dsp[co['latitude']], dsp['PCM_POST'].sel(pcm_class=k),
+                sc = ax[k].pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp['PCM_POST'].sel(pcm_class=k),
                                       cmap=cmap, transform=proj, vmin=0, vmax=1)
 
             plt.colorbar(sc, ax=ax[k], fraction=0.03)
