@@ -21,10 +21,11 @@ class Plotter:
            
            '''
 
-    def __init__(self, ds, m, coords_dict=None):
+    def __init__(self, ds, m, coords_dict=None, cmap_name='Accent'):
 
         self.ds = ds
         self.m = m
+        self.cmap_name = cmap_name
 
         # check if dataset should include PCM variables
         # TODO: PCM_LABELS is an option in pyxpcm
@@ -174,7 +175,7 @@ class Plotter:
         nQ = len(da[QUANT_DIM])  # Nb of quantiles
 
         #cmapK = self.m.plot.cmap()  # cmap_discretize(plt.cm.get_cmap(name='Paired'), m.K)
-        cmapK = self.cmap_discretize(plt.cm.get_cmap(name='Accent'), self.m.K)
+        cmapK = self.cmap_discretize(plt.cm.get_cmap(name=self.cmap_name), self.m.K)
         if not cmap:
             cmap = self.cmap_discretize(plt.cm.get_cmap(name='brg'), nQ)
         defaults = {'figsize': (10, 8), 'dpi': 80,
@@ -272,7 +273,7 @@ class Plotter:
 
         nQ = len(da[QUANT_DIM])  # Nb of quantiles
 
-        cmapK = self.m.plot.cmap()  # cmap_discretize(plt.cm.get_cmap(name='Paired'), m.K)
+        cmapK = self.m.plot.cmap(name=self.cmap_name)  # cmap_discretize(plt.cm.get_cmap(name='Paired'), m.K)
         #cmapK = self.cmap_discretize(plt.cm.get_cmap(name='Accent'), self.m.K)
         if not cmap:
             cmap = self.cmap_discretize(plt.cm.get_cmap(name='brg'), nQ)
@@ -286,8 +287,8 @@ class Plotter:
                 Qqk = Qq.loc[{CLASS_DIM: k}]
                 ax[q].plot(Qqk.values.T, da[VERTICAL_DIM], label=(
             "K=%i") % (Qqk[CLASS_DIM]),color=cmapK(k))
-            ax[q].set_title(("quantile: %.2f") % (da[QUANT_DIM].values[q]), color=cmap(q))
-            ax[q].legend(loc='lower right')
+            ax[q].set_title(("quantile: %.2f") % (da[QUANT_DIM].values[q]), color=cmap(q),fontsize=12)
+            ax[q].legend(loc='lower right',fontsize=11)
             ax[q].set_xlim(xlim)
             if isinstance(ylim, str):
                 ax[q].set_ylim(
@@ -299,14 +300,83 @@ class Plotter:
                 ax[q].set_ylabel(ylabel)
             ax[q].grid(True)
         plt.subplots_adjust(top=0.90)
+        plt.rc('xtick',labelsize=12)
+        plt.rc('ytick',labelsize=12)
         fig.suptitle(r"$\bf{"'Vertical'"}$"+' ' + r"$\bf{"'structure'"}$"+' '+r"$\bf{"'of'"}$"+' '+r"$\bf{"'classes'"}$")
-        fig.text(0.04, 0.5, 'depth (m)', va='center', rotation='vertical')
+        fig.text(0.04, 0.5, 'depth (m)', va='center', rotation='vertical',fontsize=12)
         #plt.tight_layout()
 
         # TODO: check if data is profile: difference between profiles, gridded profiles and gridded
         # TODO: try with other k values
 
-    def spatial_distribution(self, proj, extent, time_slice=0):
+    def spatial_distribution(self, proj, extent, time_slice=None):
+        '''Plot spatial distribution of classes
+        
+           Parameters
+           ----------
+               proj: projection
+               extent: map extent
+               time_slice: time snapshot to be plot (default 0) or most_freq_label
+               
+           Returns
+           -------
+           
+               '''
+
+        #TODO: if finally we use k-means instead of GMM with huge datsets, we can not plot posteriors
+        #TODO: check if time variable exits if not error
+        #TODO: make default values for projection and extent (dataset extent)
+
+        def get_most_freq_labels(this_ds):
+            this_ds = this_ds.stack({'N_OBS': [d for d in this_ds['PCM_LABELS'].dims if d != 'time']})
+            def fct(this):
+                def most_prob_label(vals):
+                    return np.argmax(np.bincount(vals))
+                mpblab = []
+                for i in this['N_OBS']:
+                    val = this.sel(N_OBS=i)['PCM_LABELS'].values
+                    res = np.nan
+                    if np.count_nonzero(~np.isnan(val)) != 0 :
+                        res = most_prob_label(val.astype('int'))    
+                    mpblab.append(res)
+                mpblab = np.array(mpblab)
+                return xr.DataArray(mpblab, dims='N_OBS', coords={'N_OBS': this['N_OBS']}, name='PCM_MOST_FREQ_LABELS').to_dataset()
+            this_ds['PCM_MOST_FREQ_LABELS'] = this_ds.map_blocks(fct)['PCM_MOST_FREQ_LABELS'].load()
+            return this_ds.unstack('N_OBS')
+
+        if isinstance(time_slice, str):
+            dsp = get_most_freq_labels(self.ds)
+            var_name = 'PCM_MOST_FREQ_LABELS'
+            title_str = r"$\bf{"'Spatial'"}$"+' ' + r"$\bf{"'ditribution'"}$"+' '+r"$\bf{"'of'"}$"+' '+r"$\bf{"'classes'"}$" + ' \n (most frequent label in time series)'
+        else:
+            dsp = self.ds.isel(time = time_slice)
+            var_name = 'PCM_LABELS'
+            title_str = r"$\bf{"'Spatial'"}$"+' ' + r"$\bf{"'ditribution'"}$"+' '+r"$\bf{"'of'"}$"+' '+r"$\bf{"'classes'"}$" + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')'  
+            
+        subplot_kw = {'projection': proj, 'extent': extent}
+        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(
+            5, 5), dpi=120, facecolor='w', edgecolor='k', subplot_kw=subplot_kw)
+        #kmap = self.m.plot.cmap()
+        kmap = self.m.plot.cmap(name=self.cmap_name) # TODO: function already in pyxpcm
+
+        # check if gridded or profiles data
+        if self.data_type == 'profiles':
+            ax.scatter(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], s=3,
+                            c=self.ds[var_name], cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
+        if self.data_type == 'gridded':
+            ax.pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp[var_name],
+                               cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
+
+        self.m.plot.colorbar(ax=ax, cmap='Accent')  # TODO: function already in pyxpcm
+        self.m.plot.latlongrid(ax, dx=10)  # TODO: function already in pyxpcm
+        ax.add_feature(cfeature.LAND)
+        ax.add_feature(cfeature.COASTLINE)
+        ax.set_title(title_str)
+        fig.canvas.draw()
+        fig.tight_layout()
+        plt.margins(0.1)
+
+    def spatial_distribution_mfreq(self, proj, extent, time_slice=0):
         '''Plot spatial distribution of classes
         
            Parameters
@@ -324,20 +394,38 @@ class Plotter:
         #TODO: check if time variable exits if not error
         #TODO: make default values for projection and extent (dataset extent)
 
-        dsp = self.ds.isel(time = time_slice)
+        def get_most_freq_labels(this_ds):
+            this_ds = this_ds.stack({'N_OBS': [d for d in this_ds['PCM_LABELS'].dims if d != 'time']})
+            def fct(this):
+                def most_prob_label(vals):
+                    return np.argmax(np.bincount(vals))
+                mpblab = []
+                for i in this['N_OBS']:
+                    val = this.sel(N_OBS=i)['PCM_LABELS'].values
+                    res = np.nan
+                    if np.count_nonzero(~np.isnan(val)) != 0 :
+                        res = most_prob_label(val.astype('int'))    
+                    mpblab.append(res)
+                mpblab = np.array(mpblab)
+                return xr.DataArray(mpblab, dims='N_OBS', coords={'N_OBS': this['N_OBS']}, name='PCM_MOST_FREQ_LABELS').to_dataset()
+            this_ds['PCM_MOST_FREQ_LABELS'] = this_ds.map_blocks(fct)['PCM_MOST_FREQ_LABELS'].load()
+            return this_ds.unstack('N_OBS')
+
+        dsp = get_most_freq_labels(self.ds)
+        #dsp = self.ds.isel(time = time_slice)
 
         subplot_kw = {'projection': proj, 'extent': extent}
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(
             5, 5), dpi=120, facecolor='w', edgecolor='k', subplot_kw=subplot_kw)
         #kmap = self.m.plot.cmap()
-        kmap = self.m.plot.cmap(name='Accent') # TODO: function already in pyxpcm
+        kmap = self.m.plot.cmap(name=self.cmap_name) # TODO: function already in pyxpcm
 
         # check if gridded or profiles data
         if self.data_type == 'profiles':
             ax.scatter(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], s=3,
-                            c=self.ds['PCM_LABELS'], cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
+                            c=self.ds['PCM_MOST_FREQ_LABELS'], cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
         if self.data_type == 'gridded':
-            ax.pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp['PCM_LABELS'],
+            ax.pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp['PCM_MOST_FREQ_LABELS'],
                                cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
 
         self.m.plot.colorbar(ax=ax, cmap='Accent')  # TODO: function already in pyxpcm
@@ -345,10 +433,11 @@ class Plotter:
         ax.add_feature(cfeature.LAND)
         ax.add_feature(cfeature.COASTLINE)
         ax.set_title(r"$\bf{"'Spatial'"}$"+' ' + r"$\bf{"'ditribution'"}$"+' '+r"$\bf{"'of'"}$"+' '+r"$\bf{"'classes'"}$"
-                     + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')')
+                     + ' \n (most frequent label in time series)')
         fig.canvas.draw()
         fig.tight_layout()
         plt.margins(0.1)
+
 
     def plot_posteriors(self, proj, extent, time_slice=0):
         '''Plot posteriors in a map
@@ -422,7 +511,7 @@ class Plotter:
         # data to be plot
         # TODO: is it the best way??
         pcm_labels = self.ds['PCM_LABELS']
-        kmap = self.m.plot.cmap()
+        kmap = self.m.plot.cmap(name=self.cmap_name)
 
         if time_bins == 'month':
             xaxis_labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May',
