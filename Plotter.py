@@ -17,18 +17,24 @@ class Plotter:
        ----------
            ds: dataset including PCM results
            m: pyxpcm model
-           data_type: data type
+           coords_dict: (optional) dictionary with coordinates names (ex: {'latitude': 'lat', 'time': 'time', 'longitude': 'lon'})
+           cmap_name: (optional) colormap name (default: 'Accent')
            
            '''
 
     def __init__(self, ds, m, coords_dict=None, cmap_name='Accent'):
+
+        # TODO: automatic detection of PCM_LABELS and q_variable ?
+        # TODO: Check if the PCM is trained:
+        # validation.check_is_fitted(m, 'fitted')
+        # TODO: automatic detection of vertical dimension
+        # TODO: check if datatype works with different datasets
 
         self.ds = ds
         self.m = m
         self.cmap_name = cmap_name
 
         # check if dataset should include PCM variables
-        # TODO: PCM_LABELS is an option in pyxpcm
         assert ("PCM_LABELS" in self.ds), "Dataset should include PCM_LABELS variable to be plotted. Use pyxpcm.predict function with inplace=True option"
 
         if coords_dict == None:
@@ -37,7 +43,6 @@ class Plotter:
             coords_dict = {}
             for c in coords_list:
                 axis_at = self.ds[c].attrs.get('axis')
-                #print(axis_at)
                 if axis_at == 'Y':
                     coords_dict.update({'latitude': c})
                 if axis_at == 'X':
@@ -54,19 +59,12 @@ class Plotter:
             self.coords_dict = coords_dict
 
         # assign a data type
-        # types: profiles, gridded, timeseries in the future
         dims_dict = list(ds.dims.keys())
         dims_dict = [e for e in dims_dict if e not in ('quantile', 'pcm_class')]
         if len(dims_dict) > 2:
             self.data_type = 'gridded'
         else:
             self.data_type = 'profile'    
-
-        # Check if the PCM is trained:
-        # validation.check_is_fitted(m, 'fitted')
-        # TODO: get colormap
-        # TODO: check if it works with profiles type
-        # TODO: DEPTH DIM
 
     @staticmethod
     def cmap_discretize(name, K):
@@ -111,11 +109,13 @@ class Plotter:
                 cmap.name + "_%d" % N, cdict, N)
         return new_cmap
 
-    def vertical_structure(self, q_variable,
+    def vertical_structure(self, 
+                           q_variable,
                            xlim=None,
                            classdimname='pcm_class',
                            quantdimname='quantile',
-                           maxcols=3, cmap=None,
+                           maxcols=3,
+                           cmap=None,
                            ylabel='depth (m)',
                            ylim='auto',
                            **kwargs):
@@ -124,22 +124,18 @@ class Plotter:
            Parameters
            ----------
                q_variable: quantile variable calculated with pyxpcm.quantile function (inplace=True option)
-               
-               classdimname
-
-               quantdimname
-
-               maxcols
-               
-               ylim
-
-               Returns
-               
+               xlim: (optional) x axis limits 
+               classdimname: (optional) pcm classes dimension name (default = 'pcm_class')
+               quantdimname: (optional) pcm quantiles dimension name (default = 'quantiles')
+               maxcols: (optional) max number of column (default = 3)
+               cmap: (optional) colormap name for quantiles (default = 'brg')
+               ylabel: (optional) y axis label (default = 'depth (m)')
+               ylim: (optional) y axis limits (default = 'auto')
+               **kwargs
                
            Returns
            ------
                fig : :class:`matplotlib.pyplot.figure.Figure`
-
                ax : :class:`matplotlib.axes.Axes` object or array of Axes objects.
                     *ax* can be either a single :class:`matplotlib.axes.Axes` object or an
                     array of Axes objects if more than one subplot was created.  The
@@ -147,14 +143,14 @@ class Plotter:
                     keyword.
           
                '''
-        # copy of fig, ax = self.m.plot.quantile(self.ds[q_variable], maxcols=4, figsize=(10, 8), sharey=True)
 
-        # Check if the PCM is trained:
-        # validation.check_is_fitted(m, 'fitted')
+        # copy of pyxpcm.plot.quantile function
+        # TODO: Is it neccesary to use all this options in function?
+        # TODO: detection of quantile variable?
+        
+        # select quantile variable
         da = self.ds[q_variable]
 
-        #TODO: adapt to automatique detection of coordinates
-        #TODO: detection of quantile dimension
         ###########################################################################
         # da must be 3D with a dimension for: CLASS, QUANTILES and a vertical axis
         # The QUANTILES dimension is called "quantile"
@@ -207,9 +203,6 @@ class Plotter:
         fig.suptitle(r"$\bf{"'Vertical'"}$"+' ' + r"$\bf{"'structure'"}$"+' '+r"$\bf{"'of'"}$"+' '+r"$\bf{"'classes'"}$")
         #plt.tight_layout()
 
-        # TODO: check if data is profile: difference between profiles, gridded profiles and gridded
-        # TODO: try with other k values
-
     def vertical_structure_comp(self, q_variable,
                            xlim=None,
                            classdimname='pcm_class',
@@ -247,13 +240,11 @@ class Plotter:
           
                '''
         
-        # copy of fig, ax = self.m.plot.quantile(self.ds[q_variable], maxcols=4, figsize=(10, 8), sharey=True)
+        # TODO: merge with vertical_structure function
 
-        # Check if the PCM is trained:
-        # validation.check_is_fitted(m, 'fitted')
+        # select quantile variable
         da = self.ds[q_variable]
-
-        #TODO: adapt to automatique detection of coordinates
+        
         ###########################################################################
         # da must be 3D with a dimension for: CLASS, QUANTILES and a vertical axis
         # The QUANTILES dimension is called "quantile"
@@ -306,25 +297,20 @@ class Plotter:
         fig.text(0.04, 0.5, 'depth (m)', va='center', rotation='vertical',fontsize=12)
         #plt.tight_layout()
 
-        # TODO: check if data is profile: difference between profiles, gridded profiles and gridded
-        # TODO: try with other k values
-
-    def spatial_distribution(self, proj, extent, time_slice=None):
+    def spatial_distribution(self, proj, extent, time_slice=0):
         '''Plot spatial distribution of classes
         
            Parameters
            ----------
                proj: projection
                extent: map extent
-               time_slice: time snapshot to be plot (default 0) or most_freq_label
+               time_slice: time snapshot to be plot (default 0). If time_slice = 'most_freq_label', most frequent label in dataseries is plotted.
                
            Returns
            -------
            
                '''
-
-        #TODO: if finally we use k-means instead of GMM with huge datsets, we can not plot posteriors
-        #TODO: check if time variable exits if not error
+        #TODO: check if time variable exits if not error (time variable should be 'time' at the moment)
         #TODO: make default values for projection and extent (dataset extent)
 
         def get_most_freq_labels(this_ds):
@@ -356,7 +342,6 @@ class Plotter:
         subplot_kw = {'projection': proj, 'extent': extent}
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(
             5, 5), dpi=120, facecolor='w', edgecolor='k', subplot_kw=subplot_kw)
-        #kmap = self.m.plot.cmap()
         kmap = self.m.plot.cmap(name=self.cmap_name) # TODO: function already in pyxpcm
 
         # check if gridded or profiles data
@@ -376,69 +361,6 @@ class Plotter:
         fig.tight_layout()
         plt.margins(0.1)
 
-    def spatial_distribution_mfreq(self, proj, extent, time_slice=0):
-        '''Plot spatial distribution of classes
-        
-           Parameters
-           ----------
-               proj: projection
-               extent: map extent
-               time_slice: time snapshot to be plot (default 0)
-               
-           Returns
-           -------
-           
-               '''
-
-        #TODO: if finally we use k-means instead of GMM with huge datsets, we can not plot posteriors
-        #TODO: check if time variable exits if not error
-        #TODO: make default values for projection and extent (dataset extent)
-
-        def get_most_freq_labels(this_ds):
-            this_ds = this_ds.stack({'N_OBS': [d for d in this_ds['PCM_LABELS'].dims if d != 'time']})
-            def fct(this):
-                def most_prob_label(vals):
-                    return np.argmax(np.bincount(vals))
-                mpblab = []
-                for i in this['N_OBS']:
-                    val = this.sel(N_OBS=i)['PCM_LABELS'].values
-                    res = np.nan
-                    if np.count_nonzero(~np.isnan(val)) != 0 :
-                        res = most_prob_label(val.astype('int'))    
-                    mpblab.append(res)
-                mpblab = np.array(mpblab)
-                return xr.DataArray(mpblab, dims='N_OBS', coords={'N_OBS': this['N_OBS']}, name='PCM_MOST_FREQ_LABELS').to_dataset()
-            this_ds['PCM_MOST_FREQ_LABELS'] = this_ds.map_blocks(fct)['PCM_MOST_FREQ_LABELS'].load()
-            return this_ds.unstack('N_OBS')
-
-        dsp = get_most_freq_labels(self.ds)
-        #dsp = self.ds.isel(time = time_slice)
-
-        subplot_kw = {'projection': proj, 'extent': extent}
-        fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(
-            5, 5), dpi=120, facecolor='w', edgecolor='k', subplot_kw=subplot_kw)
-        #kmap = self.m.plot.cmap()
-        kmap = self.m.plot.cmap(name=self.cmap_name) # TODO: function already in pyxpcm
-
-        # check if gridded or profiles data
-        if self.data_type == 'profiles':
-            ax.scatter(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], s=3,
-                            c=self.ds['PCM_MOST_FREQ_LABELS'], cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
-        if self.data_type == 'gridded':
-            ax.pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp['PCM_MOST_FREQ_LABELS'],
-                               cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
-
-        self.m.plot.colorbar(ax=ax, cmap='Accent')  # TODO: function already in pyxpcm
-        self.m.plot.latlongrid(ax, dx=10)  # TODO: function already in pyxpcm
-        ax.add_feature(cfeature.LAND)
-        ax.add_feature(cfeature.COASTLINE)
-        ax.set_title(r"$\bf{"'Spatial'"}$"+' ' + r"$\bf{"'ditribution'"}$"+' '+r"$\bf{"'of'"}$"+' '+r"$\bf{"'classes'"}$"
-                     + ' \n (most frequent label in time series)')
-        fig.canvas.draw()
-        fig.tight_layout()
-        plt.margins(0.1)
-
-
     def plot_posteriors(self, proj, extent, time_slice=0):
         '''Plot posteriors in a map
         
@@ -446,13 +368,14 @@ class Plotter:
            ----------
                proj: projection
                extent: map extent
-               co: coordinates names co={'longitude':'LONGITUDE', 'latitude':'LATITUDE'}
-               Input dataset should have only one time step
+               time_slice: time snapshot to be plot (default 0)
            
            Returns
            -------
            
            '''
+        # TODO: class colors in title in subplots using colormap
+        # TODO: time should be called time in dataset. use coords_dict
         
         dsp = self.ds.isel(time = time_slice)
 
@@ -461,7 +384,6 @@ class Plotter:
 
         cmap = sns.light_palette("blue", as_cmap=True)
         subplot_kw = {'projection': proj, 'extent': extent}
-        #fig, ax = self.m.plot.subplots(figsize=(10,22), maxcols=2, subplot_kw=subplot_kw)# TODO: function already in pyxpcm
         # TODO: function already in pyxpcm
         fig, ax = self.m.plot.subplots(
             figsize=(10, 14), maxcols=2, subplot_kw=subplot_kw)
@@ -487,8 +409,6 @@ class Plotter:
         #fig.canvas.draw()
         #fig.tight_layout()
         #fig.subplots_adjust(top=0.95)
-
-        # TODO: add dataset information (function)
 
     def temporal_distribution(self, time_variable, time_bins, pond):
         '''Plot temporal distribution of classes by moth or by season
