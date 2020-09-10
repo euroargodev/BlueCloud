@@ -341,7 +341,7 @@ class Plotter:
             
         subplot_kw = {'projection': proj, 'extent': extent}
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(
-            5, 5), dpi=120, facecolor='w', edgecolor='k', subplot_kw=subplot_kw)
+            6, 6), dpi=120, facecolor='w', edgecolor='k', subplot_kw=subplot_kw)
         kmap = self.m.plot.cmap(name=self.cmap_name) # TODO: function already in pyxpcm
 
         # check if gridded or profiles data
@@ -352,7 +352,7 @@ class Plotter:
             ax.pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp[var_name],
                                cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
 
-        self.m.plot.colorbar(ax=ax, cmap='Accent')  # TODO: function already in pyxpcm
+        self.m.plot.colorbar(ax=ax, cmap='Accent', shrink=0.3)  # TODO: function already in pyxpcm
         self.m.plot.latlongrid(ax, dx=10)  # TODO: function already in pyxpcm
         ax.add_feature(cfeature.LAND)
         ax.add_feature(cfeature.COASTLINE)
@@ -396,18 +396,18 @@ class Plotter:
                 sc = ax[k].pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp['PCM_POST'].sel(pcm_class=k),
                                       cmap=cmap, transform=proj, vmin=0, vmax=1)
 
-            plt.colorbar(sc, ax=ax[k], fraction=0.03)
+            plt.colorbar(sc, ax=ax[k], fraction=0.03, shrink=0.7)
             self.m.plot.latlongrid(ax[k], fontsize=8, dx=20, dy=10)
 
             ax[k].add_feature(cfeature.LAND)
             ax[k].add_feature(cfeature.COASTLINE)
             ax[k].set_title('PCM Posteriors for k=%i' % k)
 
-        #plt.subplots_adjust(wspace=0.1, hspace=0.1)
         fig.suptitle(r"$\bf{"'PCM  Posteriors'"}$" + ' \n probability of a profile to belong to a class k'
                      + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')')
+        #plt.subplots_adjust(wspace=0.1, hspace=0.1)
         #fig.canvas.draw()
-        #fig.tight_layout()
+        fig.tight_layout()
         #fig.subplots_adjust(top=0.95)
 
     def temporal_distribution(self, time_variable, time_bins, pond):
@@ -494,7 +494,7 @@ class Plotter:
 
 
     @staticmethod
-    def add_lowerband(mfname, outfname, band_height=70, color=(255, 255, 255, 255)):
+    def add_lowerband(mfname, outfname, band_height=80, color=(255, 255, 255, 255)):
         """ Add lowerband to a figure
     
             Parameters
@@ -513,7 +513,7 @@ class Plotter:
         background.paste(image, (0, 0))
         background.save(outfname)
 
-    def add_2logo(self, mfname, outfname, logo_height=70, txt_color=(0, 0, 0, 255), data_src='CMEMS'):
+    def add_2logo(self, mfname, outfname, logo_height=80, txt_color=(0, 0, 0, 255), data_src='CMEMS'):
         """ Add 2 logos and text to a figure
     
             Parameters
@@ -566,11 +566,16 @@ class Plotter:
         else:
             time_extent = [min(self.ds["time"].dt.strftime(
                 "%Y/%m/%d")), max(self.ds["time"].dt.strftime("%Y/%m/%d"))]
-            time_string = 'Extracted periode: from %s to %s' % (
+            time_string = 'Extracted period: from %s to %s' % (
                 time_extent[0].values, time_extent[1].values)
+        
+        # spatial extent
+        lat_extent = [min(self.ds[self.coords_dict.get('latitude')].values), max(self.ds[self.coords_dict.get('latitude')].values)]
+        lon_extent = [min(self.ds[self.coords_dict.get('longitude')].values), max(self.ds[self.coords_dict.get('longitude')].values)]
+        spatial_string = 'Extracted geographical extent: lat:%s, lon:%s' % (str(lat_extent), str(lon_extent))
 
-        txtA = "Dataset extracted from:\n   %s\n   %s\nSource: %s\n%s" % (self.ds.attrs.get(
-            'title'), time_string, self.ds.attrs.get('credit'), pcm1liner(self.m))
+        txtA = "Dataset extracted from:\n   %s\n   %s\n   %s\nSource: %s\n%s" % (self.ds.attrs.get(
+            'title'), time_string, spatial_string, self.ds.attrs.get('credit'), pcm1liner(self.m))
         fontA = ImageFont.truetype(font_path, 12)
 
         txtsA = fontA.getsize_multiline(txtA)
