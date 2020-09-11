@@ -12,14 +12,14 @@ from PIL import Image, ImageFont, ImageDraw
 
 class Plotter:
     '''New class for visualisation of data from pyxpcm
-    
+
        Parameters
        ----------
            ds: dataset including PCM results
            m: pyxpcm model
            coords_dict: (optional) dictionary with coordinates names (ex: {'latitude': 'lat', 'time': 'time', 'longitude': 'lon'})
            cmap_name: (optional) colormap name (default: 'Accent')
-           
+
            '''
 
     def __init__(self, ds, m, coords_dict=None, cmap_name='Accent'):
@@ -53,18 +53,20 @@ class Plotter:
             self.coords_dict = coords_dict
 
             if 'latitude' not in coords_dict or 'longitude' not in coords_dict:
-                raise ValueError('Coordinates not found in dataset. Please, define coordinates using coord_dict input')
+                raise ValueError(
+                    'Coordinates not found in dataset. Please, define coordinates using coord_dict input')
 
         else:
             self.coords_dict = coords_dict
 
         # assign a data type
         dims_dict = list(ds.dims.keys())
-        dims_dict = [e for e in dims_dict if e not in ('quantile', 'pcm_class')]
+        dims_dict = [e for e in dims_dict if e not in (
+            'quantile', 'pcm_class')]
         if len(dims_dict) > 2:
             self.data_type = 'gridded'
         else:
-            self.data_type = 'profile'    
+            self.data_type = 'profile'
 
     @staticmethod
     def cmap_discretize(name, K):
@@ -109,7 +111,7 @@ class Plotter:
                 cmap.name + "_%d" % N, cdict, N)
         return new_cmap
 
-    def vertical_structure(self, 
+    def vertical_structure(self,
                            q_variable,
                            xlim=None,
                            classdimname='pcm_class',
@@ -120,7 +122,7 @@ class Plotter:
                            ylim='auto',
                            **kwargs):
         '''Plot vertical structure of each class
-        
+
            Parameters
            ----------
                q_variable: quantile variable calculated with pyxpcm.quantile function (inplace=True option)
@@ -132,7 +134,7 @@ class Plotter:
                ylabel: (optional) y axis label (default = 'depth (m)')
                ylim: (optional) y axis limits (default = 'auto')
                **kwargs
-               
+
            Returns
            ------
                fig : :class:`matplotlib.pyplot.figure.Figure`
@@ -141,13 +143,13 @@ class Plotter:
                     array of Axes objects if more than one subplot was created.  The
                     dimensions of the resulting array can be controlled with the squeeze
                     keyword.
-          
+
                '''
 
         # copy of pyxpcm.plot.quantile function
         # TODO: Is it neccesary to use all this options in function?
         # TODO: detection of quantile variable?
-        
+
         # select quantile variable
         da = self.ds[q_variable]
 
@@ -170,8 +172,9 @@ class Plotter:
 
         nQ = len(da[QUANT_DIM])  # Nb of quantiles
 
-        #cmapK = self.m.plot.cmap()  # cmap_discretize(plt.cm.get_cmap(name='Paired'), m.K)
-        cmapK = self.cmap_discretize(plt.cm.get_cmap(name=self.cmap_name), self.m.K)
+        # cmapK = self.m.plot.cmap()  # cmap_discretize(plt.cm.get_cmap(name='Paired'), m.K)
+        cmapK = self.cmap_discretize(
+            plt.cm.get_cmap(name=self.cmap_name), self.m.K)
         if not cmap:
             cmap = self.cmap_discretize(plt.cm.get_cmap(name='brg'), nQ)
         defaults = {'figsize': (10, 8), 'dpi': 80,
@@ -200,34 +203,35 @@ class Plotter:
                 ax[k].set_ylabel(ylabel)
             ax[k].grid(True)
         plt.subplots_adjust(top=0.90)
-        fig.suptitle(r"$\bf{"'Vertical'"}$"+' ' + r"$\bf{"'structure'"}$"+' '+r"$\bf{"'of'"}$"+' '+r"$\bf{"'classes'"}$")
-        #plt.tight_layout()
+        fig.suptitle(r"$\bf{"'Vertical'"}$"+' ' + r"$\bf{"'structure'"}$" +
+                     ' '+r"$\bf{"'of'"}$"+' '+r"$\bf{"'classes'"}$")
+        # plt.tight_layout()
 
     def vertical_structure_comp(self, q_variable,
-                           xlim=None,
-                           classdimname='pcm_class',
-                           quantdimname='quantile',
-                           maxcols=3, cmap=None,
-                           ylabel='depth (m)',
-                           ylim='auto',
-                           **kwargs):
+                                xlim=None,
+                                classdimname='pcm_class',
+                                quantdimname='quantile',
+                                maxcols=3, cmap=None,
+                                ylabel='depth (m)',
+                                ylim='auto',
+                                **kwargs):
         '''Plot vertical structure of each class
-        
+
            Parameters
            ----------
                q_variable: quantile variable calculated with pyxpcm.quantile function (inplace=True option)
-               
+
                classdimname
 
                quantdimname
 
                maxcols
-               
+
                ylim
 
                Returns
-               
-               
+
+
            Returns
            ------
                fig : :class:`matplotlib.pyplot.figure.Figure`
@@ -237,14 +241,14 @@ class Plotter:
                     array of Axes objects if more than one subplot was created.  The
                     dimensions of the resulting array can be controlled with the squeeze
                     keyword.
-          
+
                '''
-        
+
         # TODO: merge with vertical_structure function
 
         # select quantile variable
         da = self.ds[q_variable]
-        
+
         ###########################################################################
         # da must be 3D with a dimension for: CLASS, QUANTILES and a vertical axis
         # The QUANTILES dimension is called "quantile"
@@ -264,22 +268,25 @@ class Plotter:
 
         nQ = len(da[QUANT_DIM])  # Nb of quantiles
 
-        cmapK = self.m.plot.cmap(name=self.cmap_name)  # cmap_discretize(plt.cm.get_cmap(name='Paired'), m.K)
+        # cmap_discretize(plt.cm.get_cmap(name='Paired'), m.K)
+        cmapK = self.m.plot.cmap(name=self.cmap_name)
         #cmapK = self.cmap_discretize(plt.cm.get_cmap(name='Accent'), self.m.K)
         if not cmap:
             cmap = self.cmap_discretize(plt.cm.get_cmap(name='brg'), nQ)
-        fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(10, 8), facecolor='w', edgecolor='k',sharey=True)
+        fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(
+            10, 8), facecolor='w', edgecolor='k', sharey=True)
 
         if not xlim:
             xlim = np.array([0.9 * da.min(), 1.1 * da.max()])
-        for q in np.arange(0,nQ):
+        for q in np.arange(0, nQ):
             Qq = da.loc[{QUANT_DIM: da[QUANT_DIM].values[q]}]
             for k in self.m:
                 Qqk = Qq.loc[{CLASS_DIM: k}]
                 ax[q].plot(Qqk.values.T, da[VERTICAL_DIM], label=(
-            "K=%i") % (Qqk[CLASS_DIM]),color=cmapK(k))
-            ax[q].set_title(("quantile: %.2f") % (da[QUANT_DIM].values[q]), color=cmap(q),fontsize=12)
-            ax[q].legend(loc='lower right',fontsize=11)
+                    "K=%i") % (Qqk[CLASS_DIM]), color=cmapK(k))
+            ax[q].set_title(("quantile: %.2f") % (
+                da[QUANT_DIM].values[q]), color=cmap(q), fontsize=12)
+            ax[q].legend(loc='lower right', fontsize=11)
             ax[q].set_xlim(xlim)
             if isinstance(ylim, str):
                 ax[q].set_ylim(
@@ -291,30 +298,34 @@ class Plotter:
                 ax[q].set_ylabel(ylabel)
             ax[q].grid(True)
         plt.subplots_adjust(top=0.90)
-        plt.rc('xtick',labelsize=12)
-        plt.rc('ytick',labelsize=12)
-        fig.suptitle(r"$\bf{"'Vertical'"}$"+' ' + r"$\bf{"'structure'"}$"+' '+r"$\bf{"'of'"}$"+' '+r"$\bf{"'classes'"}$")
-        fig.text(0.04, 0.5, 'depth (m)', va='center', rotation='vertical',fontsize=12)
-        #plt.tight_layout()
+        plt.rc('xtick', labelsize=12)
+        plt.rc('ytick', labelsize=12)
+        fig.suptitle(r"$\bf{"'Vertical'"}$"+' ' + r"$\bf{"'structure'"}$" +
+                     ' '+r"$\bf{"'of'"}$"+' '+r"$\bf{"'classes'"}$")
+        fig.text(0.04, 0.5, 'depth (m)', va='center',
+                 rotation='vertical', fontsize=12)
+        # plt.tight_layout()
 
     def spatial_distribution(self, proj, extent, time_slice=0):
         '''Plot spatial distribution of classes
-        
+
            Parameters
            ----------
                proj: projection
                extent: map extent
                time_slice: time snapshot to be plot (default 0). If time_slice = 'most_freq_label', most frequent label in dataseries is plotted.
-               
+
            Returns
            -------
-           
+
                '''
-        #TODO: check if time variable exits if not error (time variable should be 'time' at the moment)
-        #TODO: make default values for projection and extent (dataset extent)
+        # TODO: check if time variable exits if not error (time variable should be 'time' at the moment)
+        # TODO: make default values for projection and extent (dataset extent)
 
         def get_most_freq_labels(this_ds):
-            this_ds = this_ds.stack({'N_OBS': [d for d in this_ds['PCM_LABELS'].dims if d != 'time']})
+            this_ds = this_ds.stack(
+                {'N_OBS': [d for d in this_ds['PCM_LABELS'].dims if d != 'time']})
+
             def fct(this):
                 def most_prob_label(vals):
                     return np.argmax(np.bincount(vals))
@@ -322,37 +333,45 @@ class Plotter:
                 for i in this['N_OBS']:
                     val = this.sel(N_OBS=i)['PCM_LABELS'].values
                     res = np.nan
-                    if np.count_nonzero(~np.isnan(val)) != 0 :
-                        res = most_prob_label(val.astype('int'))    
+                    if np.count_nonzero(~np.isnan(val)) != 0:
+                        res = most_prob_label(val.astype('int'))
                     mpblab.append(res)
                 mpblab = np.array(mpblab)
                 return xr.DataArray(mpblab, dims='N_OBS', coords={'N_OBS': this['N_OBS']}, name='PCM_MOST_FREQ_LABELS').to_dataset()
-            this_ds['PCM_MOST_FREQ_LABELS'] = this_ds.map_blocks(fct)['PCM_MOST_FREQ_LABELS'].load()
+            this_ds['PCM_MOST_FREQ_LABELS'] = this_ds.map_blocks(
+                fct)['PCM_MOST_FREQ_LABELS'].load()
             return this_ds.unstack('N_OBS')
 
         if isinstance(time_slice, str):
             dsp = get_most_freq_labels(self.ds)
             var_name = 'PCM_MOST_FREQ_LABELS'
-            title_str = r"$\bf{"'Spatial'"}$"+' ' + r"$\bf{"'ditribution'"}$"+' '+r"$\bf{"'of'"}$"+' '+r"$\bf{"'classes'"}$" + ' \n (most frequent label in time series)'
+            title_str = r"$\bf{"'Spatial'"}$"+' ' + r"$\bf{"'ditribution'"}$"+' ' + \
+                r"$\bf{"'of'"}$"+' '+r"$\bf{"'classes'"}$" + \
+                ' \n (most frequent label in time series)'
         else:
-            dsp = self.ds.isel(time = time_slice)
+            dsp = self.ds.isel(time=time_slice)
             var_name = 'PCM_LABELS'
-            title_str = r"$\bf{"'Spatial'"}$"+' ' + r"$\bf{"'ditribution'"}$"+' '+r"$\bf{"'of'"}$"+' '+r"$\bf{"'classes'"}$" + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')'  
-            
+            title_str = r"$\bf{"'Spatial'"}$"+' ' + r"$\bf{"'ditribution'"}$"+' '+r"$\bf{"'of'"}$"+' ' + \
+                r"$\bf{"'classes'"}$" + \
+                ' \n (time: ' + \
+                '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')'
+
         subplot_kw = {'projection': proj, 'extent': extent}
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(
             6, 6), dpi=120, facecolor='w', edgecolor='k', subplot_kw=subplot_kw)
-        kmap = self.m.plot.cmap(name=self.cmap_name) # TODO: function already in pyxpcm
+        # TODO: function already in pyxpcm
+        kmap = self.m.plot.cmap(name=self.cmap_name)
 
         # check if gridded or profiles data
         if self.data_type == 'profiles':
             ax.scatter(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], s=3,
-                            c=self.ds[var_name], cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
+                       c=self.ds[var_name], cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
         if self.data_type == 'gridded':
             ax.pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp[var_name],
-                               cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
+                          cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
 
-        self.m.plot.colorbar(ax=ax, cmap='Accent', shrink=0.3)  # TODO: function already in pyxpcm
+        # TODO: function already in pyxpcm
+        self.m.plot.colorbar(ax=ax, cmap='Accent', shrink=0.3)
         self.m.plot.latlongrid(ax, dx=10)  # TODO: function already in pyxpcm
         ax.add_feature(cfeature.LAND)
         ax.add_feature(cfeature.COASTLINE)
@@ -363,21 +382,21 @@ class Plotter:
 
     def plot_posteriors(self, proj, extent, time_slice=0):
         '''Plot posteriors in a map
-        
+
            Parameters
            ----------
                proj: projection
                extent: map extent
                time_slice: time snapshot to be plot (default 0)
-           
+
            Returns
            -------
-           
+
            '''
         # TODO: class colors in title in subplots using colormap
         # TODO: time should be called time in dataset. use coords_dict
-        
-        dsp = self.ds.isel(time = time_slice)
+
+        dsp = self.ds.isel(time=time_slice)
 
         # check if PCM_POST variable exists
         assert ("PCM_POST" in dsp), "Dataset should include PCM_POST varible to be plotted. Use pyxpcm.predict_proba function with inplace=True option"
@@ -386,7 +405,7 @@ class Plotter:
         subplot_kw = {'projection': proj, 'extent': extent}
         # TODO: function already in pyxpcm
         fig, ax = self.m.plot.subplots(
-            figsize=(10, 14), maxcols=2, subplot_kw=subplot_kw)
+            figsize=(10, 16), maxcols=2, subplot_kw=subplot_kw)
 
         for k in self.m:
             if self.data_type == 'profiles':
@@ -406,22 +425,22 @@ class Plotter:
         fig.suptitle(r"$\bf{"'PCM  Posteriors'"}$" + ' \n probability of a profile to belong to a class k'
                      + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')')
         #plt.subplots_adjust(wspace=0.1, hspace=0.1)
-        #fig.canvas.draw()
+        # fig.canvas.draw()
         fig.tight_layout()
-        #fig.subplots_adjust(top=0.95)
+        # fig.subplots_adjust(top=0.95)
 
     def temporal_distribution(self, time_variable, time_bins, pond):
         '''Plot temporal distribution of classes by moth or by season
-        
+
            Parameters
            ----------
                time_variable: time variable name
                time_bins: 'month' or 'season'
                pond: 'abs' or 'rel' (divided by total nomber of observation in time bin)
-            
+
             Returns
             -------
-            
+
         '''
 
         # check if more than one temporal step
@@ -444,9 +463,9 @@ class Plotter:
         fig, ax = plt.subplots(figsize=(10, 6))
         kmap = self.m.plot.cmap()  # TODO: function already in pyxpcm
 
-        #loop in k for counting
+        # loop in k for counting
         for cl in range(self.m.K):
-            #get time array with k=cl
+            # get time array with k=cl
             pcm_labels_k = pcm_labels.where(pcm_labels == cl)
 
             if cl == 0:
@@ -459,21 +478,21 @@ class Plotter:
         if pond == 'rel':
             counts_k = counts_k/sum(counts_k)*100
 
-        #loop for plotting
+        # loop for plotting
         for cl in range(self.m.K):
 
             if time_bins == 'month':
-               ax.bar(counts_k.month - (self.m.K/2-cl)*width, counts_k.isel(k=cl), width, label='K=' + str(cl),
-                                    color=kmap(cl))
+                ax.bar(counts_k.month - (self.m.K/2-cl)*width, counts_k.isel(k=cl), width, label='K=' + str(cl),
+                       color=kmap(cl))
             if time_bins == 'season':
                 x_ticks_k = []
                 for i in range(len(counts_k.season)):
                     x_ticks_k.append(
                         list(seasons_dict.values()).index(counts_k.season[i])+1)
                     # print(x_ticks_k)
-                #plot
+                # plot
                 ax.bar(np.array(x_ticks_k) - (self.m.K/2-cl)*width, counts_k.isel(k=cl), width, label='K=' + str(cl),
-                                    color=kmap(cl))
+                       color=kmap(cl))
 
         # format
         title_string = r'Number of profiles in each class by $\bf{' + time_bins + '}$'
@@ -486,17 +505,16 @@ class Plotter:
         ax.set_xticklabels(xaxis_labels, fontsize=12)
         plt.yticks(fontsize=12)
         ax.legend(fontsize=12, bbox_to_anchor=(1.01, 1), loc='upper left')
-        ax.set_xticks(np.arange(0.5,len(xaxis_labels)+1.5), minor=True)
+        ax.set_xticks(np.arange(0.5, len(xaxis_labels)+1.5), minor=True)
         ax.grid(axis='x', which='minor', alpha=0.5, ls='--')
         ax.set_ylabel(ylabel_string, fontsize=12)
         ax.set_title(title_string, fontsize=14)
         fig.tight_layout()
 
-
     @staticmethod
     def add_lowerband(mfname, outfname, band_height=80, color=(255, 255, 255, 255)):
         """ Add lowerband to a figure
-    
+
             Parameters
             ----------
             mfname : string
@@ -504,7 +522,7 @@ class Plotter:
             outfname : string
                 output figure file
         """
-        #TODO: do I need to use self here?
+        # TODO: do I need to use self here?
         image = Image.open(mfname, 'r')
         image_size = image.size
         width = image_size[0]
@@ -515,7 +533,7 @@ class Plotter:
 
     def add_2logo(self, mfname, outfname, logo_height=80, txt_color=(0, 0, 0, 255), data_src='CMEMS'):
         """ Add 2 logos and text to a figure
-    
+
             Parameters
             ----------
             mfname : string
@@ -524,14 +542,17 @@ class Plotter:
                 output figure file
         """
         def pcm1liner(this_pcm):
-            prtval = lambda x: "%0.2f" % x    
-            getrge = lambda x: [np.max(x), np.min(x)]
-            prtrge = lambda x: "[%s:%s]" % (prtval(getrge(x)[0]), prtval(getrge(x)[1]))
-            prtfeatures = lambda p: "{%s}" % ", ".join(["'%s':%s" % (k, prtrge(v)) for k, v in p.features.items()])
-            return "PCM model information: K:%i, F:%i%s, %s" % (this_pcm.K, 
-                                        this_pcm.F, 
-                                        prtfeatures(this_pcm), 
-                                        this_pcm._props['with_classifier'].upper())
+            def prtval(x): return "%0.2f" % x
+            def getrge(x): return [np.max(x), np.min(x)]
+            def prtrge(x): return "[%s:%s]" % (
+                prtval(getrge(x)[0]), prtval(getrge(x)[1]))
+            def prtfeatures(p): return "{%s}" % ", ".join(
+                ["'%s':%s" % (k, prtrge(v)) for k, v in p.features.items()])
+            return "PCM model information: K:%i, F:%i%s, %s" % (this_pcm.K,
+                                                                this_pcm.F,
+                                                                prtfeatures(
+                                                                    this_pcm),
+                                                                this_pcm._props['with_classifier'].upper())
 
         font_path = "logos/Calibri_Regular.ttf"
         lfname2 = "logos/Blue-cloud_compact_color_W.jpg"
@@ -568,11 +589,14 @@ class Plotter:
                 "%Y/%m/%d")), max(self.ds["time"].dt.strftime("%Y/%m/%d"))]
             time_string = 'Extracted period: from %s to %s' % (
                 time_extent[0].values, time_extent[1].values)
-        
+
         # spatial extent
-        lat_extent = [min(self.ds[self.coords_dict.get('latitude')].values), max(self.ds[self.coords_dict.get('latitude')].values)]
-        lon_extent = [min(self.ds[self.coords_dict.get('longitude')].values), max(self.ds[self.coords_dict.get('longitude')].values)]
-        spatial_string = 'Extracted geographical extent: lat:%s, lon:%s' % (str(lat_extent), str(lon_extent))
+        lat_extent = [min(self.ds[self.coords_dict.get('latitude')].values), max(
+            self.ds[self.coords_dict.get('latitude')].values)]
+        lon_extent = [min(self.ds[self.coords_dict.get('longitude')].values), max(
+            self.ds[self.coords_dict.get('longitude')].values)]
+        spatial_string = 'Extracted geographical extent: lat:%s, lon:%s' % (
+            str(lat_extent), str(lon_extent))
 
         txtA = "Dataset extracted from:\n   %s\n   %s\n   %s\nSource: %s\n%s" % (self.ds.attrs.get(
             'title'), time_string, spatial_string, self.ds.attrs.get('credit'), pcm1liner(self.m))
@@ -595,15 +619,15 @@ class Plotter:
 
     def save_BlueCloud(self, out_name):  # function which saves figure and add logos
 
-        #save image
-        #plt.margins(0.1)
+        # save image
+        # plt.margins(0.1)
         plt.savefig(out_name, bbox_inches='tight', pad_inches=0.1)
 
-        #add lower band
+        # add lower band
         #self.add_lowerband(out_name, out_name, band_height = 120, color=(255, 255, 255, 255))
         self.add_lowerband(out_name, out_name)
 
-        #add logo
+        # add logo
         #self.add_2logo(out_name, out_name, logo_height=120, txt_color=(0, 0, 0, 255), data_src='CMEMS')
         self.add_2logo(out_name, out_name)
 
