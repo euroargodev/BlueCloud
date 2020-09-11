@@ -208,6 +208,7 @@ class Plotter:
         # plt.tight_layout()
 
     def vertical_structure_comp(self, q_variable,
+                                plot_q='all',
                                 xlim=None,
                                 classdimname='pcm_class',
                                 quantdimname='quantile',
@@ -220,7 +221,7 @@ class Plotter:
            Parameters
            ----------
                q_variable: quantile variable calculated with pyxpcm.quantile function (inplace=True option)
-
+               plot_q: quantiles to be plotted
                classdimname
 
                quantdimname
@@ -268,35 +269,47 @@ class Plotter:
 
         nQ = len(da[QUANT_DIM])  # Nb of quantiles
 
+        if isinstance(plot_q, str): # plot all quantiles, default
+            q_range = np.arange(0, nQ)
+        else:
+            q_range = np.where(da[QUANT_DIM].isin(plot_q))[0]
+            
+        nQ_p = len(q_range)  # Nb of plots
+
         # cmap_discretize(plt.cm.get_cmap(name='Paired'), m.K)
         cmapK = self.m.plot.cmap(name=self.cmap_name)
         #cmapK = self.cmap_discretize(plt.cm.get_cmap(name='Accent'), self.m.K)
         if not cmap:
             cmap = self.cmap_discretize(plt.cm.get_cmap(name='brg'), nQ)
-        fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(
+        fig, ax = plt.subplots(nrows=1, ncols=nQ_p, figsize=(
             10, 8), facecolor='w', edgecolor='k', sharey=True)
 
         if not xlim:
             xlim = np.array([0.9 * da.min(), 1.1 * da.max()])
-        for q in np.arange(0, nQ):
+        
+        cnt=0
+        for q in q_range:
+            print(q)
             Qq = da.loc[{QUANT_DIM: da[QUANT_DIM].values[q]}]
             for k in self.m:
                 Qqk = Qq.loc[{CLASS_DIM: k}]
-                ax[q].plot(Qqk.values.T, da[VERTICAL_DIM], label=(
+                ax[cnt].plot(Qqk.values.T, da[VERTICAL_DIM], label=(
                     "K=%i") % (Qqk[CLASS_DIM]), color=cmapK(k))
-            ax[q].set_title(("quantile: %.2f") % (
+            ax[cnt].set_title(("quantile: %.2f") % (
                 da[QUANT_DIM].values[q]), color=cmap(q), fontsize=12)
-            ax[q].legend(loc='lower right', fontsize=11)
-            ax[q].set_xlim(xlim)
+            ax[cnt].legend(loc='lower right', fontsize=11)
+            ax[cnt].set_xlim(xlim)
             if isinstance(ylim, str):
-                ax[q].set_ylim(
+                ax[cnt].set_ylim(
                     np.array([da[VERTICAL_DIM].min(), da[VERTICAL_DIM].max()]))
             else:
-                ax[q].set_ylim(ylim)
+                ax[cnt].set_ylim(ylim)
             # ax[k].set_xlabel(Q.units)
             if k == 0:
-                ax[q].set_ylabel(ylabel)
-            ax[q].grid(True)
+                ax[cnt].set_ylabel(ylabel)
+            ax[cnt].grid(True)
+            cnt = cnt+1
+
         plt.subplots_adjust(top=0.90)
         plt.rc('xtick', labelsize=12)
         plt.rc('ytick', labelsize=12)
