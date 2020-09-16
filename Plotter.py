@@ -68,6 +68,44 @@ class Plotter:
         else:
             self.data_type = 'profile'
 
+    def pie_classes(self):
+        """Pie chart of classes
+
+            name: name of the colormap, eg 'Paired' or 'jet'
+            K: number of colors in the final discrete colormap
+        """
+
+        # loop in k for counting
+        pcm_labels = self.ds['PCM_LABELS']
+        kmap = self.m.plot.cmap(name=self.cmap_name)
+        
+        for cl in range(self.m.K):
+            # get labels 
+            pcm_labels_k = pcm_labels.where(pcm_labels == cl)
+            if cl == 0:
+                counts_k = pcm_labels_k.count(...)
+                pie_labels = list(['K=%i' % cl])
+                table_cn = list([[str(cl), str(counts_k.values)]])
+            else:
+                counts_k = xr.concat([counts_k, pcm_labels_k.count(...)], "k")
+                pie_labels.append('K=%i' % cl)
+                table_cn.append([str(cl), str(counts_k[cl].values)])
+
+        fig, ax = plt.subplots(ncols=2, figsize=(10,6))
+
+        cheader = ['k','profiles']
+        ccolors = plt.cm.BuPu(np.full(len(cheader), 0.1))
+        the_table = plt.table(cellText=table_cn, cellLoc='center', loc='center left', colLabels=cheader, colColours=ccolors, fontsize=12)
+
+        ax[0].pie(counts_k, labels=pie_labels, autopct='%1.1f%%',
+                shadow=True, startangle=90, colors=kmap)
+        ax[0].axis('equal')
+
+        ax[1].get_xaxis().set_visible(False)
+        ax[1].get_yaxis().set_visible(False)
+        plt.box(on=None)
+        the_table.scale(1, 1.5)
+
     @staticmethod
     def cmap_discretize(name, K):
         """Return a discrete colormap from a quantitative or continuous colormap name
@@ -246,6 +284,7 @@ class Plotter:
                '''
 
         # TODO: merge with vertical_structure function
+        # TODO: automatic number of rows
 
         # select quantile variable
         da = self.ds[q_variable]
@@ -275,39 +314,39 @@ class Plotter:
             q_range = np.where(da[QUANT_DIM].isin(plot_q))[0]
             
         nQ_p = len(q_range)  # Nb of plots
-
+       
         # cmap_discretize(plt.cm.get_cmap(name='Paired'), m.K)
         cmapK = self.m.plot.cmap(name=self.cmap_name)
         #cmapK = self.cmap_discretize(plt.cm.get_cmap(name='Accent'), self.m.K)
         if not cmap:
             cmap = self.cmap_discretize(plt.cm.get_cmap(name='brg'), nQ)
-        fig, ax = plt.subplots(nrows=1, ncols=nQ_p, figsize=(
-            10, 8), facecolor='w', edgecolor='k', sharey=True)
+        
 
         if not xlim:
             xlim = np.array([0.9 * da.min(), 1.1 * da.max()])
-        
+
+        fig, ax = plt.subplots(nrows=1, ncols=nQ_p, figsize=(
+                        10, 8), facecolor='w', edgecolor='k', sharey=True,  squeeze=False)
         cnt=0
         for q in q_range:
-            print(q)
             Qq = da.loc[{QUANT_DIM: da[QUANT_DIM].values[q]}]
             for k in self.m:
                 Qqk = Qq.loc[{CLASS_DIM: k}]
-                ax[cnt].plot(Qqk.values.T, da[VERTICAL_DIM], label=(
-                    "K=%i") % (Qqk[CLASS_DIM]), color=cmapK(k))
-            ax[cnt].set_title(("quantile: %.2f") % (
+                ax[0][cnt].plot(Qqk.values.T, da[VERTICAL_DIM], label=(
+                        "K=%i") % (Qqk[CLASS_DIM]), color=cmapK(k))
+            ax[0][cnt].set_title(("quantile: %.2f") % (
                 da[QUANT_DIM].values[q]), color=cmap(q), fontsize=12)
-            ax[cnt].legend(loc='lower right', fontsize=11)
-            ax[cnt].set_xlim(xlim)
+            ax[0][cnt].legend(loc='lower right', fontsize=11)
+            ax[0][cnt].set_xlim(xlim)
             if isinstance(ylim, str):
-                ax[cnt].set_ylim(
+                ax[0][cnt].set_ylim(
                     np.array([da[VERTICAL_DIM].min(), da[VERTICAL_DIM].max()]))
             else:
-                ax[cnt].set_ylim(ylim)
+                ax[0][cnt].set_ylim(ylim)
             # ax[k].set_xlabel(Q.units)
             if k == 0:
-                ax[cnt].set_ylabel(ylabel)
-            ax[cnt].grid(True)
+                ax[0][cnt].set_ylabel(ylabel)
+            ax[0][cnt].grid(True)
             cnt = cnt+1
 
         plt.subplots_adjust(top=0.90)
