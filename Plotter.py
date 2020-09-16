@@ -92,19 +92,22 @@ class Plotter:
                 table_cn.append([str(cl), str(counts_k[cl].values)])
 
         fig, ax = plt.subplots(ncols=2, figsize=(10,6))
+        #fig.set_cmap(kmap)
 
         cheader = ['k','profiles']
         ccolors = plt.cm.BuPu(np.full(len(cheader), 0.1))
         the_table = plt.table(cellText=table_cn, cellLoc='center', loc='center left', colLabels=cheader, colColours=ccolors, fontsize=12)
 
+        kmap_n = [list(kmap(k)[0:3]) for k in range(self.m.K)]
         ax[0].pie(counts_k, labels=pie_labels, autopct='%1.1f%%',
-                shadow=True, startangle=90, colors=kmap)
+                shadow=True, startangle=90, colors=kmap_n)
         ax[0].axis('equal')
-
         ax[1].get_xaxis().set_visible(False)
         ax[1].get_yaxis().set_visible(False)
         plt.box(on=None)
         the_table.scale(1, 1.5)
+        fig.suptitle(r"$\bf{"'Classes'"}$"+' ' + r"$\bf{"'distribution'"}$")
+        plt.tight_layout()
 
     @staticmethod
     def cmap_discretize(name, K):
