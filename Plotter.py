@@ -78,9 +78,9 @@ class Plotter:
         # loop in k for counting
         pcm_labels = self.ds['PCM_LABELS']
         kmap = self.m.plot.cmap(name=self.cmap_name)
-        
+
         for cl in range(self.m.K):
-            # get labels 
+            # get labels
             pcm_labels_k = pcm_labels.where(pcm_labels == cl)
             if cl == 0:
                 counts_k = pcm_labels_k.count(...)
@@ -91,16 +91,17 @@ class Plotter:
                 pie_labels.append('K=%i' % cl)
                 table_cn.append([str(cl), str(counts_k[cl].values)])
 
-        fig, ax = plt.subplots(ncols=2, figsize=(10,6))
-        #fig.set_cmap(kmap)
+        fig, ax = plt.subplots(ncols=2, figsize=(10, 6))
+        # fig.set_cmap(kmap)
 
-        cheader = ['k','profiles']
+        cheader = ['k', 'profiles']
         ccolors = plt.cm.BuPu(np.full(len(cheader), 0.1))
-        the_table = plt.table(cellText=table_cn, cellLoc='center', loc='center left', colLabels=cheader, colColours=ccolors, fontsize=12)
+        the_table = plt.table(cellText=table_cn, cellLoc='center', loc='center left',
+                              colLabels=cheader, colColours=ccolors, fontsize=12)
 
         kmap_n = [list(kmap(k)[0:3]) for k in range(self.m.K)]
         ax[0].pie(counts_k, labels=pie_labels, autopct='%1.1f%%',
-                shadow=True, startangle=90, colors=kmap_n)
+                  shadow=True, startangle=90, colors=kmap_n)
         ax[0].axis('equal')
         ax[1].get_xaxis().set_visible(False)
         ax[1].get_yaxis().set_visible(False)
@@ -311,32 +312,31 @@ class Plotter:
 
         nQ = len(da[QUANT_DIM])  # Nb of quantiles
 
-        if isinstance(plot_q, str): # plot all quantiles, default
+        if isinstance(plot_q, str):  # plot all quantiles, default
             q_range = np.arange(0, nQ)
         else:
             q_range = np.where(da[QUANT_DIM].isin(plot_q))[0]
-            
+
         nQ_p = len(q_range)  # Nb of plots
-       
+
         # cmap_discretize(plt.cm.get_cmap(name='Paired'), m.K)
         cmapK = self.m.plot.cmap(name=self.cmap_name)
         #cmapK = self.cmap_discretize(plt.cm.get_cmap(name='Accent'), self.m.K)
         if not cmap:
             cmap = self.cmap_discretize(plt.cm.get_cmap(name='brg'), nQ)
-        
 
         if not xlim:
             xlim = np.array([0.9 * da.min(), 1.1 * da.max()])
 
         fig, ax = plt.subplots(nrows=1, ncols=nQ_p, figsize=(
-                        10, 8), facecolor='w', edgecolor='k', sharey=True,  squeeze=False)
-        cnt=0
+            10, 8), facecolor='w', edgecolor='k', sharey=True,  squeeze=False)
+        cnt = 0
         for q in q_range:
             Qq = da.loc[{QUANT_DIM: da[QUANT_DIM].values[q]}]
             for k in self.m:
                 Qqk = Qq.loc[{CLASS_DIM: k}]
                 ax[0][cnt].plot(Qqk.values.T, da[VERTICAL_DIM], label=(
-                        "K=%i") % (Qqk[CLASS_DIM]), color=cmapK(k))
+                    "K=%i") % (Qqk[CLASS_DIM]), color=cmapK(k))
             ax[0][cnt].set_title(("quantile: %.2f") % (
                 da[QUANT_DIM].values[q]), color=cmap(q), fontsize=12)
             ax[0][cnt].legend(loc='lower right', fontsize=11)
