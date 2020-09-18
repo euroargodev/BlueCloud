@@ -492,14 +492,14 @@ class Plotter:
         fig.tight_layout()
         # fig.subplots_adjust(top=0.95)
 
-    def temporal_distribution(self, time_variable, time_bins, pond):
+    def temporal_distribution(self, time_variable, time_bins):
         '''Plot temporal distribution of classes by moth or by season
 
            Parameters
            ----------
-               time_variable: time variable name
-               time_bins: 'month' or 'season'
-               pond: 'abs' or 'rel' (divided by total nomber of observation in time bin)
+                time_variable: time variable name
+                time_bins: 'month' or 'season'
+                pond: 'abs' or 'rel' (divided by total nomber of observation in time bin)
 
             Returns
             -------
@@ -515,16 +515,15 @@ class Plotter:
         pcm_labels = self.ds['PCM_LABELS']
         kmap = self.m.plot.cmap(name=self.cmap_name)
 
+
         if time_bins == 'month':
             xaxis_labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May',
-                            'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                                'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
         if time_bins == 'season':
             seasons_dict = {1: 'DJF', 2: 'MAM', 3: 'JJA', 4: 'SON'}
             xaxis_labels = ['DJF', 'MAM', 'JJA', 'SON']
 
-        width = 0.8/(self.m.K)  # the width of the bars
         fig, ax = plt.subplots(figsize=(10, 6))
-        kmap = self.m.plot.cmap()  # TODO: function already in pyxpcm
 
         # loop in k for counting
         for cl in range(self.m.K):
@@ -538,39 +537,39 @@ class Plotter:
                 counts_k = xr.concat([counts_k, pcm_labels_k.groupby(
                     time_variable + '.' + time_bins).count(...)], "k")
 
-        if pond == 'rel':
-            counts_k = counts_k/sum(counts_k)*100
+        counts_k = counts_k/sum(counts_k)*100
+    
+        #start point in stacked bars
+        counts_cum = counts_k.cumsum(axis=0)
 
         # loop for plotting
         for cl in range(self.m.K):
 
             if time_bins == 'month':
-                ax.bar(counts_k.month - (self.m.K/2-cl)*width, counts_k.isel(k=cl), width, label='K=' + str(cl),
-                       color=kmap(cl))
+                starts = counts_cum.isel(k=cl) - counts_k.isel(k=cl)
+                ax.barh(counts_k.month, counts_k.isel(k=cl), left=starts, color=kmap(cl), label='K=' + str(cl))
+                #, width, label='K=' + str(cl),
+                    
             if time_bins == 'season':
                 x_ticks_k = []
                 for i in range(len(counts_k.season)):
                     x_ticks_k.append(
-                        list(seasons_dict.values()).index(counts_k.season[i])+1)
+                       list(seasons_dict.values()).index(counts_k.season[i])+1)
                     # print(x_ticks_k)
                 # plot
-                ax.bar(np.array(x_ticks_k) - (self.m.K/2-cl)*width, counts_k.isel(k=cl), width, label='K=' + str(cl),
-                       color=kmap(cl))
+                starts = counts_cum.isel(k=cl) - counts_k.isel(k=cl)
+                ax.barh(x_ticks_k, counts_k.isel(k=cl), left=starts, label='K=' + str(cl),
+                        color=kmap(cl))
 
         # format
-        title_string = r'Number of profiles in each class by $\bf{' + time_bins + '}$'
-        ylabel_string = 'Number of profiles'
-        if pond == 'rel':
-            title_string = title_string + '\n (% of profiles in each bin)'
-            ylabel_string = '% of profiles'
-
-        ax.set_xticks(np.arange(1, len(xaxis_labels)+1))
-        ax.set_xticklabels(xaxis_labels, fontsize=12)
+        title_string = r'Percentage profiles in each class by $\bf{' + time_bins + '}$'
+        ylabel_string = '% of profiles'
+        plt.gca().invert_yaxis()
+        ax.set_yticks(np.arange(1, len(xaxis_labels)+1))
+        ax.set_yticklabels(xaxis_labels, fontsize=12)
         plt.yticks(fontsize=12)
         ax.legend(fontsize=12, bbox_to_anchor=(1.01, 1), loc='upper left')
-        ax.set_xticks(np.arange(0.5, len(xaxis_labels)+1.5), minor=True)
-        ax.grid(axis='x', which='minor', alpha=0.5, ls='--')
-        ax.set_ylabel(ylabel_string, fontsize=12)
+        ax.set_xlabel(ylabel_string, fontsize=12)
         ax.set_title(title_string, fontsize=14)
         fig.tight_layout()
 
