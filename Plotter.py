@@ -432,8 +432,8 @@ class Plotter:
         # TODO: function already in pyxpcm
         self.m.plot.colorbar(ax=ax, cmap='Accent', shrink=0.3)
         self.m.plot.latlongrid(ax, dx=10)  # TODO: function already in pyxpcm
-        ax.add_feature(cfeature.LAND)
-        ax.add_feature(cfeature.COASTLINE)
+        land_feature=cfeature.NaturalEarthFeature(category='physical',name='land',scale='50m',facecolor=[0.4,0.6,0.7])
+        ax.add_feature(land_feature, edgecolor='black')
         ax.set_title(title_str)
         fig.canvas.draw()
         fig.tight_layout()
@@ -466,6 +466,7 @@ class Plotter:
 
         cmap = sns.light_palette("blue", as_cmap=True)
         subplot_kw = {'projection': proj, 'extent': extent}
+        land_feature=cfeature.NaturalEarthFeature(category='physical',name='land',scale='50m',facecolor=[0.4,0.6,0.7])
         # TODO: function already in pyxpcm
         fig, ax = self.m.plot.subplots(
             figsize=(10, 16), maxcols=2, subplot_kw=subplot_kw)
@@ -481,8 +482,8 @@ class Plotter:
             plt.colorbar(sc, ax=ax[k], fraction=0.03, shrink=0.7)
             self.m.plot.latlongrid(ax[k], fontsize=8, dx=20, dy=10)
 
-            ax[k].add_feature(cfeature.LAND)
-            ax[k].add_feature(cfeature.COASTLINE)
+            
+            ax[k].add_feature(land_feature, edgecolor='black')
             ax[k].set_title('PCM Posteriors for k=%i' % k)
 
         fig.suptitle(r"$\bf{"'PCM  Posteriors'"}$" + ' \n probability of a profile to belong to a class k'
