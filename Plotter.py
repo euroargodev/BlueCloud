@@ -567,7 +567,7 @@ class Plotter:
         fig.tight_layout()
 
     @staticmethod
-    def add_lowerband(mfname, outfname, band_height=80, color=(255, 255, 255, 255)):
+    def add_lowerband(mfname, outfname, band_height=70, color=(255, 255, 255, 255)):
         """ Add lowerband to a figure
 
             Parameters
@@ -586,7 +586,7 @@ class Plotter:
         background.paste(image, (0, 0))
         background.save(outfname)
 
-    def add_2logo(self, mfname, outfname, logo_height=80, txt_color=(0, 0, 0, 255), data_src='CMEMS'):
+    def add_2logo(self, mfname, outfname, logo_height=70, txt_color=(0, 0, 0, 255), data_src='CMEMS'):
         """ Add 2 logos and text to a figure
 
             Parameters
@@ -638,11 +638,11 @@ class Plotter:
         if len(self.ds.time.sizes) == 0:
             # TODO: when using isel hours information is lost
             time_extent = self.ds["time"].dt.strftime("%Y/%m/%d %H:%M")
-            time_string = 'Extracted periode: %s' % time_extent.values
+            time_string = 'Period: %s' % time_extent.values
         else:
             time_extent = [min(self.ds["time"].dt.strftime(
                 "%Y/%m/%d")), max(self.ds["time"].dt.strftime("%Y/%m/%d"))]
-            time_string = 'Extracted period: from %s to %s' % (
+            time_string = 'Period: from %s to %s' % (
                 time_extent[0].values, time_extent[1].values)
 
         # spatial extent
@@ -650,12 +650,12 @@ class Plotter:
             self.ds[self.coords_dict.get('latitude')].values)]
         lon_extent = [min(self.ds[self.coords_dict.get('longitude')].values), max(
             self.ds[self.coords_dict.get('longitude')].values)]
-        spatial_string = 'Extracted geographical extent: lat:%s, lon:%s' % (
+        spatial_string = 'Domain: lat:%s, lon:%s' % (
             str(lat_extent), str(lon_extent))
 
-        txtA = "Dataset extracted from:\n   %s\n   %s\n   %s\nSource: %s\n%s" % (self.ds.attrs.get(
+        txtA = "User selection:\n   %s\n   %s\n   %s\nSource: %s\n%s" % (self.ds.attrs.get(
             'title'), time_string, spatial_string, self.ds.attrs.get('credit'), pcm1liner(self.m))
-        fontA = ImageFont.truetype(font_path, 12)
+        fontA = ImageFont.truetype(font_path, 10)
 
         txtsA = fontA.getsize_multiline(txtA)
 
