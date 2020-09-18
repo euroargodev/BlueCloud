@@ -361,7 +361,7 @@ class Plotter:
                  rotation='vertical', fontsize=12)
         # plt.tight_layout()
 
-    def spatial_distribution(self, proj, extent, time_slice=0):
+    def spatial_distribution(self, proj=ccrs.PlateCarree(), extent='auto', time_slice=0):
         '''Plot spatial distribution of classes
 
            Parameters
@@ -397,6 +397,10 @@ class Plotter:
                 fct)['PCM_MOST_FREQ_LABELS'].load()
             return this_ds.unstack('N_OBS')
 
+        # spatial extent
+        if isinstance(extent, str):
+            extent = np.array([min(self.ds[self.coords_dict.get('longitude')]), max(self.ds[self.coords_dict.get('longitude')]), min(self.ds[self.coords_dict.get('latitude')]), max(self.ds[self.coords_dict.get('latitude')])]) + np.array([-0.1, +0.1, -0.1, +0.1])
+        
         if isinstance(time_slice, str):
             dsp = get_most_freq_labels(self.ds)
             var_name = 'PCM_MOST_FREQ_LABELS'
@@ -435,13 +439,13 @@ class Plotter:
         fig.tight_layout()
         plt.margins(0.1)
 
-    def plot_posteriors(self, proj, extent, time_slice=0):
+    def plot_posteriors(self, proj=ccrs.PlateCarree(), extent='auto', time_slice=0):
         '''Plot posteriors in a map
 
            Parameters
            ----------
-               proj: projection
-               extent: map extent
+               proj: projection (default ccrs.PlateCarree())
+               extent: map extent (default 'auto')
                time_slice: time snapshot to be plot (default 0)
 
            Returns
@@ -452,6 +456,10 @@ class Plotter:
         # TODO: time should be called time in dataset. use coords_dict
 
         dsp = self.ds.isel(time=time_slice)
+
+        # spatial extent
+        if isinstance(extent, str):
+            extent = np.array([min(dsp[self.coords_dict.get('longitude')]), max(dsp[self.coords_dict.get('longitude')]), min(dsp[self.coords_dict.get('latitude')]), max(dsp[self.coords_dict.get('latitude')])]) + np.array([-0.1, +0.1, -0.1, +0.1])
 
         # check if PCM_POST variable exists
         assert ("PCM_POST" in dsp), "Dataset should include PCM_POST varible to be plotted. Use pyxpcm.predict_proba function with inplace=True option"
