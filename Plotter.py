@@ -493,14 +493,13 @@ class Plotter:
         fig.tight_layout()
         # fig.subplots_adjust(top=0.95)
 
-    def temporal_distribution(self, time_variable, time_bins):
+    def temporal_distribution(self, time_bins, start_month=0):
         '''Plot temporal distribution of classes by moth or by season
 
            Parameters
            ----------
-                time_variable: time variable name
                 time_bins: 'month' or 'season'
-                pond: 'abs' or 'rel' (divided by total nomber of observation in time bin)
+                start_month: (optional) start plot in this month (index from 1:Jan to 12:Dec)
 
             Returns
             -------
@@ -508,7 +507,7 @@ class Plotter:
         '''
 
         # check if more than one temporal step
-        assert (len(self.ds[time_variable]) >
+        assert (len(self.ds[self.coords_dict.get('time')]) >
                 1), "Length of time variable should be > 1"
 
         # data to be plot
@@ -520,6 +519,9 @@ class Plotter:
         if time_bins == 'month':
             xaxis_labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May',
                                 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+            if start_month != 0:
+                new_order = np.concatenate((np.arange(start_month,13), np.arange(1,start_month)))
+                xaxis_labels = [xaxis_labels[i-1] for i in new_order]
         if time_bins == 'season':
             seasons_dict = {1: 'DJF', 2: 'MAM', 3: 'JJA', 4: 'SON'}
             xaxis_labels = ['DJF', 'MAM', 'JJA', 'SON']
@@ -533,12 +535,15 @@ class Plotter:
 
             if cl == 0:
                 counts_k = pcm_labels_k.groupby(
-                    time_variable + '.' + time_bins).count(...)
+                    self.coords_dict.get('time') + '.' + time_bins).count(...)
             else:
                 counts_k = xr.concat([counts_k, pcm_labels_k.groupby(
-                    time_variable + '.' + time_bins).count(...)], "k")
+                    self.coords_dict.get('time') + '.' + time_bins).count(...)], "k")
 
         counts_k = counts_k/sum(counts_k)*100
+        # change order
+        if start_month != 0:
+            counts_k = counts_k.reindex({'month': new_order})
     
         #start point in stacked bars
         counts_cum = counts_k.cumsum(axis=0)
@@ -548,8 +553,8 @@ class Plotter:
 
             if time_bins == 'month':
                 starts = counts_cum.isel(k=cl) - counts_k.isel(k=cl)
-                ax.barh(counts_k.month, counts_k.isel(k=cl), left=starts, color=kmap(cl), label='K=' + str(cl))
-                #, width, label='K=' + str(cl),
+                #ax.barh(counts_k.month, counts_k.isel(k=cl), left=starts, color=kmap(cl), label='K=' + str(cl))
+                ax.barh(xaxis_labels, counts_k.isel(k=cl), left=starts, color=kmap(cl), label='K=' + str(cl))
                     
             if time_bins == 'season':
                 x_ticks_k = []
@@ -563,10 +568,11 @@ class Plotter:
                         color=kmap(cl))
 
         # format
-        title_string = r'Percentage profiles in each class by $\bf{' + time_bins + '}$'
+        title_string = r'Percentage of profiles in each class by $\bf{' + time_bins + '}$'
         ylabel_string = '% of profiles'
         plt.gca().invert_yaxis()
-        ax.set_yticks(np.arange(1, len(xaxis_labels)+1))
+        if time_bins == 'season':
+            ax.set_yticks(np.arange(1, len(xaxis_labels)+1))
         ax.set_yticklabels(xaxis_labels, fontsize=12)
         plt.yticks(fontsize=12)
         ax.legend(fontsize=12, bbox_to_anchor=(1.01, 1), loc='upper left')
