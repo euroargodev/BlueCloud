@@ -432,7 +432,7 @@ class Plotter:
         # TODO: function already in pyxpcm
         self.m.plot.colorbar(ax=ax, cmap='Accent', shrink=0.3)
         self.m.plot.latlongrid(ax, dx=10)  # TODO: function already in pyxpcm
-        land_feature=cfeature.NaturalEarthFeature(category='physical',name='land',scale='50m',facecolor=[0.4,0.6,0.7])
+        land_feature=cfeature.NaturalEarthFeature(category='physical', name='land', scale='50m', facecolor=[0.9375 ,0.9375 ,0.859375])
         ax.add_feature(land_feature, edgecolor='black')
         ax.set_title(title_str)
         fig.canvas.draw()
@@ -466,7 +466,7 @@ class Plotter:
 
         cmap = sns.light_palette("blue", as_cmap=True)
         subplot_kw = {'projection': proj, 'extent': extent}
-        land_feature=cfeature.NaturalEarthFeature(category='physical',name='land',scale='50m',facecolor=[0.4,0.6,0.7])
+        land_feature=cfeature.NaturalEarthFeature(category='physical',name='land',scale='50m',facecolor=[0.9375 ,0.9375 ,0.859375])
         # TODO: function already in pyxpcm
         fig, ax = self.m.plot.subplots(
             figsize=(10, 16), maxcols=2, subplot_kw=subplot_kw)
