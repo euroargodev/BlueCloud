@@ -94,20 +94,38 @@ class Plotter:
         fig, ax = plt.subplots(ncols=2, figsize=(10, 6))
         # fig.set_cmap(kmap)
 
-        cheader = ['k', 'profiles']
+        cheader = ['$\\bf{K}$', '$\\bf{Number\\ of\\ profiles}$']
         ccolors = plt.cm.BuPu(np.full(len(cheader), 0.1))
-        the_table = plt.table(cellText=table_cn, cellLoc='center', loc='center left',
-                              colLabels=cheader, colColours=ccolors, fontsize=12)
+        the_table = plt.table(cellText=table_cn, cellLoc='center', loc='center',
+                              colLabels=cheader, colColours=ccolors, fontsize=14, colWidths=(0.2, 0.45))
 
+        the_table.auto_set_font_size(False)
+        the_table.set_fontsize(12)
+        
+        explode = np.ones(self.m.K)*0.05
         kmap_n = [list(kmap(k)[0:3]) for k in range(self.m.K)]
-        ax[0].pie(counts_k, labels=pie_labels, autopct='%1.1f%%',
-                  shadow=True, startangle=90, colors=kmap_n)
+        textprops = {'fontweight':"bold", 'fontsize':12}
+
+        _, _, autotexts = ax[0].pie(counts_k, labels=pie_labels, autopct='%1.1f%%',
+                  startangle=90, colors=kmap_n, explode=explode, textprops=textprops, pctdistance=0.5)
+
+        #labels in white
+        for autotext in autotexts:
+            autotext.set_fontweight('normal')
+            autotext.set_fontsize(10)
+
+        #draw circle
+        centre_circle = plt.Circle((0,0),0.70,fc='white')
+        fig = plt.gcf()
+        ax[0].add_artist(centre_circle)
+        #fig.gca().add_artist(centre_circle)
+
         ax[0].axis('equal')
         ax[1].get_xaxis().set_visible(False)
         ax[1].get_yaxis().set_visible(False)
         plt.box(on=None)
         the_table.scale(1, 1.5)
-        fig.suptitle(r"$\bf{"'Classes'"}$"+' ' + r"$\bf{"'distribution'"}$")
+        fig.suptitle(r"$\bf{"'Classes'"}$"+' ' + r"$\bf{"'distribution'"}$", fontsize=14)
         plt.tight_layout()
 
     @staticmethod
@@ -245,8 +263,7 @@ class Plotter:
                 ax[k].set_ylabel(ylabel)
             ax[k].grid(True)
         plt.subplots_adjust(top=0.90)
-        fig.suptitle(r"$\bf{"'Vertical'"}$"+' ' + r"$\bf{"'structure'"}$" +
-                     ' '+r"$\bf{"'of'"}$"+' '+r"$\bf{"'classes'"}$")
+        fig.suptitle('$\\bf{Vertical\\ structure\\ of\\ classes}$')
         # plt.tight_layout()
 
     def vertical_structure_comp(self, q_variable,
@@ -355,8 +372,7 @@ class Plotter:
         plt.subplots_adjust(top=0.90)
         plt.rc('xtick', labelsize=12)
         plt.rc('ytick', labelsize=12)
-        fig.suptitle(r"$\bf{"'Vertical'"}$"+' ' + r"$\bf{"'structure'"}$" +
-                     ' '+r"$\bf{"'of'"}$"+' '+r"$\bf{"'classes'"}$")
+        fig.suptitle('$\\bf{Vertical\\ structure\\ of\\ classes}$')
         fig.text(0.04, 0.5, 'depth (m)', va='center',
                  rotation='vertical', fontsize=12)
         # plt.tight_layout()
@@ -410,8 +426,7 @@ class Plotter:
         else:
             dsp = self.ds.isel(time=time_slice)
             var_name = 'PCM_LABELS'
-            title_str = r"$\bf{"'Spatial'"}$"+' ' + r"$\bf{"'ditribution'"}$"+' '+r"$\bf{"'of'"}$"+' ' + \
-                r"$\bf{"'classes'"}$" + \
+            title_str = '$\\bf{Spatial\\ ditribution\\ of\\ classes}$' + \
                 ' \n (time: ' + \
                 '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')'
 
@@ -486,7 +501,7 @@ class Plotter:
             ax[k].add_feature(land_feature, edgecolor='black')
             ax[k].set_title('PCM Posteriors for k=%i' % k)
 
-        fig.suptitle(r"$\bf{"'PCM  Posteriors'"}$" + ' \n probability of a profile to belong to a class k'
+        fig.suptitle('$\\bf{PCM\\  Posteriors}$' + ' \n probability of a profile to belong to a class k'
                      + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')')
         #plt.subplots_adjust(wspace=0.1, hspace=0.1)
         # fig.canvas.draw()
