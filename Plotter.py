@@ -345,8 +345,12 @@ class Plotter:
         if not xlim:
             xlim = np.array([0.9 * da.min(), 1.1 * da.max()])
 
-        fig, ax = plt.subplots(nrows=1, ncols=nQ_p, figsize=(
-            10, 8), facecolor='w', edgecolor='k', sharey=True,  squeeze=False)
+        defaults = {'figsize': (10, 8), 'dpi': 80,
+                    'facecolor': 'w', 'edgecolor': 'k'}
+        maxcols = 4
+        fig, ax = self.m.plot.subplots(maxcols=maxcols, **defaults, sharey=True,  squeeze=False)
+        #fig, ax = plt.subplots(nrows=1, ncols=nQ_p, figsize=(
+        #    10, 8), facecolor='w', edgecolor='k', sharey=True,  squeeze=False)
         cnt = 0
         for q in q_range:
             Qq = da.loc[{QUANT_DIM: da[QUANT_DIM].values[q]}]
