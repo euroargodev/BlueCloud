@@ -94,20 +94,38 @@ class Plotter:
         fig, ax = plt.subplots(ncols=2, figsize=(10, 6))
         # fig.set_cmap(kmap)
 
-        cheader = ['k', 'profiles']
+        cheader = ['$\\bf{K}$', '$\\bf{Number\\ of\\ profiles}$']
         ccolors = plt.cm.BuPu(np.full(len(cheader), 0.1))
-        the_table = plt.table(cellText=table_cn, cellLoc='center', loc='center left',
-                              colLabels=cheader, colColours=ccolors, fontsize=12)
+        the_table = plt.table(cellText=table_cn, cellLoc='center', loc='center',
+                              colLabels=cheader, colColours=ccolors, fontsize=14, colWidths=(0.2, 0.45))
 
+        the_table.auto_set_font_size(False)
+        the_table.set_fontsize(12)
+        
+        explode = np.ones(self.m.K)*0.05
         kmap_n = [list(kmap(k)[0:3]) for k in range(self.m.K)]
-        ax[0].pie(counts_k, labels=pie_labels, autopct='%1.1f%%',
-                  shadow=True, startangle=90, colors=kmap_n)
+        textprops = {'fontweight':"bold", 'fontsize':12}
+
+        _, _, autotexts = ax[0].pie(counts_k, labels=pie_labels, autopct='%1.1f%%',
+                  startangle=90, colors=kmap_n, explode=explode, textprops=textprops, pctdistance=0.5)
+
+        #labels in white
+        for autotext in autotexts:
+            autotext.set_fontweight('normal')
+            autotext.set_fontsize(10)
+
+        #draw circle
+        centre_circle = plt.Circle((0,0),0.70,fc='white')
+        fig = plt.gcf()
+        ax[0].add_artist(centre_circle)
+        #fig.gca().add_artist(centre_circle)
+
         ax[0].axis('equal')
         ax[1].get_xaxis().set_visible(False)
         ax[1].get_yaxis().set_visible(False)
         plt.box(on=None)
         the_table.scale(1, 1.5)
-        fig.suptitle(r"$\bf{"'Classes'"}$"+' ' + r"$\bf{"'distribution'"}$")
+        fig.suptitle(r"$\bf{"'Classes'"}$"+' ' + r"$\bf{"'distribution'"}$", fontsize=14)
         plt.tight_layout()
 
     @staticmethod
@@ -245,8 +263,7 @@ class Plotter:
                 ax[k].set_ylabel(ylabel)
             ax[k].grid(True)
         plt.subplots_adjust(top=0.90)
-        fig.suptitle(r"$\bf{"'Vertical'"}$"+' ' + r"$\bf{"'structure'"}$" +
-                     ' '+r"$\bf{"'of'"}$"+' '+r"$\bf{"'classes'"}$")
+        fig.suptitle('$\\bf{Vertical\\ structure\\ of\\ classes}$')
         # plt.tight_layout()
 
     def vertical_structure_comp(self, q_variable,
@@ -328,8 +345,12 @@ class Plotter:
         if not xlim:
             xlim = np.array([0.9 * da.min(), 1.1 * da.max()])
 
-        fig, ax = plt.subplots(nrows=1, ncols=nQ_p, figsize=(
-            10, 8), facecolor='w', edgecolor='k', sharey=True,  squeeze=False)
+        defaults = {'figsize': (10, 8), 'dpi': 80,
+                    'facecolor': 'w', 'edgecolor': 'k'}
+        maxcols = 4
+        fig, ax = self.m.plot.subplots(maxcols=maxcols, **defaults, sharey=True,  squeeze=False)
+        #fig, ax = plt.subplots(nrows=1, ncols=nQ_p, figsize=(
+        #    10, 8), facecolor='w', edgecolor='k', sharey=True,  squeeze=False)
         cnt = 0
         for q in q_range:
             Qq = da.loc[{QUANT_DIM: da[QUANT_DIM].values[q]}]
@@ -355,13 +376,12 @@ class Plotter:
         plt.subplots_adjust(top=0.90)
         plt.rc('xtick', labelsize=12)
         plt.rc('ytick', labelsize=12)
-        fig.suptitle(r"$\bf{"'Vertical'"}$"+' ' + r"$\bf{"'structure'"}$" +
-                     ' '+r"$\bf{"'of'"}$"+' '+r"$\bf{"'classes'"}$")
+        fig.suptitle('$\\bf{Vertical\\ structure\\ of\\ classes}$')
         fig.text(0.04, 0.5, 'depth (m)', va='center',
                  rotation='vertical', fontsize=12)
         # plt.tight_layout()
 
-    def spatial_distribution(self, proj, extent, time_slice=0):
+    def spatial_distribution(self, proj=ccrs.PlateCarree(), extent='auto', time_slice=0):
         '''Plot spatial distribution of classes
 
            Parameters
@@ -397,6 +417,10 @@ class Plotter:
                 fct)['PCM_MOST_FREQ_LABELS'].load()
             return this_ds.unstack('N_OBS')
 
+        # spatial extent
+        if isinstance(extent, str):
+            extent = np.array([min(self.ds[self.coords_dict.get('longitude')]), max(self.ds[self.coords_dict.get('longitude')]), min(self.ds[self.coords_dict.get('latitude')]), max(self.ds[self.coords_dict.get('latitude')])]) + np.array([-0.1, +0.1, -0.1, +0.1])
+        
         if isinstance(time_slice, str):
             dsp = get_most_freq_labels(self.ds)
             var_name = 'PCM_MOST_FREQ_LABELS'
@@ -406,8 +430,7 @@ class Plotter:
         else:
             dsp = self.ds.isel(time=time_slice)
             var_name = 'PCM_LABELS'
-            title_str = r"$\bf{"'Spatial'"}$"+' ' + r"$\bf{"'ditribution'"}$"+' '+r"$\bf{"'of'"}$"+' ' + \
-                r"$\bf{"'classes'"}$" + \
+            title_str = '$\\bf{Spatial\\ ditribution\\ of\\ classes}$' + \
                 ' \n (time: ' + \
                 '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')'
 
@@ -428,20 +451,20 @@ class Plotter:
         # TODO: function already in pyxpcm
         self.m.plot.colorbar(ax=ax, cmap='Accent', shrink=0.3)
         self.m.plot.latlongrid(ax, dx=10)  # TODO: function already in pyxpcm
-        ax.add_feature(cfeature.LAND)
-        ax.add_feature(cfeature.COASTLINE)
+        land_feature=cfeature.NaturalEarthFeature(category='physical', name='land', scale='50m', facecolor=[0.9375 ,0.9375 ,0.859375])
+        ax.add_feature(land_feature, edgecolor='black')
         ax.set_title(title_str)
         fig.canvas.draw()
         fig.tight_layout()
         plt.margins(0.1)
 
-    def plot_posteriors(self, proj, extent, time_slice=0):
+    def plot_posteriors(self, proj=ccrs.PlateCarree(), extent='auto', time_slice=0):
         '''Plot posteriors in a map
 
            Parameters
            ----------
-               proj: projection
-               extent: map extent
+               proj: projection (default ccrs.PlateCarree())
+               extent: map extent (default 'auto')
                time_slice: time snapshot to be plot (default 0)
 
            Returns
@@ -453,11 +476,16 @@ class Plotter:
 
         dsp = self.ds.isel(time=time_slice)
 
+        # spatial extent
+        if isinstance(extent, str):
+            extent = np.array([min(dsp[self.coords_dict.get('longitude')]), max(dsp[self.coords_dict.get('longitude')]), min(dsp[self.coords_dict.get('latitude')]), max(dsp[self.coords_dict.get('latitude')])]) + np.array([-0.1, +0.1, -0.1, +0.1])
+
         # check if PCM_POST variable exists
         assert ("PCM_POST" in dsp), "Dataset should include PCM_POST varible to be plotted. Use pyxpcm.predict_proba function with inplace=True option"
 
         cmap = sns.light_palette("blue", as_cmap=True)
         subplot_kw = {'projection': proj, 'extent': extent}
+        land_feature=cfeature.NaturalEarthFeature(category='physical',name='land',scale='50m',facecolor=[0.9375 ,0.9375 ,0.859375])
         # TODO: function already in pyxpcm
         fig, ax = self.m.plot.subplots(
             figsize=(10, 16), maxcols=2, subplot_kw=subplot_kw)
@@ -473,25 +501,24 @@ class Plotter:
             plt.colorbar(sc, ax=ax[k], fraction=0.03, shrink=0.7)
             self.m.plot.latlongrid(ax[k], fontsize=8, dx=20, dy=10)
 
-            ax[k].add_feature(cfeature.LAND)
-            ax[k].add_feature(cfeature.COASTLINE)
+            
+            ax[k].add_feature(land_feature, edgecolor='black')
             ax[k].set_title('PCM Posteriors for k=%i' % k)
 
-        fig.suptitle(r"$\bf{"'PCM  Posteriors'"}$" + ' \n probability of a profile to belong to a class k'
+        fig.suptitle('$\\bf{PCM\\  Posteriors}$' + ' \n probability of a profile to belong to a class k'
                      + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')')
         #plt.subplots_adjust(wspace=0.1, hspace=0.1)
         # fig.canvas.draw()
         fig.tight_layout()
         # fig.subplots_adjust(top=0.95)
 
-    def temporal_distribution(self, time_variable, time_bins, pond):
+    def temporal_distribution(self, time_bins, start_month=0):
         '''Plot temporal distribution of classes by moth or by season
 
            Parameters
            ----------
-               time_variable: time variable name
-               time_bins: 'month' or 'season'
-               pond: 'abs' or 'rel' (divided by total nomber of observation in time bin)
+                time_bins: 'month' or 'season'
+                start_month: (optional) start plot in this month (index from 1:Jan to 12:Dec)
 
             Returns
             -------
@@ -499,7 +526,7 @@ class Plotter:
         '''
 
         # check if more than one temporal step
-        assert (len(self.ds[time_variable]) >
+        assert (len(self.ds[self.coords_dict.get('time')]) >
                 1), "Length of time variable should be > 1"
 
         # data to be plot
@@ -507,16 +534,18 @@ class Plotter:
         pcm_labels = self.ds['PCM_LABELS']
         kmap = self.m.plot.cmap(name=self.cmap_name)
 
+
         if time_bins == 'month':
             xaxis_labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May',
-                            'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                                'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+            if start_month != 0:
+                new_order = np.concatenate((np.arange(start_month,13), np.arange(1,start_month)))
+                xaxis_labels = [xaxis_labels[i-1] for i in new_order]
         if time_bins == 'season':
             seasons_dict = {1: 'DJF', 2: 'MAM', 3: 'JJA', 4: 'SON'}
             xaxis_labels = ['DJF', 'MAM', 'JJA', 'SON']
 
-        width = 0.8/(self.m.K)  # the width of the bars
         fig, ax = plt.subplots(figsize=(10, 6))
-        kmap = self.m.plot.cmap()  # TODO: function already in pyxpcm
 
         # loop in k for counting
         for cl in range(self.m.K):
@@ -525,49 +554,53 @@ class Plotter:
 
             if cl == 0:
                 counts_k = pcm_labels_k.groupby(
-                    time_variable + '.' + time_bins).count(...)
+                    self.coords_dict.get('time') + '.' + time_bins).count(...)
             else:
                 counts_k = xr.concat([counts_k, pcm_labels_k.groupby(
-                    time_variable + '.' + time_bins).count(...)], "k")
+                    self.coords_dict.get('time') + '.' + time_bins).count(...)], "k")
 
-        if pond == 'rel':
-            counts_k = counts_k/sum(counts_k)*100
+        counts_k = counts_k/sum(counts_k)*100
+        # change order
+        if start_month != 0:
+            counts_k = counts_k.reindex({'month': new_order})
+    
+        #start point in stacked bars
+        counts_cum = counts_k.cumsum(axis=0)
 
         # loop for plotting
         for cl in range(self.m.K):
 
             if time_bins == 'month':
-                ax.bar(counts_k.month - (self.m.K/2-cl)*width, counts_k.isel(k=cl), width, label='K=' + str(cl),
-                       color=kmap(cl))
+                starts = counts_cum.isel(k=cl) - counts_k.isel(k=cl)
+                #ax.barh(counts_k.month, counts_k.isel(k=cl), left=starts, color=kmap(cl), label='K=' + str(cl))
+                ax.barh(xaxis_labels, counts_k.isel(k=cl), left=starts, color=kmap(cl), label='K=' + str(cl))
+                    
             if time_bins == 'season':
                 x_ticks_k = []
                 for i in range(len(counts_k.season)):
                     x_ticks_k.append(
-                        list(seasons_dict.values()).index(counts_k.season[i])+1)
+                       list(seasons_dict.values()).index(counts_k.season[i])+1)
                     # print(x_ticks_k)
                 # plot
-                ax.bar(np.array(x_ticks_k) - (self.m.K/2-cl)*width, counts_k.isel(k=cl), width, label='K=' + str(cl),
-                       color=kmap(cl))
+                starts = counts_cum.isel(k=cl) - counts_k.isel(k=cl)
+                ax.barh(x_ticks_k, counts_k.isel(k=cl), left=starts, label='K=' + str(cl),
+                        color=kmap(cl))
 
         # format
-        title_string = r'Number of profiles in each class by $\bf{' + time_bins + '}$'
-        ylabel_string = 'Number of profiles'
-        if pond == 'rel':
-            title_string = title_string + '\n (% of profiles in each bin)'
-            ylabel_string = '% of profiles'
-
-        ax.set_xticks(np.arange(1, len(xaxis_labels)+1))
-        ax.set_xticklabels(xaxis_labels, fontsize=12)
+        title_string = r'Percentage of profiles in each class by $\bf{' + time_bins + '}$'
+        ylabel_string = '% of profiles'
+        plt.gca().invert_yaxis()
+        if time_bins == 'season':
+            ax.set_yticks(np.arange(1, len(xaxis_labels)+1))
+        ax.set_yticklabels(xaxis_labels, fontsize=12)
         plt.yticks(fontsize=12)
         ax.legend(fontsize=12, bbox_to_anchor=(1.01, 1), loc='upper left')
-        ax.set_xticks(np.arange(0.5, len(xaxis_labels)+1.5), minor=True)
-        ax.grid(axis='x', which='minor', alpha=0.5, ls='--')
-        ax.set_ylabel(ylabel_string, fontsize=12)
+        ax.set_xlabel(ylabel_string, fontsize=12)
         ax.set_title(title_string, fontsize=14)
         fig.tight_layout()
 
     @staticmethod
-    def add_lowerband(mfname, outfname, band_height=80, color=(255, 255, 255, 255)):
+    def add_lowerband(mfname, outfname, band_height=70, color=(255, 255, 255, 255)):
         """ Add lowerband to a figure
 
             Parameters
@@ -586,7 +619,7 @@ class Plotter:
         background.paste(image, (0, 0))
         background.save(outfname)
 
-    def add_2logo(self, mfname, outfname, logo_height=80, txt_color=(0, 0, 0, 255), data_src='CMEMS'):
+    def add_2logo(self, mfname, outfname, logo_height=70, txt_color=(0, 0, 0, 255), data_src='CMEMS'):
         """ Add 2 logos and text to a figure
 
             Parameters
@@ -638,11 +671,11 @@ class Plotter:
         if len(self.ds.time.sizes) == 0:
             # TODO: when using isel hours information is lost
             time_extent = self.ds["time"].dt.strftime("%Y/%m/%d %H:%M")
-            time_string = 'Extracted periode: %s' % time_extent.values
+            time_string = 'Period: %s' % time_extent.values
         else:
             time_extent = [min(self.ds["time"].dt.strftime(
                 "%Y/%m/%d")), max(self.ds["time"].dt.strftime("%Y/%m/%d"))]
-            time_string = 'Extracted period: from %s to %s' % (
+            time_string = 'Period: from %s to %s' % (
                 time_extent[0].values, time_extent[1].values)
 
         # spatial extent
@@ -650,12 +683,12 @@ class Plotter:
             self.ds[self.coords_dict.get('latitude')].values)]
         lon_extent = [min(self.ds[self.coords_dict.get('longitude')].values), max(
             self.ds[self.coords_dict.get('longitude')].values)]
-        spatial_string = 'Extracted geographical extent: lat:%s, lon:%s' % (
+        spatial_string = 'Domain: lat:%s, lon:%s' % (
             str(lat_extent), str(lon_extent))
 
-        txtA = "Dataset extracted from:\n   %s\n   %s\n   %s\nSource: %s\n%s" % (self.ds.attrs.get(
+        txtA = "User selection:\n   %s\n   %s\n   %s\nSource: %s\n%s" % (self.ds.attrs.get(
             'title'), time_string, spatial_string, self.ds.attrs.get('credit'), pcm1liner(self.m))
-        fontA = ImageFont.truetype(font_path, 12)
+        fontA = ImageFont.truetype(font_path, 10)
 
         txtsA = fontA.getsize_multiline(txtA)
 
