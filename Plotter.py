@@ -478,8 +478,11 @@ class Plotter:
         # TODO: class colors in title in subplots using colormap
         # TODO: time should be called time in dataset. use coords_dict
 
-        dsp = self.ds.isel(time=time_slice)
-
+        if 'time' in self.coords_dict:
+            dsp = self.ds.isel(time=time_slice)
+        else:
+            dsp = self.ds
+            
         # spatial extent
         if isinstance(extent, str):
             extent = np.array([min(dsp[self.coords_dict.get('longitude')]), max(dsp[self.coords_dict.get('longitude')]), min(dsp[self.coords_dict.get('latitude')]), max(dsp[self.coords_dict.get('latitude')])]) + np.array([-0.1, +0.1, -0.1, +0.1])
@@ -509,8 +512,12 @@ class Plotter:
             ax[k].add_feature(land_feature, edgecolor='black')
             ax[k].set_title('PCM Posteriors for k=%i' % k)
 
-        fig.suptitle('$\\bf{PCM\\  Posteriors}$' + ' \n probability of a profile to belong to a class k'
+        if 'time' in self.coords_dict:
+            fig.suptitle('$\\bf{PCM\\  Posteriors}$' + ' \n probability of a profile to belong to a class k'
                      + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')')
+        else:
+            fig.suptitle('$\\bf{PCM\\  Posteriors}$' + ' \n probability of a profile to belong to a class k')
+
         #plt.subplots_adjust(wspace=0.1, hspace=0.1)
         # fig.canvas.draw()
         fig.tight_layout()
