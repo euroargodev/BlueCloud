@@ -420,7 +420,7 @@ class Plotter:
         # spatial extent
         if isinstance(extent, str):
             extent = np.array([min(self.ds[self.coords_dict.get('longitude')]), max(self.ds[self.coords_dict.get('longitude')]), min(self.ds[self.coords_dict.get('latitude')]), max(self.ds[self.coords_dict.get('latitude')])]) + np.array([-0.1, +0.1, -0.1, +0.1])
-        
+
         if isinstance(time_slice, str):
             dsp = get_most_freq_labels(self.ds)
             var_name = 'PCM_MOST_FREQ_LABELS'
@@ -428,11 +428,15 @@ class Plotter:
                 r"$\bf{"'of'"}$"+' '+r"$\bf{"'classes'"}$" + \
                 ' \n (most frequent label in time series)'
         else:
-            dsp = self.ds.isel(time=time_slice)
-            var_name = 'PCM_LABELS'
-            title_str = '$\\bf{Spatial\\ ditribution\\ of\\ classes}$' + \
+            if 'time' in self.coords_dict:
+                dsp = self.ds.isel(time=time_slice)
+                title_str = '$\\bf{Spatial\\ ditribution\\ of\\ classes}$' + \
                 ' \n (time: ' + \
                 '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')'
+            else:
+                dsp = self.ds
+                title_str = '$\\bf{Spatial\\ ditribution\\ of\\ classes}$'
+            var_name = 'PCM_LABELS'
 
         subplot_kw = {'projection': proj, 'extent': extent}
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(
@@ -446,7 +450,7 @@ class Plotter:
                        c=self.ds[var_name], cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
         if self.data_type == 'gridded':
             ax.pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp[var_name],
-                          cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
+                         cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
 
         # TODO: function already in pyxpcm
         self.m.plot.colorbar(ax=ax, cmap='Accent', shrink=0.3)
