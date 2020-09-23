@@ -672,7 +672,9 @@ class Plotter:
 
         # Add dataset and model information
         # time extent
-        if len(self.ds.time.sizes) == 0:
+        if 'time' not in self.coords_dict:
+            time_string = 'Period: Unknown'
+        elif len(self.ds.time.sizes) == 0:
             # TODO: when using isel hours information is lost
             time_extent = self.ds["time"].dt.strftime("%Y/%m/%d %H:%M")
             time_string = 'Period: %s' % time_extent.values
