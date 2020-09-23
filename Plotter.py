@@ -345,40 +345,40 @@ class Plotter:
         if not xlim:
             xlim = np.array([0.9 * da.min(), 1.1 * da.max()])
 
-        defaults = {'figsize': (10, 8), 'dpi': 80,
-                    'facecolor': 'w', 'edgecolor': 'k'}
         maxcols = 4
-        fig, ax = self.m.plot.subplots(maxcols=maxcols, **defaults, sharey=True,  squeeze=False)
-        #fig, ax = plt.subplots(nrows=1, ncols=nQ_p, figsize=(
-        #    10, 8), facecolor='w', edgecolor='k', sharey=True,  squeeze=False)
+        fig_max_size = 2.5*nQ_p if nQ_p < maxcols else 10
+        defaults = {'figsize': (fig_max_size, 8), 'dpi': 80,
+                    'facecolor': 'w', 'edgecolor': 'k'}
+        fig, ax = self.m.plot.subplots(maxcols=maxcols, K=nQ_p, **defaults, sharey=True,  squeeze=False)
+
         cnt = 0
         for q in q_range:
             Qq = da.loc[{QUANT_DIM: da[QUANT_DIM].values[q]}]
             for k in self.m:
                 Qqk = Qq.loc[{CLASS_DIM: k}]
-                ax[0][cnt].plot(Qqk.values.T, da[VERTICAL_DIM], label=(
+                ax[cnt].plot(Qqk.values.T, da[VERTICAL_DIM], label=(
                     "K=%i") % (Qqk[CLASS_DIM]), color=cmapK(k))
-            ax[0][cnt].set_title(("quantile: %.2f") % (
+            ax[cnt].set_title(("quantile: %.2f") % (
                 da[QUANT_DIM].values[q]), color=cmap(q), fontsize=12)
-            ax[0][cnt].legend(loc='lower right', fontsize=11)
-            ax[0][cnt].set_xlim(xlim)
+            ax[cnt].legend(loc='lower right', fontsize=11)
+            ax[cnt].set_xlim(xlim)
             if isinstance(ylim, str):
-                ax[0][cnt].set_ylim(
+                ax[cnt].set_ylim(
                     np.array([da[VERTICAL_DIM].min(), da[VERTICAL_DIM].max()]))
             else:
-                ax[0][cnt].set_ylim(ylim)
+                ax[cnt].set_ylim(ylim)
             # ax[k].set_xlabel(Q.units)
-            if k == 0:
-                ax[0][cnt].set_ylabel(ylabel)
-            ax[0][cnt].grid(True)
+            if cnt == 0:
+                ax[cnt].set_ylabel(ylabel)
+            ax[cnt].grid(True)
             cnt = cnt+1
 
         plt.subplots_adjust(top=0.90)
-        plt.rc('xtick', labelsize=12)
-        plt.rc('ytick', labelsize=12)
+        plt.rc('xtick', labelsize=10)
+        plt.rc('ytick', labelsize=10)
         fig.suptitle('$\\bf{Vertical\\ structure\\ of\\ classes}$')
-        fig.text(0.04, 0.5, 'depth (m)', va='center',
-                 rotation='vertical', fontsize=12)
+        #fig.text(0.04, 0.5, 'depth (m)', va='center',
+        #         rotation='vertical', fontsize=12)
         # plt.tight_layout()
 
     def spatial_distribution(self, proj=ccrs.PlateCarree(), extent='auto', time_slice=0):
@@ -495,8 +495,8 @@ class Plotter:
         cmap = sns.light_palette("blue", as_cmap=True)
         subplot_kw = {'projection': proj, 'extent': extent}
         land_feature=cfeature.NaturalEarthFeature(category='physical',name='land',scale='50m',facecolor=[0.9375 ,0.9375 ,0.859375])
-        lon_grid = np.floor_divide((self.ds[self.coords_dict.get('longitude')].max() - self.ds[self.coords_dict.get('longitude')].min()),10)
-        lat_grid = np.floor_divide((self.ds[self.coords_dict.get('latitude')].max() - self.ds[self.coords_dict.get('latitude')].min()),10)
+        lon_grid = np.floor_divide((self.ds[self.coords_dict.get('longitude')].max() - self.ds[self.coords_dict.get('longitude')].min()),5)
+        lat_grid = np.floor_divide((self.ds[self.coords_dict.get('latitude')].max() - self.ds[self.coords_dict.get('latitude')].min()),5)
         # TODO: function already in pyxpcm
         fig, ax = self.m.plot.subplots(
             figsize=(10, 16), maxcols=2, subplot_kw=subplot_kw)
