@@ -345,40 +345,40 @@ class Plotter:
         if not xlim:
             xlim = np.array([0.9 * da.min(), 1.1 * da.max()])
 
-        defaults = {'figsize': (10, 8), 'dpi': 80,
-                    'facecolor': 'w', 'edgecolor': 'k'}
         maxcols = 4
-        fig, ax = self.m.plot.subplots(maxcols=maxcols, **defaults, sharey=True,  squeeze=False)
-        #fig, ax = plt.subplots(nrows=1, ncols=nQ_p, figsize=(
-        #    10, 8), facecolor='w', edgecolor='k', sharey=True,  squeeze=False)
+        fig_max_size = 2.5*nQ_p if nQ_p < maxcols else 10
+        defaults = {'figsize': (fig_max_size, 8), 'dpi': 80,
+                    'facecolor': 'w', 'edgecolor': 'k'}
+        fig, ax = self.m.plot.subplots(maxcols=maxcols, K=nQ_p, **defaults, sharey=True,  squeeze=False)
+
         cnt = 0
         for q in q_range:
             Qq = da.loc[{QUANT_DIM: da[QUANT_DIM].values[q]}]
             for k in self.m:
                 Qqk = Qq.loc[{CLASS_DIM: k}]
-                ax[0][cnt].plot(Qqk.values.T, da[VERTICAL_DIM], label=(
+                ax[cnt].plot(Qqk.values.T, da[VERTICAL_DIM], label=(
                     "K=%i") % (Qqk[CLASS_DIM]), color=cmapK(k))
-            ax[0][cnt].set_title(("quantile: %.2f") % (
+            ax[cnt].set_title(("quantile: %.2f") % (
                 da[QUANT_DIM].values[q]), color=cmap(q), fontsize=12)
-            ax[0][cnt].legend(loc='lower right', fontsize=11)
-            ax[0][cnt].set_xlim(xlim)
+            ax[cnt].legend(loc='lower right', fontsize=11)
+            ax[cnt].set_xlim(xlim)
             if isinstance(ylim, str):
-                ax[0][cnt].set_ylim(
+                ax[cnt].set_ylim(
                     np.array([da[VERTICAL_DIM].min(), da[VERTICAL_DIM].max()]))
             else:
-                ax[0][cnt].set_ylim(ylim)
+                ax[cnt].set_ylim(ylim)
             # ax[k].set_xlabel(Q.units)
-            if k == 0:
-                ax[0][cnt].set_ylabel(ylabel)
-            ax[0][cnt].grid(True)
+            if cnt == 0:
+                ax[cnt].set_ylabel(ylabel)
+            ax[cnt].grid(True)
             cnt = cnt+1
 
         plt.subplots_adjust(top=0.90)
-        plt.rc('xtick', labelsize=12)
-        plt.rc('ytick', labelsize=12)
+        plt.rc('xtick', labelsize=10)
+        plt.rc('ytick', labelsize=10)
         fig.suptitle('$\\bf{Vertical\\ structure\\ of\\ classes}$')
-        fig.text(0.04, 0.5, 'depth (m)', va='center',
-                 rotation='vertical', fontsize=12)
+        #fig.text(0.04, 0.5, 'depth (m)', va='center',
+        #         rotation='vertical', fontsize=12)
         # plt.tight_layout()
 
     def spatial_distribution(self, proj=ccrs.PlateCarree(), extent='auto', time_slice=0):
@@ -420,7 +420,7 @@ class Plotter:
         # spatial extent
         if isinstance(extent, str):
             extent = np.array([min(self.ds[self.coords_dict.get('longitude')]), max(self.ds[self.coords_dict.get('longitude')]), min(self.ds[self.coords_dict.get('latitude')]), max(self.ds[self.coords_dict.get('latitude')])]) + np.array([-0.1, +0.1, -0.1, +0.1])
-        
+
         if isinstance(time_slice, str):
             dsp = get_most_freq_labels(self.ds)
             var_name = 'PCM_MOST_FREQ_LABELS'
@@ -428,11 +428,15 @@ class Plotter:
                 r"$\bf{"'of'"}$"+' '+r"$\bf{"'classes'"}$" + \
                 ' \n (most frequent label in time series)'
         else:
-            dsp = self.ds.isel(time=time_slice)
-            var_name = 'PCM_LABELS'
-            title_str = '$\\bf{Spatial\\ ditribution\\ of\\ classes}$' + \
+            if 'time' in self.coords_dict:
+                dsp = self.ds.isel(time=time_slice)
+                title_str = '$\\bf{Spatial\\ ditribution\\ of\\ classes}$' + \
                 ' \n (time: ' + \
                 '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')'
+            else:
+                dsp = self.ds
+                title_str = '$\\bf{Spatial\\ ditribution\\ of\\ classes}$'
+            var_name = 'PCM_LABELS'
 
         subplot_kw = {'projection': proj, 'extent': extent}
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(
@@ -446,11 +450,13 @@ class Plotter:
                        c=self.ds[var_name], cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
         if self.data_type == 'gridded':
             ax.pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp[var_name],
-                          cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
+                         cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
 
         # TODO: function already in pyxpcm
         self.m.plot.colorbar(ax=ax, cmap='Accent', shrink=0.3)
-        self.m.plot.latlongrid(ax, dx=10)  # TODO: function already in pyxpcm
+        lon_grid = np.floor_divide((self.ds[self.coords_dict.get('longitude')].max() - self.ds[self.coords_dict.get('longitude')].min()),10)
+        lat_grid = np.floor_divide((self.ds[self.coords_dict.get('latitude')].max() - self.ds[self.coords_dict.get('latitude')].min()),10)
+        self.m.plot.latlongrid(ax, dx=lon_grid, dy=lat_grid)  # TODO: function already in pyxpcm
         land_feature=cfeature.NaturalEarthFeature(category='physical', name='land', scale='50m', facecolor=[0.9375 ,0.9375 ,0.859375])
         ax.add_feature(land_feature, edgecolor='black')
         ax.set_title(title_str)
@@ -474,7 +480,10 @@ class Plotter:
         # TODO: class colors in title in subplots using colormap
         # TODO: time should be called time in dataset. use coords_dict
 
-        dsp = self.ds.isel(time=time_slice)
+        if 'time' in self.coords_dict:
+            dsp = self.ds.isel(time=time_slice)
+        else:
+            dsp = self.ds
 
         # spatial extent
         if isinstance(extent, str):
@@ -486,6 +495,8 @@ class Plotter:
         cmap = sns.light_palette("blue", as_cmap=True)
         subplot_kw = {'projection': proj, 'extent': extent}
         land_feature=cfeature.NaturalEarthFeature(category='physical',name='land',scale='50m',facecolor=[0.9375 ,0.9375 ,0.859375])
+        lon_grid = np.floor_divide((self.ds[self.coords_dict.get('longitude')].max() - self.ds[self.coords_dict.get('longitude')].min()),5)
+        lat_grid = np.floor_divide((self.ds[self.coords_dict.get('latitude')].max() - self.ds[self.coords_dict.get('latitude')].min()),5)
         # TODO: function already in pyxpcm
         fig, ax = self.m.plot.subplots(
             figsize=(10, 16), maxcols=2, subplot_kw=subplot_kw)
@@ -499,14 +510,16 @@ class Plotter:
                                       cmap=cmap, transform=proj, vmin=0, vmax=1)
 
             plt.colorbar(sc, ax=ax[k], fraction=0.03, shrink=0.7)
-            self.m.plot.latlongrid(ax[k], fontsize=8, dx=20, dy=10)
-
-            
+            self.m.plot.latlongrid(ax[k], fontsize=8, dx=lon_grid, dy=lat_grid)
             ax[k].add_feature(land_feature, edgecolor='black')
             ax[k].set_title('PCM Posteriors for k=%i' % k)
 
-        fig.suptitle('$\\bf{PCM\\  Posteriors}$' + ' \n probability of a profile to belong to a class k'
+        if 'time' in self.coords_dict:
+            fig.suptitle('$\\bf{PCM\\  Posteriors}$' + ' \n probability of a profile to belong to a class k'
                      + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')')
+        else:
+            fig.suptitle('$\\bf{PCM\\  Posteriors}$' + ' \n probability of a profile to belong to a class k')
+
         #plt.subplots_adjust(wspace=0.1, hspace=0.1)
         # fig.canvas.draw()
         fig.tight_layout()
@@ -668,7 +681,9 @@ class Plotter:
 
         # Add dataset and model information
         # time extent
-        if len(self.ds.time.sizes) == 0:
+        if 'time' not in self.coords_dict:
+            time_string = 'Period: Unknown'
+        elif len(self.ds.time.sizes) == 0:
             # TODO: when using isel hours information is lost
             time_extent = self.ds["time"].dt.strftime("%Y/%m/%d %H:%M")
             time_string = 'Period: %s' % time_extent.values
