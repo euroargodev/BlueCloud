@@ -1,5 +1,6 @@
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import seaborn as sns
@@ -522,6 +523,75 @@ class Plotter:
                      + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')')
         else:
             fig.suptitle('$\\bf{PCM\\  Posteriors}$' + ' \n probability of a profile to belong to a class k')
+
+        #plt.subplots_adjust(wspace=0.1, hspace=0.1)
+        # fig.canvas.draw()
+        fig.tight_layout()
+        # fig.subplots_adjust(top=0.95)
+
+    def plot_robustness(self, proj=ccrs.PlateCarree(), extent='auto', time_slice=0):
+        '''Plot posteriors in a map
+
+           Parameters
+           ----------
+               proj: projection (default ccrs.PlateCarree())
+               extent: map extent (default 'auto')
+               time_slice: time snapshot to be plot (default 0)
+
+           Returns
+           -------
+
+           '''
+        # TODO: class colors in title in subplots using colormap
+        # TODO: time should be called time in dataset. use coords_dict
+
+        if 'time' in self.coords_dict:
+            dsp = self.ds.isel(time=time_slice)
+        else:
+            dsp = self.ds
+
+        # spatial extent
+        if isinstance(extent, str):
+            extent = np.array([min(dsp[self.coords_dict.get('longitude')]), max(dsp[self.coords_dict.get('longitude')]), min(dsp[self.coords_dict.get('latitude')]), max(dsp[self.coords_dict.get('latitude')])]) + np.array([-0.1, +0.1, -0.1, +0.1])
+
+        # check if PCM_ROBUSTNESS variable exists
+        assert ("PCM_ROBUSTNESS" in dsp), "Dataset should include PCM_ROBUSTNESS varible to be plotted. Use pyxpcm.robustness function with inplace=True option"
+        assert ("PCM_ROBUSTNESS_CAT" in dsp), "Dataset should include PCM_ROBUSTNESS_CAT varible to be plotted. Use pyxpcm.robustness_digit function with inplace=True option"
+
+        subplot_kw = {'projection': proj, 'extent': extent}
+        land_feature=cfeature.NaturalEarthFeature(category='physical',name='land',scale='50m',facecolor=[0.9375 ,0.9375 ,0.859375])
+        lon_grid = np.floor_divide((self.ds[self.coords_dict.get('longitude')].max() - self.ds[self.coords_dict.get('longitude')].min()),5)
+        lat_grid = np.floor_divide((self.ds[self.coords_dict.get('latitude')].max() - self.ds[self.coords_dict.get('latitude')].min()),5)
+        # TODO: function already in pyxpcm
+        fig, ax = self.m.plot.subplots(
+            figsize=(10, 10), maxcols=2, facecolor='w', edgecolor='k', dpi=120, subplot_kw=subplot_kw)
+        cmap = self.m.plot.cmap(usage='robustness')
+        kmap = self.m.plot.cmap(name=self.cmap_name)
+
+        for k in self.m:
+            if self.data_type == 'profiles':
+                sc = ax[k].scatter(dsp[self.coords_dict.get('longitude')], self.ds[self.coords_dict.get('latitude')], s=3, c=dsp['PCM_ROBUSTNESS'].where(dsp[dsp['PCM_LABELS']]==k),
+                                   cmap=cmap, transform=proj, vmin=0, vmax=1)
+            if self.data_type == 'gridded':
+                sc = ax[k].pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp['PCM_ROBUSTNESS'].where(dsp['PCM_LABELS']==k),
+                                      cmap=cmap, transform=proj, vmin=0, vmax=1)
+
+            self.m.plot.latlongrid(ax[k], fontsize=8, dx=lon_grid, dy=lat_grid)
+            ax[k].add_feature(land_feature, edgecolor='black')
+            ax[k].set_title('k=%i' % k, color=kmap(k), fontweight='bold', x=1.05, y=0.84)
+
+        boundaries = dsp['PCM_ROBUSTNESS_CAT'].attrs['bins']
+        rowl0 = dsp['PCM_ROBUSTNESS_CAT'].attrs['legend']
+        cl = fig.colorbar(sc, ax=ax.ravel().tolist(),fraction=0.01)
+        #cl = plt.colorbar(sc, ax=ax, fraction=0.03)
+        for (i,j) in zip(np.arange(0.1,1,1/5), rowl0):
+            cl.ax.text(2, i, j, ha='left', va='center')
+        
+        if 'time' in self.coords_dict:
+            fig.suptitle('$\\bf{PCM\\  Robustness}$' + ' \n probability of a profile to belong to a class k'
+                     + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')')
+        else:
+            fig.suptitle('$\\bf{PCM\\  Robustness}$' + ' \n probability of a profile to belong to a class k')
 
         #plt.subplots_adjust(wspace=0.1, hspace=0.1)
         # fig.canvas.draw()
