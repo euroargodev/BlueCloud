@@ -237,7 +237,10 @@ class Plotter:
             plt.cm.get_cmap(name=self.cmap_name), self.m.K)
         if not cmap:
             cmap = self.cmap_discretize(plt.cm.get_cmap(name='brg'), nQ)
-        defaults = {'figsize': (10, 8), 'dpi': 80,
+        
+        maxcols = 4
+        fig_max_size = 2.5*self.m.K if self.m.K < maxcols else 10
+        defaults = {'figsize': (fig_max_size, 12), 'dpi': 80,
                     'facecolor': 'w', 'edgecolor': 'k'}
         fig, ax = self.m.plot.subplots(
             maxcols=maxcols, **{**defaults, **kwargs})  # TODO: function in pyxpcm
@@ -264,7 +267,7 @@ class Plotter:
             ax[k].grid(True)
         plt.subplots_adjust(top=0.90)
         fig.suptitle('$\\bf{Vertical\\ structure\\ of\\ classes}$')
-        # plt.tight_layout()
+        #plt.tight_layout()
 
     def vertical_structure_comp(self, q_variable,
                                 plot_q='all',
@@ -455,7 +458,7 @@ class Plotter:
         # TODO: function already in pyxpcm
         self.m.plot.colorbar(ax=ax, cmap='Accent', shrink=0.3)
         lon_grid = np.floor_divide((self.ds[self.coords_dict.get('longitude')].max() - self.ds[self.coords_dict.get('longitude')].min()),10)
-        lat_grid = np.floor_divide((self.ds[self.coords_dict.get('latitude')].max() - self.ds[self.coords_dict.get('latitude')].min()),10)
+        lat_grid = np.floor_divide((self.ds[self.coords_dict.get('latitude')].max() - self.ds[self.coords_dict.get('latitude')].min()),8)
         self.m.plot.latlongrid(ax, dx=lon_grid, dy=lat_grid)  # TODO: function already in pyxpcm
         land_feature=cfeature.NaturalEarthFeature(category='physical', name='land', scale='50m', facecolor=[0.9375 ,0.9375 ,0.859375])
         ax.add_feature(land_feature, edgecolor='black')
