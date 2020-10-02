@@ -180,6 +180,7 @@ class Plotter:
                            maxcols=3,
                            cmap=None,
                            ylabel='depth (m)',
+                           xlabel='feature',
                            ylim='auto',
                            **kwargs):
         '''Plot vertical structure of each class
@@ -263,11 +264,12 @@ class Plotter:
             else:
                 ax[k].set_ylim(ylim)
             # ax[k].set_xlabel(Q.units)
-            if k == 0:
+            if k == 0 or np.divmod(k, maxcols)[1] == 0:
                 ax[k].set_ylabel(ylabel)
             ax[k].grid(True)
         plt.subplots_adjust(top=0.90)
         fig.suptitle('$\\bf{Vertical\\ structure\\ of\\ classes}$')
+        fig.text(0.5, 0.3, xlabel, va='center', fontsize=10)
         #plt.tight_layout()
 
     def vertical_structure_comp(self, q_variable,
@@ -517,6 +519,7 @@ class Plotter:
             self.m.plot.latlongrid(ax[k], fontsize=8, dx=lon_grid, dy=lat_grid)
             ax[k].add_feature(land_feature, edgecolor='black')
             ax[k].set_title('PCM Posteriors for k=%i' % k)
+            ax[k].tick_params(axis='both', labelsize=5)
 
         if 'time' in self.coords_dict:
             fig.suptitle('$\\bf{PCM\\  Posteriors}$' + ' \n probability of a profile to belong to a class k'
@@ -582,16 +585,16 @@ class Plotter:
 
         boundaries = dsp['PCM_ROBUSTNESS_CAT'].attrs['bins']
         rowl0 = dsp['PCM_ROBUSTNESS_CAT'].attrs['legend']
-        cl = fig.colorbar(sc, ax=ax.ravel().tolist(),fraction=0.01)
+        cl = fig.colorbar(sc, ax=ax.ravel().tolist(),fraction=0.02)
         #cl = plt.colorbar(sc, ax=ax, fraction=0.03)
         for (i,j) in zip(np.arange(0.1,1,1/5), rowl0):
             cl.ax.text(2, i, j, ha='left', va='center')
         
         if 'time' in self.coords_dict:
             fig.suptitle('$\\bf{PCM\\  Robustness}$' + ' \n probability of a profile to belong to a class k'
-                     + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')')
+                     + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')', fontsize=12)
         else:
-            fig.suptitle('$\\bf{PCM\\  Robustness}$' + ' \n probability of a profile to belong to a class k')
+            fig.suptitle('$\\bf{PCM\\  Robustness}$' + ' \n probability of a profile to belong to a class k', fontsize=12)
 
         #plt.subplots_adjust(wspace=0.1, hspace=0.1)
         # fig.canvas.draw()
