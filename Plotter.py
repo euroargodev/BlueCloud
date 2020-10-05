@@ -595,7 +595,8 @@ class Plotter:
         # TODO: function already in pyxpcm
         fig, ax = self.m.plot.subplots(
             figsize=(wi, hi), maxcols=2, facecolor='w', edgecolor='k', dpi=120, subplot_kw=subplot_kw)
-        plt.subplots_adjust(hspace=0.42)
+        plt.subplots_adjust(wspace = 0.2, hspace=0.4)
+        plt.rcParams['figure.constrained_layout.use'] = True
 
         cmap = self.m.plot.cmap(usage='robustness')
         kmap = self.m.plot.cmap(name=self.cmap_name)
@@ -608,7 +609,7 @@ class Plotter:
                 sc = ax[k].pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp['PCM_ROBUSTNESS'].where(dsp['PCM_LABELS']==k),
                                       cmap=cmap, transform=proj, vmin=0, vmax=1)
 
-            self.m.plot.latlongrid(ax[k], fontsize=8, dx=lon_grid, dy=lat_grid)
+            self.m.plot.latlongrid(ax[k], fontsize=6, dx=lon_grid, dy=lat_grid)
             ax[k].add_feature(land_feature, edgecolor='black')
             #ax[k].set_title('k=%i' % k, color=kmap(k), fontweight='bold', x=1.05, y=0.84)
             ax[k].set_title('k=%i' % k, color=kmap(k), fontweight='bold')
@@ -620,23 +621,29 @@ class Plotter:
         y2x_ratio = (ymax-ymin)/(xmax-xmin) * rows/cols
         fig.set_figheight(wi * y2x_ratio)
         print(wi * y2x_ratio)
-        fig.tight_layout()
-        
-        boundaries = dsp['PCM_ROBUSTNESS_CAT'].attrs['bins']
-        rowl0 = dsp['PCM_ROBUSTNESS_CAT'].attrs['legend']
-        #cl = fig.colorbar(sc, ax=ax.ravel().tolist(),fraction=0.02)
-        cl = plt.colorbar(sc, ax=ax, fraction=0.02)
-        for (i,j) in zip(np.arange(0.1,1,1/5), rowl0):
-            cl.ax.text(2, i, j, ha='left', va='center', fontsize=8)
-        
+        #fig.subplots_adjust(top=0.90)
+        #fig.tight_layout()
+        #fig.tight_layout(rect=[0, 0, 1, 0.90])
+
         fig.subplots_adjust(top=0.90)
+        #plt.subplots_adjust(wspace = 0.2, hspace=0.4)
         if 'time' in self.coords_dict:
             fig.suptitle('$\\bf{PCM\\  Robustness}$' + ' \n probability of a profile to belong to a class k'
                      + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')', fontsize=10)
         else:
             fig.suptitle('$\\bf{PCM\\  Robustness}$' + ' \n probability of a profile to belong to a class k', fontsize=10)
 
+        #plt.subplots_adjust(hspace=0.3)
+        #plt.subplots_adjust(wspace = 0.2, hspace=0.4)
         
+        boundaries = dsp['PCM_ROBUSTNESS_CAT'].attrs['bins']
+        rowl0 = dsp['PCM_ROBUSTNESS_CAT'].attrs['legend']
+        #cl = fig.colorbar(sc, ax=ax.ravel().tolist(),fraction=0.02)
+        cl = plt.colorbar(sc, ax=ax, fraction=0.02, pad=0.05)
+        for (i,j) in zip(np.arange(0.1,1,1/5), rowl0):
+            cl.ax.text(2, i, j, ha='left', va='center', fontsize=8)
+        
+
         # fig.canvas.draw()
         #fig.tight_layout()
         #fig.subplots_adjust(top=0.95)
