@@ -33,7 +33,10 @@ class Plotter:
 
         self.ds = ds
         self.m = m
-        self.cmap_name = cmap_name
+        if cmap_name =='Accent' and self.m.K > 8:
+            self.cmap_name = 'tab20'
+        else:
+            self.cmap_name = cmap_name
 
         # check if dataset should include PCM variables
         assert ("PCM_LABELS" in self.ds), "Dataset should include PCM_LABELS variable to be plotted. Use pyxpcm.predict function with inplace=True option"
@@ -269,7 +272,7 @@ class Plotter:
             ax[k].grid(True)
         plt.subplots_adjust(top=0.90)
         fig.suptitle('$\\bf{Vertical\\ structure\\ of\\ classes}$')
-        fig.text(0.5, 0.3, xlabel, va='center', fontsize=10)
+        fig.text(0.45, 0.36, xlabel, va='center', fontsize=10)
         #plt.tight_layout()
 
     def vertical_structure_comp(self, q_variable,
@@ -503,9 +506,16 @@ class Plotter:
         land_feature=cfeature.NaturalEarthFeature(category='physical',name='land',scale='50m',facecolor=[0.9375 ,0.9375 ,0.859375])
         lon_grid = np.floor_divide((self.ds[self.coords_dict.get('longitude')].max() - self.ds[self.coords_dict.get('longitude')].min()),5)
         lat_grid = np.floor_divide((self.ds[self.coords_dict.get('latitude')].max() - self.ds[self.coords_dict.get('latitude')].min()),5)
-        # TODO: function already in pyxpcm
+        
+        #aspect ratio
+        maxcols=2
+        ar = 1.0  # initial aspect ratio for first trial
+        wi = 12    # width of the whole figure in inches
+        hi = wi * ar  # height in inches
+        rows, cols = 1 + np.int(self.m.K / maxcols) ,maxcols
+
         fig, ax = self.m.plot.subplots(
-            figsize=(10, 16), maxcols=2, subplot_kw=subplot_kw)
+            figsize=(wi, hi), maxcols=maxcols, subplot_kw=subplot_kw) # TODO: function already in pyxpcm
 
         for k in self.m:
             if self.data_type == 'profiles':
@@ -520,6 +530,15 @@ class Plotter:
             ax[k].add_feature(land_feature, edgecolor='black')
             ax[k].set_title('PCM Posteriors for k=%i' % k)
             ax[k].tick_params(axis='both', labelsize=5)
+        
+        #aspect ratio
+        plt.draw()
+        xmin, xmax = ax.get_xbound()
+        ymin, ymax = ax.get_ybound()
+        y2x_ratio = (ymax-ymin)/(xmax-xmin) * rows/cols
+        fig.set_figheight(wi * y2x_ratio)
+        print(wi * y2x_ratio)
+
 
         if 'time' in self.coords_dict:
             fig.suptitle('$\\bf{PCM\\  Posteriors}$' + ' \n probability of a profile to belong to a class k'
@@ -528,7 +547,7 @@ class Plotter:
             fig.suptitle('$\\bf{PCM\\  Posteriors}$' + ' \n probability of a profile to belong to a class k')
 
         #plt.subplots_adjust(wspace=0.1, hspace=0.1)
-        # fig.canvas.draw()
+        #fig.canvas.draw()
         fig.tight_layout()
         # fig.subplots_adjust(top=0.95)
 
@@ -565,9 +584,19 @@ class Plotter:
         land_feature=cfeature.NaturalEarthFeature(category='physical',name='land',scale='50m',facecolor=[0.9375 ,0.9375 ,0.859375])
         lon_grid = np.floor_divide((self.ds[self.coords_dict.get('longitude')].max() - self.ds[self.coords_dict.get('longitude')].min()),5)
         lat_grid = np.floor_divide((self.ds[self.coords_dict.get('latitude')].max() - self.ds[self.coords_dict.get('latitude')].min()),5)
+        
+        #aspect ratio
+        maxcols=2
+        ar = 1.0  # initial aspect ratio for first trial
+        wi = 10    # width of the whole figure in inches
+        hi = wi * ar  # height in inches
+        rows, cols = 1 + np.int(self.m.K / maxcols) ,maxcols
+
         # TODO: function already in pyxpcm
         fig, ax = self.m.plot.subplots(
-            figsize=(10, 10), maxcols=2, facecolor='w', edgecolor='k', dpi=120, subplot_kw=subplot_kw)
+            figsize=(wi, hi), maxcols=2, facecolor='w', edgecolor='k', dpi=120, subplot_kw=subplot_kw)
+        plt.subplots_adjust(hspace=0.42)
+
         cmap = self.m.plot.cmap(usage='robustness')
         kmap = self.m.plot.cmap(name=self.cmap_name)
 
@@ -581,25 +610,37 @@ class Plotter:
 
             self.m.plot.latlongrid(ax[k], fontsize=8, dx=lon_grid, dy=lat_grid)
             ax[k].add_feature(land_feature, edgecolor='black')
-            ax[k].set_title('k=%i' % k, color=kmap(k), fontweight='bold', x=1.05, y=0.84)
+            #ax[k].set_title('k=%i' % k, color=kmap(k), fontweight='bold', x=1.05, y=0.84)
+            ax[k].set_title('k=%i' % k, color=kmap(k), fontweight='bold')
 
+        #aspect ratio
+        plt.draw()
+        xmin, xmax = ax[0].get_xbound()
+        ymin, ymax = ax[0].get_ybound()
+        y2x_ratio = (ymax-ymin)/(xmax-xmin) * rows/cols
+        fig.set_figheight(wi * y2x_ratio)
+        print(wi * y2x_ratio)
+        fig.tight_layout()
+        
         boundaries = dsp['PCM_ROBUSTNESS_CAT'].attrs['bins']
         rowl0 = dsp['PCM_ROBUSTNESS_CAT'].attrs['legend']
-        cl = fig.colorbar(sc, ax=ax.ravel().tolist(),fraction=0.02)
-        #cl = plt.colorbar(sc, ax=ax, fraction=0.03)
+        #cl = fig.colorbar(sc, ax=ax.ravel().tolist(),fraction=0.02)
+        cl = plt.colorbar(sc, ax=ax, fraction=0.02)
         for (i,j) in zip(np.arange(0.1,1,1/5), rowl0):
-            cl.ax.text(2, i, j, ha='left', va='center')
+            cl.ax.text(2, i, j, ha='left', va='center', fontsize=8)
         
+        fig.subplots_adjust(top=0.90)
         if 'time' in self.coords_dict:
             fig.suptitle('$\\bf{PCM\\  Robustness}$' + ' \n probability of a profile to belong to a class k'
-                     + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')', fontsize=12)
+                     + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')', fontsize=10)
         else:
-            fig.suptitle('$\\bf{PCM\\  Robustness}$' + ' \n probability of a profile to belong to a class k', fontsize=12)
+            fig.suptitle('$\\bf{PCM\\  Robustness}$' + ' \n probability of a profile to belong to a class k', fontsize=10)
 
-        #plt.subplots_adjust(wspace=0.1, hspace=0.1)
+        
         # fig.canvas.draw()
-        fig.tight_layout()
-        # fig.subplots_adjust(top=0.95)
+        #fig.tight_layout()
+        #fig.subplots_adjust(top=0.95)
+        #plt.rcParams['figure.constrained_layout.use'] = True
 
     def temporal_distribution(self, time_bins, start_month=0):
         '''Plot temporal distribution of classes by moth or by season
