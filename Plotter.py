@@ -53,6 +53,8 @@ class Plotter:
                     coords_dict.update({'longitude': c})
                 if axis_at == 'T':
                     coords_dict.update({'time': c})
+                if axis_at == 'Z':
+                    coords_dict.update({'depth': c})
 
             self.coords_dict = coords_dict
 
@@ -245,7 +247,7 @@ class Plotter:
         
         maxcols = 4
         fig_max_size = 2.5*self.m.K if self.m.K < maxcols else 10
-        defaults = {'figsize': (fig_max_size, 12), 'dpi': 80,
+        defaults = {'figsize': (fig_max_size, 12), 'dpi': 120,
                     'facecolor': 'w', 'edgecolor': 'k'}
         fig, ax = self.m.plot.subplots(
             maxcols=maxcols, **{**defaults, **kwargs})  # TODO: function in pyxpcm
@@ -356,7 +358,7 @@ class Plotter:
 
         maxcols = 4
         fig_max_size = 2.5*nQ_p if nQ_p < maxcols else 10
-        defaults = {'figsize': (fig_max_size, 8), 'dpi': 80,
+        defaults = {'figsize': (fig_max_size, 8), 'dpi': 120,
                     'facecolor': 'w', 'edgecolor': 'k'}
         fig, ax = self.m.plot.subplots(maxcols=maxcols, K=nQ_p, **defaults, sharey=True,  squeeze=False)
 
@@ -636,7 +638,7 @@ class Plotter:
         #plt.subplots_adjust(hspace=0.3)
         #plt.subplots_adjust(wspace = 0.2, hspace=0.4)
         
-        boundaries = dsp['PCM_ROBUSTNESS_CAT'].attrs['bins']
+        #boundaries = dsp['PCM_ROBUSTNESS_CAT'].attrs['bins']
         rowl0 = dsp['PCM_ROBUSTNESS_CAT'].attrs['legend']
         #cl = fig.colorbar(sc, ax=ax.ravel().tolist(),fraction=0.02)
         cl = plt.colorbar(sc, ax=ax, fraction=0.02, pad=0.05)
