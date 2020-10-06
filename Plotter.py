@@ -620,7 +620,7 @@ class Plotter:
         ymin, ymax = ax[0].get_ybound()
         y2x_ratio = (ymax-ymin)/(xmax-xmin) * rows/cols
         fig.set_figheight(wi * y2x_ratio)
-        print(wi * y2x_ratio)
+        #print(wi * y2x_ratio)
         #fig.subplots_adjust(top=0.90)
         #fig.tight_layout()
         #fig.tight_layout(rect=[0, 0, 1, 0.90])
@@ -647,7 +647,7 @@ class Plotter:
         # fig.canvas.draw()
         #fig.tight_layout()
         #fig.subplots_adjust(top=0.95)
-        #plt.rcParams['figure.constrained_layout.use'] = True
+        plt.rcParams['figure.constrained_layout.use'] = False
 
     def temporal_distribution(self, time_bins, start_month=0):
         '''Plot temporal distribution of classes by moth or by season
