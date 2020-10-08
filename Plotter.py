@@ -247,7 +247,7 @@ class Plotter:
         
         maxcols = 4
         fig_max_size = 2.5*self.m.K if self.m.K < maxcols else 10
-        defaults = {'figsize': (fig_max_size, 12), 'dpi': 120,
+        defaults = {'figsize': (fig_max_size, 12), 'dpi': 80,
                     'facecolor': 'w', 'edgecolor': 'k'}
         fig, ax = self.m.plot.subplots(
             maxcols=maxcols, **{**defaults, **kwargs})  # TODO: function in pyxpcm
@@ -274,7 +274,8 @@ class Plotter:
             ax[k].grid(True)
         plt.subplots_adjust(top=0.90)
         fig.suptitle('$\\bf{Vertical\\ structure\\ of\\ classes}$')
-        fig.text(0.45, 0.36, xlabel, va='center', fontsize=10)
+        fig_size = fig.get_size_inches()
+        fig.text((fig_size[0]/2)/fig_size[0], 1-(fig_size[1]-0.5)/fig_size[1], xlabel, va='center', fontsize=10)
         #plt.tight_layout()
 
     def vertical_structure_comp(self, q_variable,
@@ -284,6 +285,7 @@ class Plotter:
                                 quantdimname='quantile',
                                 maxcols=3, cmap=None,
                                 ylabel='depth (m)',
+                                xlabel='feature',
                                 ylim='auto',
                                 **kwargs):
         '''Plot vertical structure of each class
@@ -358,7 +360,7 @@ class Plotter:
 
         maxcols = 4
         fig_max_size = 2.5*nQ_p if nQ_p < maxcols else 10
-        defaults = {'figsize': (fig_max_size, 8), 'dpi': 120,
+        defaults = {'figsize': (fig_max_size, 8), 'dpi': 80,
                     'facecolor': 'w', 'edgecolor': 'k'}
         fig, ax = self.m.plot.subplots(maxcols=maxcols, K=nQ_p, **defaults, sharey=True,  squeeze=False)
 
@@ -388,6 +390,8 @@ class Plotter:
         plt.rc('xtick', labelsize=10)
         plt.rc('ytick', labelsize=10)
         fig.suptitle('$\\bf{Vertical\\ structure\\ of\\ classes}$')
+        fig_size = fig.get_size_inches()
+        fig.text((fig_size[0]/2)/fig_size[0], 1-(fig_size[1]-0.5)/fig_size[1], xlabel, va='center', fontsize=10)
         #fig.text(0.04, 0.5, 'depth (m)', va='center',
         #         rotation='vertical', fontsize=12)
         # plt.tight_layout()
