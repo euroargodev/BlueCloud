@@ -97,6 +97,8 @@ class Plotter:
                 pie_labels.append('K=%i' % cl)
                 table_cn.append([str(cl), str(counts_k[cl].values)])
 
+        table_cn.append(['Total', str(sum([int(row[1]) for row in table_cn]))])
+
         fig, ax = plt.subplots(ncols=2, figsize=(10, 6))
         # fig.set_cmap(kmap)
 
