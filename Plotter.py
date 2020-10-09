@@ -33,7 +33,7 @@ class Plotter:
 
         self.ds = ds
         self.m = m
-        if cmap_name =='Accent' and self.m.K > 8:
+        if cmap_name == 'Accent' and self.m.K > 8:
             self.cmap_name = 'tab20'
         else:
             self.cmap_name = cmap_name
@@ -109,31 +109,31 @@ class Plotter:
 
         the_table.auto_set_font_size(False)
         the_table.set_fontsize(12)
-        
+
         explode = np.ones(self.m.K)*0.05
         kmap_n = [list(kmap(k)[0:3]) for k in range(self.m.K)]
-        textprops = {'fontweight':"bold", 'fontsize':12}
+        textprops = {'fontweight': "bold", 'fontsize': 12}
 
         _, _, autotexts = ax[0].pie(counts_k, labels=pie_labels, autopct='%1.1f%%',
-                  startangle=90, colors=kmap_n, explode=explode, textprops=textprops, pctdistance=0.5)
+                                    startangle=90, colors=kmap_n, explode=explode, textprops=textprops, pctdistance=0.5)
 
         #labels in white
         for autotext in autotexts:
             autotext.set_fontweight('normal')
             autotext.set_fontsize(10)
 
-        #draw circle
-        centre_circle = plt.Circle((0,0),0.70,fc='white')
+        # draw circle
+        centre_circle = plt.Circle((0, 0), 0.70, fc='white')
         fig = plt.gcf()
         ax[0].add_artist(centre_circle)
-        #fig.gca().add_artist(centre_circle)
+        # fig.gca().add_artist(centre_circle)
 
         ax[0].axis('equal')
         ax[1].get_xaxis().set_visible(False)
         ax[1].get_yaxis().set_visible(False)
         plt.box(on=None)
         the_table.scale(1, 1.5)
-        fig.suptitle(r"$\bf{"'Classes'"}$"+' ' + r"$\bf{"'distribution'"}$", fontsize=14)
+        fig.suptitle('$\\bf{Classes\\ distribution}$', fontsize=14)
         plt.tight_layout()
 
     @staticmethod
@@ -246,11 +246,14 @@ class Plotter:
             plt.cm.get_cmap(name=self.cmap_name), self.m.K)
         if not cmap:
             cmap = self.cmap_discretize(plt.cm.get_cmap(name='brg'), nQ)
-        
+
         maxcols = 4
         fig_max_size = 2.5*self.m.K if self.m.K < maxcols else 10
+        #fig_max_size = [2.5*self.m.K if self.m.K < maxcols else 10, 6*np.int(self.m.K/maxcols)]
         defaults = {'figsize': (fig_max_size, 12), 'dpi': 80,
                     'facecolor': 'w', 'edgecolor': 'k'}
+        # defaults = {'figsize': fig_max_size, 'dpi': 80,
+        #            'facecolor': 'w', 'edgecolor': 'k'}
         fig, ax = self.m.plot.subplots(
             maxcols=maxcols, **{**defaults, **kwargs})  # TODO: function in pyxpcm
 
@@ -274,11 +277,16 @@ class Plotter:
             if k == 0 or np.divmod(k, maxcols)[1] == 0:
                 ax[k].set_ylabel(ylabel)
             ax[k].grid(True)
+
         plt.subplots_adjust(top=0.90)
         fig.suptitle('$\\bf{Vertical\\ structure\\ of\\ classes}$')
         fig_size = fig.get_size_inches()
-        fig.text((fig_size[0]/2)/fig_size[0], 1-(fig_size[1]-0.5)/fig_size[1], xlabel, va='center', fontsize=10)
-        #plt.tight_layout()
+        plt.draw()
+        # print(fig_size)
+        #fig.text((fig_size[0]/2)/fig_size[0], 1-(fig_size[1]-0.5)/fig_size[1], xlabel, va='center', fontsize=10)
+        fig.text((fig_size[0]/2)/fig_size[0], 0.35,
+                 xlabel, va='center', fontsize=10)
+        # plt.tight_layout()
 
     def vertical_structure_comp(self, q_variable,
                                 plot_q='all',
@@ -364,7 +372,8 @@ class Plotter:
         fig_max_size = 2.5*nQ_p if nQ_p < maxcols else 10
         defaults = {'figsize': (fig_max_size, 8), 'dpi': 80,
                     'facecolor': 'w', 'edgecolor': 'k'}
-        fig, ax = self.m.plot.subplots(maxcols=maxcols, K=nQ_p, **defaults, sharey=True,  squeeze=False)
+        fig, ax = self.m.plot.subplots(
+            maxcols=maxcols, K=nQ_p, **defaults, sharey=True,  squeeze=False)
 
         cnt = 0
         for q in q_range:
@@ -393,8 +402,9 @@ class Plotter:
         plt.rc('ytick', labelsize=10)
         fig.suptitle('$\\bf{Vertical\\ structure\\ of\\ classes}$')
         fig_size = fig.get_size_inches()
-        fig.text((fig_size[0]/2)/fig_size[0], 1-(fig_size[1]-0.5)/fig_size[1], xlabel, va='center', fontsize=10)
-        #fig.text(0.04, 0.5, 'depth (m)', va='center',
+        fig.text((fig_size[0]/2)/fig_size[0], 1-(fig_size[1] -
+                                                 0.5)/fig_size[1], xlabel, va='center', fontsize=10)
+        # fig.text(0.04, 0.5, 'depth (m)', va='center',
         #         rotation='vertical', fontsize=12)
         # plt.tight_layout()
 
@@ -436,9 +446,10 @@ class Plotter:
 
         # spatial extent
         if isinstance(extent, str):
-            extent = np.array([min(self.ds[self.coords_dict.get('longitude')]), max(self.ds[self.coords_dict.get('longitude')]), min(self.ds[self.coords_dict.get('latitude')]), max(self.ds[self.coords_dict.get('latitude')])]) + np.array([-0.1, +0.1, -0.1, +0.1])
+            extent = np.array([min(self.ds[self.coords_dict.get('longitude')]), max(self.ds[self.coords_dict.get('longitude')]), min(
+                self.ds[self.coords_dict.get('latitude')]), max(self.ds[self.coords_dict.get('latitude')])]) + np.array([-0.1, +0.1, -0.1, +0.1])
 
-        if isinstance(time_slice, str):
+        if time_slice == 'most_freq_label':
             dsp = get_most_freq_labels(self.ds)
             var_name = 'PCM_MOST_FREQ_LABELS'
             title_str = r"$\bf{"'Spatial'"}$"+' ' + r"$\bf{"'ditribution'"}$"+' ' + \
@@ -446,10 +457,11 @@ class Plotter:
                 ' \n (most frequent label in time series)'
         else:
             if 'time' in self.coords_dict:
-                dsp = self.ds.isel(time=time_slice)
+                dsp = self.ds.sel(time=time_slice, method='nearest')
                 title_str = '$\\bf{Spatial\\ ditribution\\ of\\ classes}$' + \
-                ' \n (time: ' + \
-                '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')'
+                    ' \n (time: ' + \
+                    '%s' % dsp["time"].dt.strftime(
+                        "%Y/%m/%d %H:%M").values + ')'
             else:
                 dsp = self.ds
                 title_str = '$\\bf{Spatial\\ ditribution\\ of\\ classes}$'
@@ -467,14 +479,18 @@ class Plotter:
                        c=self.ds[var_name], cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
         if self.data_type == 'gridded':
             ax.pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp[var_name],
-                         cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
+                          cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
 
         # TODO: function already in pyxpcm
         self.m.plot.colorbar(ax=ax, cmap='Accent', shrink=0.3)
-        lon_grid = np.floor_divide((self.ds[self.coords_dict.get('longitude')].max() - self.ds[self.coords_dict.get('longitude')].min()),10)
-        lat_grid = np.floor_divide((self.ds[self.coords_dict.get('latitude')].max() - self.ds[self.coords_dict.get('latitude')].min()),8)
-        self.m.plot.latlongrid(ax, dx=lon_grid, dy=lat_grid)  # TODO: function already in pyxpcm
-        land_feature=cfeature.NaturalEarthFeature(category='physical', name='land', scale='50m', facecolor=[0.9375 ,0.9375 ,0.859375])
+        lon_grid = np.floor_divide((self.ds[self.coords_dict.get('longitude')].max(
+        ) - self.ds[self.coords_dict.get('longitude')].min()), 10)
+        lat_grid = np.floor_divide((self.ds[self.coords_dict.get('latitude')].max(
+        ) - self.ds[self.coords_dict.get('latitude')].min()), 8)
+        # TODO: function already in pyxpcm
+        self.m.plot.latlongrid(ax, dx=lon_grid, dy=lat_grid)
+        land_feature = cfeature.NaturalEarthFeature(
+            category='physical', name='land', scale='50m', facecolor=[0.9375, 0.9375, 0.859375])
         ax.add_feature(land_feature, edgecolor='black')
         ax.set_title(title_str)
         fig.canvas.draw()
@@ -504,26 +520,30 @@ class Plotter:
 
         # spatial extent
         if isinstance(extent, str):
-            extent = np.array([min(dsp[self.coords_dict.get('longitude')]), max(dsp[self.coords_dict.get('longitude')]), min(dsp[self.coords_dict.get('latitude')]), max(dsp[self.coords_dict.get('latitude')])]) + np.array([-0.1, +0.1, -0.1, +0.1])
+            extent = np.array([min(dsp[self.coords_dict.get('longitude')]), max(dsp[self.coords_dict.get('longitude')]), min(
+                dsp[self.coords_dict.get('latitude')]), max(dsp[self.coords_dict.get('latitude')])]) + np.array([-0.1, +0.1, -0.1, +0.1])
 
         # check if PCM_POST variable exists
         assert ("PCM_POST" in dsp), "Dataset should include PCM_POST varible to be plotted. Use pyxpcm.predict_proba function with inplace=True option"
 
         cmap = sns.light_palette("blue", as_cmap=True)
         subplot_kw = {'projection': proj, 'extent': extent}
-        land_feature=cfeature.NaturalEarthFeature(category='physical',name='land',scale='50m',facecolor=[0.9375 ,0.9375 ,0.859375])
-        lon_grid = np.floor_divide((self.ds[self.coords_dict.get('longitude')].max() - self.ds[self.coords_dict.get('longitude')].min()),5)
-        lat_grid = np.floor_divide((self.ds[self.coords_dict.get('latitude')].max() - self.ds[self.coords_dict.get('latitude')].min()),5)
-        
-        #aspect ratio
-        maxcols=2
+        land_feature = cfeature.NaturalEarthFeature(
+            category='physical', name='land', scale='50m', facecolor=[0.9375, 0.9375, 0.859375])
+        lon_grid = np.floor_divide((self.ds[self.coords_dict.get('longitude')].max(
+        ) - self.ds[self.coords_dict.get('longitude')].min()), 5)
+        lat_grid = np.floor_divide((self.ds[self.coords_dict.get('latitude')].max(
+        ) - self.ds[self.coords_dict.get('latitude')].min()), 5)
+
+        # aspect ratio
+        maxcols = 2
         ar = 1.0  # initial aspect ratio for first trial
         wi = 12    # width of the whole figure in inches
         hi = wi * ar  # height in inches
-        rows, cols = 1 + np.int(self.m.K / maxcols) ,maxcols
+        rows, cols = 1 + np.int(self.m.K / maxcols), maxcols
 
         fig, ax = self.m.plot.subplots(
-            figsize=(wi, hi), maxcols=maxcols, subplot_kw=subplot_kw) # TODO: function already in pyxpcm
+            figsize=(wi, hi), maxcols=maxcols, subplot_kw=subplot_kw)  # TODO: function already in pyxpcm
 
         for k in self.m:
             if self.data_type == 'profiles':
@@ -538,8 +558,8 @@ class Plotter:
             ax[k].add_feature(land_feature, edgecolor='black')
             ax[k].set_title('PCM Posteriors for k=%i' % k)
             ax[k].tick_params(axis='both', labelsize=5)
-        
-        #aspect ratio
+
+        # aspect ratio
         plt.draw()
         xmin, xmax = ax.get_xbound()
         ymin, ymax = ax.get_ybound()
@@ -547,15 +567,15 @@ class Plotter:
         fig.set_figheight(wi * y2x_ratio)
         print(wi * y2x_ratio)
 
-
         if 'time' in self.coords_dict:
             fig.suptitle('$\\bf{PCM\\  Posteriors}$' + ' \n probability of a profile to belong to a class k'
-                     + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')')
+                         + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')')
         else:
-            fig.suptitle('$\\bf{PCM\\  Posteriors}$' + ' \n probability of a profile to belong to a class k')
+            fig.suptitle('$\\bf{PCM\\  Posteriors}$' +
+                         ' \n probability of a profile to belong to a class k')
 
         #plt.subplots_adjust(wspace=0.1, hspace=0.1)
-        #fig.canvas.draw()
+        # fig.canvas.draw()
         fig.tight_layout()
         # fig.subplots_adjust(top=0.95)
 
@@ -582,28 +602,32 @@ class Plotter:
 
         # spatial extent
         if isinstance(extent, str):
-            extent = np.array([min(dsp[self.coords_dict.get('longitude')]), max(dsp[self.coords_dict.get('longitude')]), min(dsp[self.coords_dict.get('latitude')]), max(dsp[self.coords_dict.get('latitude')])]) + np.array([-0.1, +0.1, -0.1, +0.1])
+            extent = np.array([min(dsp[self.coords_dict.get('longitude')]), max(dsp[self.coords_dict.get('longitude')]), min(
+                dsp[self.coords_dict.get('latitude')]), max(dsp[self.coords_dict.get('latitude')])]) + np.array([-0.1, +0.1, -0.1, +0.1])
 
         # check if PCM_ROBUSTNESS variable exists
         assert ("PCM_ROBUSTNESS" in dsp), "Dataset should include PCM_ROBUSTNESS varible to be plotted. Use pyxpcm.robustness function with inplace=True option"
         assert ("PCM_ROBUSTNESS_CAT" in dsp), "Dataset should include PCM_ROBUSTNESS_CAT varible to be plotted. Use pyxpcm.robustness_digit function with inplace=True option"
 
         subplot_kw = {'projection': proj, 'extent': extent}
-        land_feature=cfeature.NaturalEarthFeature(category='physical',name='land',scale='50m',facecolor=[0.9375 ,0.9375 ,0.859375])
-        lon_grid = np.floor_divide((self.ds[self.coords_dict.get('longitude')].max() - self.ds[self.coords_dict.get('longitude')].min()),5)
-        lat_grid = np.floor_divide((self.ds[self.coords_dict.get('latitude')].max() - self.ds[self.coords_dict.get('latitude')].min()),5)
-        
-        #aspect ratio
-        maxcols=2
+        land_feature = cfeature.NaturalEarthFeature(
+            category='physical', name='land', scale='50m', facecolor=[0.9375, 0.9375, 0.859375])
+        lon_grid = np.floor_divide((self.ds[self.coords_dict.get('longitude')].max(
+        ) - self.ds[self.coords_dict.get('longitude')].min()), 5)
+        lat_grid = np.floor_divide((self.ds[self.coords_dict.get('latitude')].max(
+        ) - self.ds[self.coords_dict.get('latitude')].min()), 5)
+
+        # aspect ratio
+        maxcols = 2
         ar = 1.0  # initial aspect ratio for first trial
         wi = 10    # width of the whole figure in inches
         hi = wi * ar  # height in inches
-        rows, cols = 1 + np.int(self.m.K / maxcols) ,maxcols
+        rows, cols = 1 + np.int(self.m.K / maxcols), maxcols
 
         # TODO: function already in pyxpcm
         fig, ax = self.m.plot.subplots(
             figsize=(wi, hi), maxcols=2, facecolor='w', edgecolor='k', dpi=120, subplot_kw=subplot_kw)
-        plt.subplots_adjust(wspace = 0.2, hspace=0.4)
+        plt.subplots_adjust(wspace=0.2, hspace=0.4)
         plt.rcParams['figure.constrained_layout.use'] = True
 
         cmap = self.m.plot.cmap(usage='robustness')
@@ -611,10 +635,10 @@ class Plotter:
 
         for k in self.m:
             if self.data_type == 'profiles':
-                sc = ax[k].scatter(dsp[self.coords_dict.get('longitude')], self.ds[self.coords_dict.get('latitude')], s=3, c=dsp['PCM_ROBUSTNESS'].where(dsp[dsp['PCM_LABELS']]==k),
+                sc = ax[k].scatter(dsp[self.coords_dict.get('longitude')], self.ds[self.coords_dict.get('latitude')], s=3, c=dsp['PCM_ROBUSTNESS'].where(dsp[dsp['PCM_LABELS']] == k),
                                    cmap=cmap, transform=proj, vmin=0, vmax=1)
             if self.data_type == 'gridded':
-                sc = ax[k].pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp['PCM_ROBUSTNESS'].where(dsp['PCM_LABELS']==k),
+                sc = ax[k].pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp['PCM_ROBUSTNESS'].where(dsp['PCM_LABELS'] == k),
                                       cmap=cmap, transform=proj, vmin=0, vmax=1)
 
             self.m.plot.latlongrid(ax[k], fontsize=6, dx=lon_grid, dy=lat_grid)
@@ -622,39 +646,39 @@ class Plotter:
             #ax[k].set_title('k=%i' % k, color=kmap(k), fontweight='bold', x=1.05, y=0.84)
             ax[k].set_title('k=%i' % k, color=kmap(k), fontweight='bold')
 
-        #aspect ratio
+        # aspect ratio
         plt.draw()
         xmin, xmax = ax[0].get_xbound()
         ymin, ymax = ax[0].get_ybound()
         y2x_ratio = (ymax-ymin)/(xmax-xmin) * rows/cols
         fig.set_figheight(wi * y2x_ratio)
         #print(wi * y2x_ratio)
-        #fig.subplots_adjust(top=0.90)
-        #fig.tight_layout()
+        # fig.subplots_adjust(top=0.90)
+        # fig.tight_layout()
         #fig.tight_layout(rect=[0, 0, 1, 0.90])
 
         fig.subplots_adjust(top=0.90)
         #plt.subplots_adjust(wspace = 0.2, hspace=0.4)
         if 'time' in self.coords_dict:
             fig.suptitle('$\\bf{PCM\\  Robustness}$' + ' \n probability of a profile to belong to a class k'
-                     + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')', fontsize=10)
+                         + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')', fontsize=10)
         else:
-            fig.suptitle('$\\bf{PCM\\  Robustness}$' + ' \n probability of a profile to belong to a class k', fontsize=10)
+            fig.suptitle('$\\bf{PCM\\  Robustness}$' +
+                         ' \n probability of a profile to belong to a class k', fontsize=10)
 
-        #plt.subplots_adjust(hspace=0.3)
+        # plt.subplots_adjust(hspace=0.3)
         #plt.subplots_adjust(wspace = 0.2, hspace=0.4)
-        
+
         #boundaries = dsp['PCM_ROBUSTNESS_CAT'].attrs['bins']
         rowl0 = dsp['PCM_ROBUSTNESS_CAT'].attrs['legend']
         #cl = fig.colorbar(sc, ax=ax.ravel().tolist(),fraction=0.02)
         cl = plt.colorbar(sc, ax=ax, fraction=0.02, pad=0.05)
-        for (i,j) in zip(np.arange(0.1,1,1/5), rowl0):
+        for (i, j) in zip(np.arange(0.1, 1, 1/5), rowl0):
             cl.ax.text(2, i, j, ha='left', va='center', fontsize=8)
-        
 
         # fig.canvas.draw()
-        #fig.tight_layout()
-        #fig.subplots_adjust(top=0.95)
+        # fig.tight_layout()
+        # fig.subplots_adjust(top=0.95)
         plt.rcParams['figure.constrained_layout.use'] = False
 
     def temporal_distribution(self, time_bins, start_month=0):
@@ -679,12 +703,12 @@ class Plotter:
         pcm_labels = self.ds['PCM_LABELS']
         kmap = self.m.plot.cmap(name=self.cmap_name)
 
-
         if time_bins == 'month':
             xaxis_labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May',
-                                'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                            'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
             if start_month != 0:
-                new_order = np.concatenate((np.arange(start_month,13), np.arange(1,start_month)))
+                new_order = np.concatenate(
+                    (np.arange(start_month, 13), np.arange(1, start_month)))
                 xaxis_labels = [xaxis_labels[i-1] for i in new_order]
         if time_bins == 'season':
             seasons_dict = {1: 'DJF', 2: 'MAM', 3: 'JJA', 4: 'SON'}
@@ -708,8 +732,8 @@ class Plotter:
         # change order
         if start_month != 0:
             counts_k = counts_k.reindex({'month': new_order})
-    
-        #start point in stacked bars
+
+        # start point in stacked bars
         counts_cum = counts_k.cumsum(axis=0)
 
         # loop for plotting
@@ -718,13 +742,14 @@ class Plotter:
             if time_bins == 'month':
                 starts = counts_cum.isel(k=cl) - counts_k.isel(k=cl)
                 #ax.barh(counts_k.month, counts_k.isel(k=cl), left=starts, color=kmap(cl), label='K=' + str(cl))
-                ax.barh(xaxis_labels, counts_k.isel(k=cl), left=starts, color=kmap(cl), label='K=' + str(cl))
-                    
+                ax.barh(xaxis_labels, counts_k.isel(k=cl), left=starts,
+                        color=kmap(cl), label='K=' + str(cl))
+
             if time_bins == 'season':
                 x_ticks_k = []
                 for i in range(len(counts_k.season)):
                     x_ticks_k.append(
-                       list(seasons_dict.values()).index(counts_k.season[i])+1)
+                        list(seasons_dict.values()).index(counts_k.season[i])+1)
                     # print(x_ticks_k)
                 # plot
                 starts = counts_cum.isel(k=cl) - counts_k.isel(k=cl)
