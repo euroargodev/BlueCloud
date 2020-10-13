@@ -596,7 +596,7 @@ class Plotter:
         # TODO: time should be called time in dataset. use coords_dict
 
         if 'time' in self.coords_dict:
-            dsp = self.ds.isel(time=time_slice)
+            dsp = self.ds.sel(time=time_slice, method='nearest')
         else:
             dsp = self.ds
 
