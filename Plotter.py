@@ -72,7 +72,7 @@ class Plotter:
         if len(dims_dict) > 2:
             self.data_type = 'gridded'
         else:
-            self.data_type = 'profile'
+            self.data_type = 'profiles'
 
     def pie_classes(self):
         """Pie chart of classes
@@ -416,6 +416,7 @@ class Plotter:
                proj: projection
                extent: map extent
                time_slice: time snapshot to be plot (default 0). If time_slice = 'most_freq_label', most frequent label in dataseries is plotted.
+                        most_freq_label option can only be used with gridded data
 
            Returns
            -------
@@ -452,11 +453,10 @@ class Plotter:
         if time_slice == 'most_freq_label':
             dsp = get_most_freq_labels(self.ds)
             var_name = 'PCM_MOST_FREQ_LABELS'
-            title_str = r"$\bf{"'Spatial'"}$"+' ' + r"$\bf{"'ditribution'"}$"+' ' + \
-                r"$\bf{"'of'"}$"+' '+r"$\bf{"'classes'"}$" + \
+            title_str = '$\\bf{Spatial\\ ditribution\\ of\\ classes}$' + \
                 ' \n (most frequent label in time series)'
         else:
-            if 'time' in self.coords_dict:
+            if 'time' in self.coords_dict and self.data_type == 'gridded':
                 dsp = self.ds.sel(time=time_slice, method='nearest')
                 title_str = '$\\bf{Spatial\\ ditribution\\ of\\ classes}$' + \
                     ' \n (time: ' + \
@@ -513,7 +513,7 @@ class Plotter:
         # TODO: class colors in title in subplots using colormap
         # TODO: time should be called time in dataset. use coords_dict
 
-        if 'time' in self.coords_dict:
+        if 'time' in self.coords_dict and self.data_type == 'gridded':
             dsp = self.ds.isel(time=time_slice)
         else:
             dsp = self.ds
@@ -595,10 +595,12 @@ class Plotter:
         # TODO: class colors in title in subplots using colormap
         # TODO: time should be called time in dataset. use coords_dict
 
-        if 'time' in self.coords_dict:
+        if 'time' in self.coords_dict and self.data_type == 'gridded':
             dsp = self.ds.sel(time=time_slice, method='nearest')
+            title_string = '$\\bf{PCM\\  Robustness}$' + ' \n probability of a profile to belong to a class k' + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')'
         else:
             dsp = self.ds
+            title_string = '$\\bf{PCM\\  Robustness}$' + ' \n probability of a profile to belong to a class k'
 
         # spatial extent
         if isinstance(extent, str):
@@ -635,7 +637,7 @@ class Plotter:
 
         for k in self.m:
             if self.data_type == 'profiles':
-                sc = ax[k].scatter(dsp[self.coords_dict.get('longitude')], self.ds[self.coords_dict.get('latitude')], s=3, c=dsp['PCM_ROBUSTNESS'].where(dsp[dsp['PCM_LABELS']] == k),
+                sc = ax[k].scatter(dsp[self.coords_dict.get('longitude')], self.ds[self.coords_dict.get('latitude')], s=3, c=dsp['PCM_ROBUSTNESS'].where(dsp['PCM_LABELS'] == k),
                                    cmap=cmap, transform=proj, vmin=0, vmax=1)
             if self.data_type == 'gridded':
                 sc = ax[k].pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp['PCM_ROBUSTNESS'].where(dsp['PCM_LABELS'] == k),
@@ -659,12 +661,7 @@ class Plotter:
 
         fig.subplots_adjust(top=0.90)
         #plt.subplots_adjust(wspace = 0.2, hspace=0.4)
-        if 'time' in self.coords_dict:
-            fig.suptitle('$\\bf{PCM\\  Robustness}$' + ' \n probability of a profile to belong to a class k'
-                         + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')', fontsize=10)
-        else:
-            fig.suptitle('$\\bf{PCM\\  Robustness}$' +
-                         ' \n probability of a profile to belong to a class k', fontsize=10)
+        fig.suptitle(title_string, fontsize=10)
 
         # plt.subplots_adjust(hspace=0.3)
         #plt.subplots_adjust(wspace = 0.2, hspace=0.4)
@@ -840,13 +837,13 @@ class Plotter:
         # time extent
         if 'time' not in self.coords_dict:
             time_string = 'Period: Unknown'
-        elif len(self.ds.time.sizes) == 0:
+        elif len(self.ds[self.coords_dict.get('time')].sizes) == 0:
             # TODO: when using isel hours information is lost
-            time_extent = self.ds["time"].dt.strftime("%Y/%m/%d %H:%M")
+            time_extent = self.ds[self.coords_dict.get('time')].dt.strftime("%Y/%m/%d %H:%M")
             time_string = 'Period: %s' % time_extent.values
         else:
-            time_extent = [min(self.ds["time"].dt.strftime(
-                "%Y/%m/%d")), max(self.ds["time"].dt.strftime("%Y/%m/%d"))]
+            time_extent = [min(self.ds[self.coords_dict.get('time')].dt.strftime(
+                "%Y/%m/%d")), max(self.ds[self.coords_dict.get('time')].dt.strftime("%Y/%m/%d"))]
             time_string = 'Period: from %s to %s' % (
                 time_extent[0].values, time_extent[1].values)
 
