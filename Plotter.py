@@ -386,6 +386,7 @@ class Plotter:
                 da[QUANT_DIM].values[q]), color=cmap(q), fontsize=12)
             ax[cnt].legend(loc='lower right', fontsize=11)
             ax[cnt].set_xlim(xlim)
+
             if isinstance(ylim, str):
                 ax[cnt].set_ylim(
                     np.array([da[VERTICAL_DIM].min(), da[VERTICAL_DIM].max()]))
@@ -457,7 +458,7 @@ class Plotter:
                 ' \n (most frequent label in time series)'
         else:
             if 'time' in self.coords_dict and self.data_type == 'gridded':
-                dsp = self.ds.sel(time=time_slice, method='nearest')
+                dsp = self.ds.sel(time=time_slice, method='nearest').squeeze()
                 title_str = '$\\bf{Spatial\\ ditribution\\ of\\ classes}$' + \
                     ' \n (time: ' + \
                     '%s' % dsp["time"].dt.strftime(
