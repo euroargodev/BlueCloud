@@ -196,7 +196,8 @@ def BIC_calculation(ds, corr_dist, corr_time, pcm_features, features_in_ds, z_di
     #end = time.time()
     #print((end - start)/60)
     #calculer minimun et si il y a pas un minimun, warning
-    return BIC
+    BIC_min = np.argmin(np.mean(BIC,axis=1))+1
+    return BIC, BIC_min
 
 def plot_BIC(BIC, NK):
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10,5), dpi=90)
