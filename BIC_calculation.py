@@ -5,6 +5,11 @@ import numpy as np
 import pyxpcm
 from pyxpcm.models import pcm
 
+import matplotlib.pyplot as plt
+
+import concurrent.futures
+from tqdm import tqdm
+
 def mapping_corr_dist(corr_dist, start_point, grid_extent):
     # function remapping grid using start point and grid extent
 
@@ -103,10 +108,10 @@ def mapping_corr_time(corr_time, start_point, time_extent):
     return new_time
 
     
-def BIC_calculation(ds, corr_dist, corr_time, grid_extent, time_extent, pcm_features, features_in_ds, z_dim, Nrun=10, NK=20):
-    import concurrent.futures
-    from tqdm import tqdm
+def BIC_calculation(ds, corr_dist, corr_time, pcm_features, features_in_ds, z_dim, Nrun=10, NK=20):
+
     #start = time.time()
+    #TODO: latitude and longitude values
 
     # grid extent
     grid_extent = np.array([ds.longitude.values.min(), ds.longitude.values.max(), ds.latitude.values.min(), ds.latitude.values.max()])
@@ -151,16 +156,21 @@ def BIC_calculation(ds, corr_dist, corr_time, grid_extent, time_extent, pcm_feat
         timep = np.random.choice(ds.time.values, 1, replace=False)
         #mapping
         new_lats, new_lons = mapping_corr_dist(corr_dist=corr_dist, start_point=np.concatenate((lonp,latp)), grid_extent=grid_extent)
-        new_time = mapping_corr_time(corr_time=corr_time, start_point=timep, time_extent=time_extent)
-        print(new_time)
+        #new_time = mapping_corr_time(corr_time=corr_time, start_point=timep, time_extent=time_extent)
+       
     
-        ds_ran = ds.sel(latitude=list(new_lats), longitude=list(new_lons), time=new_time, method='nearest')
+        #ds_ran = ds.sel(latitude=list(new_lats), longitude=list(new_lons), time=new_time, method='nearest')
+        ds_ran = ds.sel(latitude=list(new_lats), longitude=list(new_lons), method='nearest')
+        #ds_ran = ds_ran.isel(time=[2,5,8,11])
+        ds_ran = ds_ran.isel(time=[5,11])
         # if repeated time values
-        index = np.unique(ds_ran['time'], return_index=True)
-        ds_ran.isel(time=index[1])
+        #index = np.unique(ds_ran['time'], return_index=True)
+        #print(index)
+        #ds_ran.isel(time=index[1])
+        print(ds_ran.time.values)
     
         # pre-processing
-        m = pcm(K=4, features=pcm_features)
+        m = pcm(K=4, features=pcm_features) # K=4 it is not important, it is only used for preproces data
         X , sampling_dims = m.preprocessing(ds_ran, features=features_in_ds, dim=z_dim, action='fit')
     
         #BIC computation in parallel
@@ -185,4 +195,21 @@ def BIC_calculation(ds, corr_dist, corr_time, grid_extent, time_extent, pcm_feat
     
     #end = time.time()
     #print((end - start)/60)
+    #calculer minimun et si il y a pas un minimun, warning
     return BIC
+
+def plot_BIC(BIC, NK):
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10,5), dpi=90)
+    BICmean = np.mean(BIC,axis=1)
+    BICstd = np.std(BIC,axis=1)
+    normBICmean = (BICmean-np.mean(BICmean))/np.std(BICmean)
+    normBICstd = np.std(normBICmean)
+    #plt.plot(np.arange(kmax)+1,(BIC-np.mean(BIC))/np.std(BIC),label='Raw BIC')
+    plt.plot(np.arange(NK)+1,BICmean, label='BIC mean')
+    plt.plot(np.arange(NK)+1,BICmean+BICstd,color=[0.7]*3,linewidth=0.5, label='BIC std')
+    plt.plot(np.arange(NK)+1,BICmean-BICstd,color=[0.7]*3,linewidth=0.5)
+    plt.ylabel('BIC')
+    plt.xlabel('Number of classes')
+    plt.xticks(np.arange(NK)+1)
+    plt.legend()
+    plt.title('Bayesian information criteria (BIC)')
