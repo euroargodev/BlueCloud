@@ -149,20 +149,50 @@ def BIC_calculation(ds, corr_dist, corr_time, pcm_features, features_in_ds, z_di
     #BIC = []
     for run in range(Nrun):
         #print('run=' + str(run))
-    
+
+        ### time step 1 ###
         #random fist point
         latp = np.random.choice(ds.latitude.values, 1, replace=False)
         lonp = np.random.choice(ds.longitude.values, 1, replace=False)
-        timep = np.random.choice(ds.time.values, 1, replace=False)
+        # timep = np.random.choice(ds.time.values, 1, replace=False)
         #mapping
         new_lats, new_lons = mapping_corr_dist(corr_dist=corr_dist, start_point=np.concatenate((lonp,latp)), grid_extent=grid_extent)
         #new_time = mapping_corr_time(corr_time=corr_time, start_point=timep, time_extent=time_extent)
-       
+        ds_ran_1 = ds.sel(latitude=list(new_lats), longitude=list(new_lons), method='nearest')
+        ds_ran_1 = ds_ran_1.isel(time=5)
+        # be able to merge the datasets, it is not necessary to have lat lon information
+        n_lat1 = ds_ran_1.latitude.size
+        n_lon1 = ds_ran_1.longitude.size
+        print(ds_ran_1.time.values) 
+        ds_ran_1['latitude'] = np.arange(0,n_lat1)
+        ds_ran_1['longitude'] = np.arange(0,n_lon1)
+        
+
+
+        ### time step 2 ###
+        #random fist point
+        latp = np.random.choice(ds.latitude.values, 1, replace=False)
+        lonp = np.random.choice(ds.longitude.values, 1, replace=False)
+        # timep = np.random.choice(ds.time.values, 1, replace=False)
+        #mapping
+        new_lats, new_lons = mapping_corr_dist(corr_dist=corr_dist, start_point=np.concatenate((lonp,latp)), grid_extent=grid_extent)
+        #new_time = mapping_corr_time(corr_time=corr_time, start_point=timep, time_extent=time_extent)
+        ds_ran_2 = ds.sel(latitude=list(new_lats), longitude=list(new_lons), method='nearest')
+        ds_ran_2 = ds_ran_2.isel(time=11)
+        # be able to merge the datasets, it is not necessary to have lat lon information
+        n_lat2 = ds_ran_2.latitude.size
+        n_lon2 = ds_ran_2.longitude.size
+        print(ds_ran_2.time.values)  
+        ds_ran_2['latitude'] = np.arange(n_lat1, n_lat1 + n_lat2)
+        ds_ran_2['longitude'] = np.arange(n_lon1, n_lon1 + n_lon2)
+          
     
         #ds_ran = ds.sel(latitude=list(new_lats), longitude=list(new_lons), time=new_time, method='nearest')
-        ds_ran = ds.sel(latitude=list(new_lats), longitude=list(new_lons), method='nearest')
+        #ds_ran = xr.concat([ds_ran_1, ds_ran_2], dim="time")
+        ds_ran = xr.concat([ds_ran_1, ds_ran_2], dim = 'time')
+        print(ds_ran)
         #ds_ran = ds_ran.isel(time=[2,5,8,11])
-        ds_ran = ds_ran.isel(time=[5,11])
+        #ds_ran = ds_ran.isel(time=[5,11])
         # if repeated time values
         #index = np.unique(ds_ran['time'], return_index=True)
         #print(index)
