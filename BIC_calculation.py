@@ -108,16 +108,16 @@ def mapping_corr_time(corr_time, start_point, time_extent):
     return new_time
 
     
-def BIC_calculation(ds, corr_dist, corr_time, pcm_features, features_in_ds, z_dim, Nrun=10, NK=20):
+def BIC_calculation(ds, corr_dist, time_steps, pcm_features, features_in_ds, z_dim, Nrun=10, NK=20):
 
     #start = time.time()
     #TODO: latitude and longitude values
+    # TODO: automatic detection of variables names
+    # TODO: warning when time steps are so near
 
     # grid extent
     grid_extent = np.array([ds.longitude.values.min(), ds.longitude.values.max(), ds.latitude.values.min(), ds.latitude.values.max()])
-    # time extent
-    time_extent = np.array([ds.time.values.min(), ds.time.values.max()])
-
+    
     class_list = np.arange(0,NK) # this is the list of arguments to iterate over, for instance nb of classes for a PCM
 
     def BIC_cal(X, k):
@@ -150,60 +150,39 @@ def BIC_calculation(ds, corr_dist, corr_time, pcm_features, features_in_ds, z_di
     for run in range(Nrun):
         #print('run=' + str(run))
 
-        ### time step 1 ###
-        #random fist point
-        latp = np.random.choice(ds.latitude.values, 1, replace=False)
-        lonp = np.random.choice(ds.longitude.values, 1, replace=False)
-        # timep = np.random.choice(ds.time.values, 1, replace=False)
-        #mapping
-        new_lats, new_lons = mapping_corr_dist(corr_dist=corr_dist, start_point=np.concatenate((lonp,latp)), grid_extent=grid_extent)
-        #new_time = mapping_corr_time(corr_time=corr_time, start_point=timep, time_extent=time_extent)
-        ds_ran_1 = ds.sel(latitude=list(new_lats), longitude=list(new_lons), method='nearest')
-        ds_ran_1 = ds_ran_1.isel(time=5)
-        # be able to merge the datasets, it is not necessary to have lat lon information
-        n_lat1 = ds_ran_1.latitude.size
-        n_lon1 = ds_ran_1.longitude.size
-        print(ds_ran_1.time.values) 
-        ds_ran_1['latitude'] = np.arange(0,n_lat1)
-        ds_ran_1['longitude'] = np.arange(0,n_lon1)
-        
-
-
-        ### time step 2 ###
-        #random fist point
-        latp = np.random.choice(ds.latitude.values, 1, replace=False)
-        lonp = np.random.choice(ds.longitude.values, 1, replace=False)
-        # timep = np.random.choice(ds.time.values, 1, replace=False)
-        #mapping
-        new_lats, new_lons = mapping_corr_dist(corr_dist=corr_dist, start_point=np.concatenate((lonp,latp)), grid_extent=grid_extent)
-        #new_time = mapping_corr_time(corr_time=corr_time, start_point=timep, time_extent=time_extent)
-        ds_ran_2 = ds.sel(latitude=list(new_lats), longitude=list(new_lons), method='nearest')
-        ds_ran_2 = ds_ran_2.isel(time=11)
-        # be able to merge the datasets, it is not necessary to have lat lon information
-        n_lat2 = ds_ran_2.latitude.size
-        n_lon2 = ds_ran_2.longitude.size
-        print(ds_ran_2.time.values)  
-        ds_ran_2['latitude'] = np.arange(n_lat1, n_lat1 + n_lat2)
-        ds_ran_2['longitude'] = np.arange(n_lon1, n_lon1 + n_lon2)
-          
-    
-        #ds_ran = ds.sel(latitude=list(new_lats), longitude=list(new_lons), time=new_time, method='nearest')
-        #ds_ran = xr.concat([ds_ran_1, ds_ran_2], dim="time")
-        ds_ran = xr.concat([ds_ran_1, ds_ran_2], dim = 'time')
-        print(ds_ran)
-        #ds_ran = ds_ran.isel(time=[2,5,8,11])
-        #ds_ran = ds_ran.isel(time=[5,11])
-        # if repeated time values
-        #index = np.unique(ds_ran['time'], return_index=True)
-        #print(index)
-        #ds_ran.isel(time=index[1])
-        print(ds_ran.time.values)
-    
+        for itime in range(len(time_steps)): # time loop
+            #random fist point
+            latp = np.random.choice(ds.latitude.values, 1, replace=False)
+            lonp = np.random.choice(ds.longitude.values, 1, replace=False)
+            #mapping
+            new_lats, new_lons = mapping_corr_dist(corr_dist=corr_dist, start_point=np.concatenate((lonp,latp)), grid_extent=grid_extent)
+            ds_run_i = ds.sel(latitude=list(new_lats), longitude=list(new_lons), method='nearest')
+            ds_run_i = ds_run_i.sel(time=time_steps[itime])
+            # change lat and lot dimensions by index to be able to merge the datasets (it is not necessary to have lat lon information)
+            n_lati = ds_run_i.latitude.size
+            n_loni = ds_run_i.longitude.size
+            # concat results
+            if itime == 0:
+                # change lat and lon to index
+                ds_run_i['latitude'] = np.arange(0,n_lati)
+                ds_run_i['longitude'] = np.arange(0,n_loni)
+                n_lat = n_lati
+                n_lon = n_loni 
+                ds_run = ds_run_i
+            else:
+                # change lat and lon to index
+                ds_run_i['latitude'] = np.arange(n_lat, n_lat + n_lati)
+                ds_run_i['longitude'] = np.arange(n_lon, n_lon + n_loni)
+                n_lat = n_lat + n_lati
+                n_lon = n_lon + n_loni
+                #concat
+                ds_run = xr.concat([ds_run, ds_run_i], dim = 'time')
+                    
         # pre-processing
-        m = pcm(K=4, features=pcm_features) # K=4 it is not important, it is only used for preproces data
-        X , sampling_dims = m.preprocessing(ds_ran, features=features_in_ds, dim=z_dim, action='fit')
+        m = pcm(K=4, features=pcm_features) # K=4 it is not important, it is only used for preprocess data
+        X , sampling_dims = m.preprocessing(ds_run, features=features_in_ds, dim=z_dim, action='fit')
     
-        #BIC computation in parallel
+        # BIC computation in parallel
         results = []
         ConcurrentExecutor = concurrent.futures.ThreadPoolExecutor(max_workers=100)
         with ConcurrentExecutor as executor:
@@ -225,7 +204,6 @@ def BIC_calculation(ds, corr_dist, corr_time, pcm_features, features_in_ds, z_di
     
     #end = time.time()
     #print((end - start)/60)
-    #calculer minimun et si il y a pas un minimun, warning
     BIC_min = np.argmin(np.mean(BIC,axis=1))+1
     return BIC, BIC_min
 
