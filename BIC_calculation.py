@@ -10,6 +10,10 @@ import matplotlib.pyplot as plt
 import concurrent.futures
 from tqdm import tqdm
 
+from datetime import datetime
+
+import warnings
+
 def mapping_corr_dist(corr_dist, start_point, grid_extent):
     # function remapping grid using start point and grid extent
 
@@ -113,10 +117,16 @@ def BIC_calculation(ds, corr_dist, time_steps, pcm_features, features_in_ds, z_d
     #start = time.time()
     #TODO: latitude and longitude values
     # TODO: automatic detection of variables names
-    # TODO: warning when time steps are so near
 
     # grid extent
     grid_extent = np.array([ds.longitude.values.min(), ds.longitude.values.max(), ds.latitude.values.min(), ds.latitude.values.max()])
+    # check time steps
+    d1 = datetime.strptime(time_steps[0], "%Y-%m")
+    d2 = datetime.strptime(time_steps[1], "%Y-%m")
+    num_months = abs(d1.year - d2.year) * 12 + abs(d1.month - d2.month)
+    print(num_months)
+    if num_months < 6:
+        warnings.warn("Chosen time steps are too near, you may not obtein a minimun in the BIC function. If this is the case, please try with more distant time steps")
     
     class_list = np.arange(0,NK) # this is the list of arguments to iterate over, for instance nb of classes for a PCM
 
