@@ -152,7 +152,7 @@ def BIC_calculation(ds, corr_dist, coords_dict, time_steps, pcm_features, featur
                corr_dist: correlation distance
                coords_dict: dictionary with coordinates names
                     {'depth': 'depth', 'latitude': 'latitude', 'time': 'time', 'longitude': 'longitude'}
-               time_steps: time steps to be taken in to acount
+               time_steps: time steps to be taken in to acount (format %Y-%m)
                pcm_features: dictionary with pcm features {'temperature': z vector}
                features_in_ds: dictionary with the name of feaures in the model and in the dataste
                     {temperature: thetao} 
