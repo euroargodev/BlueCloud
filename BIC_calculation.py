@@ -142,7 +142,7 @@ def mapping_corr_time(corr_time, start_point, time_extent):
     return new_time
 
 
-def BIC_calculation(ds, corr_dist, time_steps, pcm_features, features_in_ds, z_dim, Nrun=10, NK=20):
+def BIC_calculation(ds, corr_dist, coords_dict, time_steps, pcm_features, features_in_ds, z_dim, Nrun=10, NK=20):
     '''Calculation of BIC (Bayesian Information Criteria) for a training dataset.
         The calculation is parallelised using ThreadPoolExecutor.
 
@@ -150,6 +150,8 @@ def BIC_calculation(ds, corr_dist, time_steps, pcm_features, features_in_ds, z_d
            ----------
                ds: dataset
                corr_dist: correlation distance
+               coords_dict: dictionary with coordinates names
+                    {'depth': 'depth', 'latitude': 'latitude', 'time': 'time', 'longitude': 'longitude'}
                time_steps: time steps to be taken in to acount
                pcm_features: dictionary with pcm features {'temperature': z vector}
                features_in_ds: dictionary with the name of feaures in the model and in the dataste
@@ -171,8 +173,8 @@ def BIC_calculation(ds, corr_dist, time_steps, pcm_features, features_in_ds, z_d
     # TODO: If only one time step?
 
     # grid extent
-    grid_extent = np.array([ds.longitude.values.min(), ds.longitude.values.max(
-    ), ds.latitude.values.min(), ds.latitude.values.max()])
+    grid_extent = np.array([ds[coords_dict.get('longitude')].values.min(), ds[coords_dict.get('longitude')].values.max(
+    ), ds[coords_dict.get('latitude')].values.min(), ds[coords_dict.get('latitude')].values.max()])
 
     # check time steps
     d1 = datetime.strptime(time_steps[0], "%Y-%m")
@@ -229,34 +231,35 @@ def BIC_calculation(ds, corr_dist, time_steps, pcm_features, features_in_ds, z_d
 
         for itime in range(len(time_steps)):  # time loop
             # random fist point
-            latp = np.random.choice(ds.latitude.values, 1, replace=False)
-            lonp = np.random.choice(ds.longitude.values, 1, replace=False)
+            latp = np.random.choice(ds[coords_dict.get('latitude')].values, 1, replace=False)
+            lonp = np.random.choice(ds[coords_dict.get('longitude')].values, 1, replace=False)
             # remapping
             new_lats, new_lons = mapping_corr_dist(
                 corr_dist=corr_dist, start_point=np.concatenate((lonp, latp)), grid_extent=grid_extent)
-            ds_run_i = ds.sel(latitude=list(new_lats),
-                              longitude=list(new_lons), method='nearest')
-            ds_run_i = ds_run_i.sel(time=time_steps[itime])
+
+            ds.sel({'latitude':30, 'longitude':30 }, method='nearest')
+            ds_run_i = ds.sel({'latitude':list(new_lats), 'longitude':list(new_lons)}, method='nearest')
+            ds_run_i = ds_run_i.sel({'time':time_steps[itime]})
 
             # change lat and lot dimensions by index to be able to merge the datasets (it is not necessary to have lat lon information)
-            n_lati = ds_run_i.latitude.size
-            n_loni = ds_run_i.longitude.size
+            n_lati = ds_run_i[coords_dict.get('latitude')].size
+            n_loni = ds_run_i[coords_dict.get('longitude')].size
             # concat results
             if itime == 0:
                 # change lat and lon to index
-                ds_run_i['latitude'] = np.arange(0, n_lati)
-                ds_run_i['longitude'] = np.arange(0, n_loni)
+                ds_run_i[coords_dict.get('latitude')] = np.arange(0, n_lati)
+                ds_run_i[coords_dict.get('longitude')] = np.arange(0, n_loni)
                 n_lat = n_lati
                 n_lon = n_loni
                 ds_run = ds_run_i
             else:
                 # change lat and lon to index
-                ds_run_i['latitude'] = np.arange(n_lat, n_lat + n_lati)
-                ds_run_i['longitude'] = np.arange(n_lon, n_lon + n_loni)
+                ds_run_i[coords_dict.get('latitude')] = np.arange(n_lat, n_lat + n_lati)
+                ds_run_i[coords_dict.get('longitude')] = np.arange(n_lon, n_lon + n_loni)
                 n_lat = n_lat + n_lati
                 n_lon = n_lon + n_loni
                 # concat time steps
-                ds_run = xr.concat([ds_run, ds_run_i], dim='time')
+                ds_run = xr.concat([ds_run, ds_run_i], dim=coords_dict.get('time'))
 
         # pre-processing
         # K=4 it is not important, it is only used for preprocess data
@@ -311,7 +314,7 @@ def plot_BIC(BIC, NK):
     BICmean = np.mean(BIC, axis=1)
     BICstd = np.std(BIC, axis=1)
     normBICmean = (BICmean-np.mean(BICmean))/np.std(BICmean)
-    normBICstd = np.std(normBICmean)
+    #normBICstd = np.std(normBICmean)
     #plt.plot(np.arange(kmax)+1,(BIC-np.mean(BIC))/np.std(BIC),label='Raw BIC')
     plt.plot(np.arange(NK)+1, BICmean, label='BIC mean')
     plt.plot(np.arange(NK)+1, BICmean+BICstd,
