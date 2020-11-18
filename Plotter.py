@@ -787,7 +787,7 @@ class Plotter:
         background.paste(image, (0, 0))
         background.save(outfname)
 
-    def add_2logo(self, mfname, outfname, logo_height=70, txt_color=(0, 0, 0, 255), data_src='CMEMS'):
+    def add_2logo(self, mfname, outfname, logo_height=70, txt_color=(0, 0, 0, 255), data_src='CMEMS', bic_fig ='no'):
         """ Add 2 logos and text to a figure
 
             Parameters
@@ -856,8 +856,13 @@ class Plotter:
         spatial_string = 'Domain: lat:%s, lon:%s' % (
             str(lat_extent), str(lon_extent))
 
-        txtA = "User selection:\n   %s\n   %s\n   %s\nSource: %s\n%s" % (self.ds.attrs.get(
-            'title'), time_string, spatial_string, self.ds.attrs.get('credit'), pcm1liner(self.m))
+        if bic_fig == 'no':
+            txtA = "User selection:\n   %s\n   %s\n   %s\nSource: %s\n%s" % (self.ds.attrs.get(
+                'title'), time_string, spatial_string, self.ds.attrs.get('credit'), pcm1liner(self.m))
+        else:
+            txtA = "User selection:\n   %s\n   %s\n   %s\nSource: %s" % (self.ds.attrs.get(
+                'title'), time_string, spatial_string, self.ds.attrs.get('credit'))
+
         fontA = ImageFont.truetype(font_path, 10)
 
         txtsA = fontA.getsize_multiline(txtA)
@@ -875,7 +880,7 @@ class Plotter:
         # Final save
         mimage.save(outfname)
 
-    def save_BlueCloud(self, out_name):  # function which saves figure and add logos
+    def save_BlueCloud(self, out_name, bic_fig='no'):  # function which saves figure and add logos
 
         # save image
         # plt.margins(0.1)
@@ -887,7 +892,7 @@ class Plotter:
 
         # add logo
         #self.add_2logo(out_name, out_name, logo_height=120, txt_color=(0, 0, 0, 255), data_src='CMEMS')
-        self.add_2logo(out_name, out_name)
+        self.add_2logo(out_name, out_name, bic_fig = bic_fig)
 
         print('Figure saved in %s' % out_name)
 
