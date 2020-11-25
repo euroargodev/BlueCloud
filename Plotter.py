@@ -597,7 +597,7 @@ class Plotter:
         # TODO: time should be called time in dataset. use coords_dict
 
         if 'time' in self.coords_dict and self.data_type == 'gridded':
-            dsp = self.ds.sel(time=time_slice, method='nearest')
+            dsp = self.ds.sel(time=time_slice, method='nearest').squeeze()
             title_string = '$\\bf{PCM\\  Robustness}$' + ' \n probability of a profile to belong to a class k' + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')'
         else:
             dsp = self.ds
