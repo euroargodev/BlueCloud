@@ -177,13 +177,14 @@ def BIC_calculation(ds, corr_dist, coords_dict, time_steps, pcm_features, featur
     ), ds[coords_dict.get('latitude')].values.min(), ds[coords_dict.get('latitude')].values.max()])
 
     # check time steps
-    d1 = datetime.strptime(time_steps[0], "%Y-%m")
-    d2 = datetime.strptime(time_steps[1], "%Y-%m")
-    num_months = abs(d1.year - d2.year) * 12 + abs(d1.month - d2.month)
-    #print(num_months)
-    if num_months < 6:
-        warnings.warn(
-            "Chosen time steps are too near, you may not obtain a minimum in the BIC function. If this is the case, please try with more distant time steps")
+    if len(time_steps) > 1:
+        d1 = datetime.strptime(time_steps[0], "%Y-%m")
+        d2 = datetime.strptime(time_steps[1], "%Y-%m")
+        num_months = abs(d1.year - d2.year) * 12 + abs(d1.month - d2.month)
+        #print(num_months)
+        if num_months < 6:
+            warnings.warn(
+                "Chosen time steps are too near, you may not obtain a minimum in the BIC function. If this is the case, please try with more distant time steps")
 
     # this is the list of arguments to iterate over, for instance nb of classes for a PCM
     class_list = np.arange(0, NK)
