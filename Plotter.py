@@ -638,11 +638,11 @@ class Plotter:
 
         for k in self.m:
             if self.data_type == 'profiles':
-                sc = ax[k].scatter(dsp[self.coords_dict.get('longitude')], self.ds[self.coords_dict.get('latitude')], s=3, c=dsp['PCM_ROBUSTNESS'].where(dsp['PCM_LABELS'] == k),
-                                   cmap=cmap, transform=proj, vmin=0, vmax=1)
+                sc = ax[k].scatter(dsp[self.coords_dict.get('longitude')], self.ds[self.coords_dict.get('latitude')], s=3, c=dsp['PCM_ROBUSTNESS_CAT'].where(dsp['PCM_LABELS'] == k),
+                                   cmap=cmap, transform=proj, vmin=0, vmax=5)
             if self.data_type == 'gridded':
-                sc = ax[k].pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp['PCM_ROBUSTNESS'].where(dsp['PCM_LABELS'] == k),
-                                      cmap=cmap, transform=proj, vmin=0, vmax=1)
+                sc = ax[k].pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp['PCM_ROBUSTNESS_CAT'].where(dsp['PCM_LABELS'] == k),
+                                      cmap=cmap, transform=proj, vmin=0, vmax=5)
 
             self.m.plot.latlongrid(ax[k], fontsize=6, dx=lon_grid, dy=lat_grid)
             ax[k].add_feature(land_feature, edgecolor='black')
@@ -671,8 +671,10 @@ class Plotter:
         rowl0 = dsp['PCM_ROBUSTNESS_CAT'].attrs['legend']
         #cl = fig.colorbar(sc, ax=ax.ravel().tolist(),fraction=0.02)
         cl = plt.colorbar(sc, ax=ax, fraction=0.02, pad=0.05)
-        for (i, j) in zip(np.arange(0.1, 1, 1/5), rowl0):
-            cl.ax.text(2, i, j, ha='left', va='center', fontsize=8)
+        cl.set_ticks([0,1,2,3,4,5])
+        cl.set_ticklabels([0,0.33,0.66,0.9,0.99,1])
+        for (i, j) in zip(np.arange(0.5, 5, 1), rowl0):
+            cl.ax.text(6, i, j, ha='left', va='center', fontsize=8)
 
         # fig.canvas.draw()
         # fig.tight_layout()
