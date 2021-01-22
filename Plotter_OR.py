@@ -188,9 +188,9 @@ class Plotter_OR:
                            quantdimname='quantile',
                            maxcols=3,
                            cmap=None,
-                           xlabel='variable',
-                           ylabel='feature',
-                           xlim='auto',
+                           xlabel='feature',
+                           ylabel='variable',
+                           xlim=None,
                            **kwargs):
         '''Plot vertical structure of each class
 
@@ -249,49 +249,40 @@ class Plotter_OR:
         if not cmap:
             cmap = self.cmap_discretize(plt.cm.get_cmap(name='brg'), nQ)
 
-        maxcols = 4
         fig_max_size = 2.5*self.m.K if self.m.K < maxcols else 10
-        #fig_max_size = [2.5*self.m.K if self.m.K < maxcols else 10, 6*np.int(self.m.K/maxcols)]
         defaults = {'figsize': (10,16), 'dpi': 80,
                     'facecolor': 'w', 'edgecolor': 'k'}
-        # defaults = {'figsize': fig_max_size, 'dpi': 80,
-        #            'facecolor': 'w', 'edgecolor': 'k'}
         
         fig, ax = plt.subplots(nrows=self.m.K , ncols=1, **{**defaults, **kwargs})
-        #fig, ax = self.m.plot.subplots(
-        #    maxcols=maxcols, **{**defaults, **kwargs})  # TODO: function in pyxpcm
 
         if not ylim:
             ylim = np.array([da.min(), da.max()])
-            print(ylim)
+        if not xlim:
+            xlim = np.array([da[FEATURE_DIM].min(), da[FEATURE_DIM].max()])
+            
         for k in range(self.m.K):
             Qk = da.loc[{CLASS_DIM: k}]
             for (iq, q) in zip(np.arange(nQ), Qk[QUANT_DIM]):
                 Qkq = Qk.loc[{QUANT_DIM: q}]
                 ax[k].plot(da[FEATURE_DIM], Qkq.values, label=(
-                    "%0.2f") % (iq), color=cmap(iq))
-            ax[k].set_title(("Component: %i") % (k), color=cmapK(k))
+                    "q=%0.2f") % da[QUANT_DIM][iq], color=cmap(iq))
+                
+            ax[k].set_title(("k = %i") % (k), color=cmapK(k), fontweight="bold")
             ax[k].legend(loc='lower right')
-            ax[k].set_ylim(ylim)
-            if isinstance(xlim, str):
-                ax[k].set_xlim(
-                    np.array([da[FEATURE_DIM].min(), da[FEATURE_DIM].max()]))
-            else:
-                ax[k].set_xlim(xlim)
-            # ax[k].set_xlabel(Q.units)
-            if k == 0 or np.divmod(k, maxcols)[1] == 0:
-                ax[k].set_ylabel(ylabel)
             ax[k].grid(True)
-
-        #plt.subplots_adjust(top=0.90)
-        #fig.suptitle('$\\bf{Vertical\\ structure\\ of\\ classes}$')
-        fig_size = fig.get_size_inches()
-        plt.draw()
+            
+            ax[k].set_ylim(ylim)
+            ax[k].set_xlim(xlim)
+            ax[k].set_ylabel(ylabel)
+            if k == self.m.K-1:
+                ax[k].set_xlabel(xlabel)
+            
+        plt.subplots_adjust(hspace=0.3)
+        #fig.suptitle('$\\bf{Time\\ series\\ structure}$')
+        #fig_size = fig.get_size_inches()
+        #plt.draw()
         # print(fig_size)
-        #fig.text((fig_size[0]/2)/fig_size[0], 1-(fig_size[1]-0.5)/fig_size[1], xlabel, va='center', fontsize=10)
-        #fig.text((fig_size[0]/2)/fig_size[0], 0.35,
-        #         xlabel, va='center', fontsize=10)
-        # plt.tight_layout()
+        #plt.tight_layout()
 
     def vertical_structure_comp(self, q_variable,
                                 plot_q='all',
