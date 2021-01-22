@@ -181,7 +181,7 @@ class Plotter_OR:
                 cmap.name + "_%d" % N, cdict, N)
         return new_cmap
 
-    def timeseries_structure(self,
+    def tseries_structure(self,
                            q_variable,
                            ylim=None,
                            classdimname='pcm_class',
@@ -249,10 +249,8 @@ class Plotter_OR:
         if not cmap:
             cmap = self.cmap_discretize(plt.cm.get_cmap(name='brg'), nQ)
 
-        fig_max_size = 2.5*self.m.K if self.m.K < maxcols else 10
         defaults = {'figsize': (10,16), 'dpi': 80,
                     'facecolor': 'w', 'edgecolor': 'k'}
-        
         fig, ax = plt.subplots(nrows=self.m.K , ncols=1, **{**defaults, **kwargs})
 
         if not ylim:
@@ -284,15 +282,15 @@ class Plotter_OR:
         # print(fig_size)
         #plt.tight_layout()
 
-    def vertical_structure_comp(self, q_variable,
+    def tseries_structure_comp(self, q_variable,
                                 plot_q='all',
                                 xlim=None,
                                 classdimname='pcm_class',
                                 quantdimname='quantile',
                                 maxcols=3, cmap=None,
-                                ylabel='depth (m)',
+                                ylabel='variable',
                                 xlabel='feature',
-                                ylim='auto',
+                                ylim=None,
                                 **kwargs):
         '''Plot vertical structure of each class
 
@@ -342,7 +340,7 @@ class Plotter_OR:
             CLASS_DIM = da.dims[np.argwhere(
                 np.array(da.shape) == self.m.K)[0][0]]
         QUANT_DIM = quantdimname
-        VERTICAL_DIM = list(
+        FEATURE_DIM = list(
             set(da.dims) - set([CLASS_DIM]) - set([QUANT_DIM]))[0]
         ############################################################################
 
@@ -356,53 +354,45 @@ class Plotter_OR:
         nQ_p = len(q_range)  # Nb of plots
 
         # cmap_discretize(plt.cm.get_cmap(name='Paired'), m.K)
-        cmapK = self.m.plot.cmap(name=self.cmap_name)
+        cmapK = self.cmap_discretize(
+            plt.cm.get_cmap(name=self.cmap_name), self.m.K)
         #cmapK = self.cmap_discretize(plt.cm.get_cmap(name='Accent'), self.m.K)
         if not cmap:
             cmap = self.cmap_discretize(plt.cm.get_cmap(name='brg'), nQ)
 
+        if not ylim:
+            ylim = np.array([da.min(), da.max()])
         if not xlim:
-            xlim = np.array([0.9 * da.min(), 1.1 * da.max()])
+            xlim = np.array([da[FEATURE_DIM].min(), da[FEATURE_DIM].max()])
 
-        maxcols = 4
-        fig_max_size = 2.5*nQ_p if nQ_p < maxcols else 10
-        defaults = {'figsize': (fig_max_size, 8), 'dpi': 80,
+        defaults = {'figsize': (10,8), 'dpi': 80,
                     'facecolor': 'w', 'edgecolor': 'k'}
-        fig, ax = self.m.plot.subplots(
-            maxcols=maxcols, K=nQ_p, **defaults, sharey=True,  squeeze=False)
+        fig, ax = plt.subplots(nrows=nQ_p, ncols=1, squeeze=False, **{**defaults, **kwargs})
 
         cnt = 0
         for q in q_range:
             Qq = da.loc[{QUANT_DIM: da[QUANT_DIM].values[q]}]
-            for k in self.m:
+            for k in range(self.m.K):
                 Qqk = Qq.loc[{CLASS_DIM: k}]
-                ax[cnt].plot(Qqk.values.T, da[VERTICAL_DIM], label=(
-                    "K=%i") % (Qqk[CLASS_DIM]), color=cmapK(k))
-            ax[cnt].set_title(("quantile: %.2f") % (
+                ax[cnt][0].plot(da[FEATURE_DIM], Qqk.values, label=(
+                    "K=%i") % (da[CLASS_DIM][k]), color=cmapK(k))
+                
+            ax[cnt][0].set_title(("quantile: %.2f") % (
                 da[QUANT_DIM].values[q]), color=cmap(q), fontsize=12)
-            ax[cnt].legend(loc='lower right', fontsize=11)
-            ax[cnt].set_xlim(xlim)
-
-            if isinstance(ylim, str):
-                ax[cnt].set_ylim(
-                    np.array([da[VERTICAL_DIM].min(), da[VERTICAL_DIM].max()]))
-            else:
-                ax[cnt].set_ylim(ylim)
-            # ax[k].set_xlabel(Q.units)
-            if cnt == 0:
-                ax[cnt].set_ylabel(ylabel)
-            ax[cnt].grid(True)
+            ax[cnt][0].legend(bbox_to_anchor=(1.02, 1), loc='upper left', fontsize=10)
+            ax[cnt][0].set_xlim(xlim)
+            ax[cnt][0].set_ylim(ylim)
+            ax[cnt][0].set_ylabel(ylabel)
+            if q == q_range[-1]:
+                ax[cnt][0].set_xlabel(xlabel)
+            ax[cnt][0].grid(True)
             cnt = cnt+1
 
-        plt.subplots_adjust(top=0.90)
         plt.rc('xtick', labelsize=10)
         plt.rc('ytick', labelsize=10)
-        fig.suptitle('$\\bf{Vertical\\ structure\\ of\\ classes}$')
-        fig_size = fig.get_size_inches()
-        fig.text((fig_size[0]/2)/fig_size[0], 1-(fig_size[1] -
-                                                 0.5)/fig_size[1], xlabel, va='center', fontsize=10)
-        # fig.text(0.04, 0.5, 'depth (m)', va='center',
-        #         rotation='vertical', fontsize=12)
+        plt.subplots_adjust(hspace=0.3)
+        #fig.suptitle('$\\bf{Vertical\\ structure\\ of\\ classes}$')
+        #fig_size = fig.get_size_inches()
         # plt.tight_layout()
 
     def spatial_distribution(self, proj=ccrs.PlateCarree(), extent='auto', time_slice=0):
