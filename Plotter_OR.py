@@ -442,7 +442,7 @@ class Plotter_OR:
         #fig_size = fig.get_size_inches()
         # plt.tight_layout()
 
-    def spatial_distribution(self, proj=ccrs.PlateCarree(), extent='auto', time_slice=0):
+    def spatial_distribution(self, proj=ccrs.PlateCarree(), extent='auto'):
         '''Plot spatial distribution of classes
 
            Parameters
@@ -459,64 +459,35 @@ class Plotter_OR:
         # TODO: check if time variable exits if not error (time variable should be 'time' at the moment)
         # TODO: make default values for projection and extent (dataset extent)
 
-        def get_most_freq_labels(this_ds):
-            this_ds = this_ds.stack(
-                {'N_OBS': [d for d in this_ds['PCM_LABELS'].dims if d != 'time']})
-
-            def fct(this):
-                def most_prob_label(vals):
-                    return np.argmax(np.bincount(vals))
-                mpblab = []
-                for i in this['N_OBS']:
-                    val = this.sel(N_OBS=i)['PCM_LABELS'].values
-                    res = np.nan
-                    if np.count_nonzero(~np.isnan(val)) != 0:
-                        res = most_prob_label(val.astype('int'))
-                    mpblab.append(res)
-                mpblab = np.array(mpblab)
-                return xr.DataArray(mpblab, dims='N_OBS', coords={'N_OBS': this['N_OBS']}, name='PCM_MOST_FREQ_LABELS').to_dataset()
-            this_ds['PCM_MOST_FREQ_LABELS'] = this_ds.map_blocks(
-                fct)['PCM_MOST_FREQ_LABELS'].load()
-            return this_ds.unstack('N_OBS')
-
         # spatial extent
         if isinstance(extent, str):
             extent = np.array([min(self.ds[self.coords_dict.get('longitude')]), max(self.ds[self.coords_dict.get('longitude')]), min(
                 self.ds[self.coords_dict.get('latitude')]), max(self.ds[self.coords_dict.get('latitude')])]) + np.array([-0.1, +0.1, -0.1, +0.1])
 
-        if time_slice == 'most_freq_label':
-            dsp = get_most_freq_labels(self.ds)
-            var_name = 'PCM_MOST_FREQ_LABELS'
-            title_str = '$\\bf{Spatial\\ ditribution\\ of\\ classes}$' + \
-                ' \n (most frequent label in time series)'
-        else:
-            if 'time' in self.coords_dict and self.data_type == 'gridded':
-                dsp = self.ds.sel(time=time_slice, method='nearest').squeeze()
-                title_str = '$\\bf{Spatial\\ ditribution\\ of\\ classes}$' + \
-                    ' \n (time: ' + \
-                    '%s' % dsp["time"].dt.strftime(
-                        "%Y/%m/%d %H:%M").values + ')'
-            else:
-                dsp = self.ds
-                title_str = '$\\bf{Spatial\\ ditribution\\ of\\ classes}$'
-            var_name = 'PCM_LABELS'
+        dsp = self.ds
+        title_str = '$\\bf{Spatial\\ ditribution\\ of\\ classes}$'
+        var_name = 'GMM_labels'
 
         subplot_kw = {'projection': proj, 'extent': extent}
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(
             6, 6), dpi=120, facecolor='w', edgecolor='k', subplot_kw=subplot_kw)
         # TODO: function already in pyxpcm
-        kmap = self.m.plot.cmap(name=self.cmap_name)
+        kmap = self.cmap_discretize(
+            plt.cm.get_cmap(name=self.cmap_name), self.m.K)
+        #kmap = self.m.plot.cmap(name=self.cmap_name)
 
         # check if gridded or profiles data
         if self.data_type == 'profiles':
-            ax.scatter(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], s=3,
+            sc=ax.scatter(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], s=3,
                        c=self.ds[var_name], cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
         if self.data_type == 'gridded':
-            ax.pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp[var_name],
+            sc=ax.pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp[var_name],
                           cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
 
         # TODO: function already in pyxpcm
-        self.m.plot.colorbar(ax=ax, cmap='Accent', shrink=0.3)
+        #ticks=range(k)
+        cbar = plt.colorbar(sc, cmap=kmap)
+        #self.m.plot.colorbar(ax=ax, cmap='Accent', shrink=0.3)
         lon_grid = np.floor_divide((self.ds[self.coords_dict.get('longitude')].max(
         ) - self.ds[self.coords_dict.get('longitude')].min()), 10)
         lat_grid = np.floor_divide((self.ds[self.coords_dict.get('latitude')].max(
