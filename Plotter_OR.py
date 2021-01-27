@@ -7,6 +7,7 @@ import seaborn as sns
 
 import numpy as np
 import xarray as xr
+import pandas as pd
 
 from PIL import Image, ImageFont, ImageDraw
 
@@ -188,7 +189,7 @@ class Plotter_OR:
                            quantdimname='quantile',
                            maxcols=3,
                            cmap=None,
-                           xlabel='feature',
+                           start_month=1,
                            ylabel='variable',
                            xlim=None,
                            **kwargs):
@@ -258,10 +259,33 @@ class Plotter_OR:
         if not xlim:
             xlim = np.array([da[FEATURE_DIM].min(), da[FEATURE_DIM].max()])
             
+        #ticks in months
+        dates = 2019*1000 + da.feature*10 + 0
+        dates = dates.astype(str)
+        dates = pd.to_datetime(dates.values, format='%Y%W%w')
+
+        xaxis_labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May',
+                            'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        if start_month != 1:
+            #reorder x values
+            start_index = np.where(dates.month == 7)[0][0]
+            new_order_index = np.concatenate(
+                (np.arange(start_index, np.shape(dates)), np.arange(0, start_index)))
+            x_values = pd.to_datetime([dates[i] for i in new_order_index])
+            #reorder xlabels
+            new_order = np.concatenate(
+                (np.arange(start_month, 13), np.arange(1, start_month)))
+            xaxis_labels = [xaxis_labels[i-1] for i in new_order]
+    
+        index_ticks = np.unique(x_values.month, return_index=True)
+        index_ticks = np.sort(index_ticks[1])
+            
         for k in range(self.m.K):
             Qk = da.loc[{CLASS_DIM: k}]
             for (iq, q) in zip(np.arange(nQ), Qk[QUANT_DIM]):
                 Qkq = Qk.loc[{QUANT_DIM: q}]
+                if start_month != 0:
+                    Qkq = Qkq.reindex({'feature': new_order_index+1})
                 ax[k].plot(da[FEATURE_DIM], Qkq.values, label=(
                     "q=%0.2f") % da[QUANT_DIM][iq], color=cmap(iq))
                 
@@ -269,13 +293,13 @@ class Plotter_OR:
             ax[k].legend(loc='lower right')
             ax[k].grid(True)
             
+            ax[k].set_xticks(index_ticks)
+            ax[k].set_xticklabels(xaxis_labels)
             ax[k].set_ylim(ylim)
             ax[k].set_xlim(xlim)
             ax[k].set_ylabel(ylabel)
-            if k == self.m.K-1:
-                ax[k].set_xlabel(xlabel)
             
-        plt.subplots_adjust(hspace=0.3)
+        plt.subplots_adjust(hspace=0.4)
         #fig.suptitle('$\\bf{Time\\ series\\ structure}$')
         #fig_size = fig.get_size_inches()
         #plt.draw()
