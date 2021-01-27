@@ -278,7 +278,7 @@ class Plotter_OR:
             xaxis_labels = [xaxis_labels[i-1] for i in new_order]
     
         index_ticks = np.unique(x_values.month, return_index=True)
-        index_ticks = np.sort(index_ticks[1])
+        index_ticks = np.sort(index_ticks[1]) + 1
             
         for k in range(self.m.K):
             Qk = da.loc[{CLASS_DIM: k}]
@@ -313,7 +313,7 @@ class Plotter_OR:
                                 quantdimname='quantile',
                                 maxcols=3, cmap=None,
                                 ylabel='variable',
-                                xlabel='feature',
+                                start_month=6,
                                 ylim=None,
                                 **kwargs):
         '''Plot vertical structure of each class
@@ -388,6 +388,27 @@ class Plotter_OR:
             ylim = np.array([da.min(), da.max()])
         if not xlim:
             xlim = np.array([da[FEATURE_DIM].min(), da[FEATURE_DIM].max()])
+            
+        #ticks in months
+        dates = 2019*1000 + da.feature*10 + 0
+        dates = dates.astype(str)
+        dates = pd.to_datetime(dates.values, format='%Y%W%w')
+
+        xaxis_labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May',
+                            'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        if start_month != 1:
+            #reorder x values
+            start_index = np.where(dates.month == 7)[0][0]
+            new_order_index = np.concatenate(
+                (np.arange(start_index, np.shape(dates)), np.arange(0, start_index)))
+            x_values = pd.to_datetime([dates[i] for i in new_order_index])
+            #reorder xlabels
+            new_order = np.concatenate(
+                (np.arange(start_month, 13), np.arange(1, start_month)))
+            xaxis_labels = [xaxis_labels[i-1] for i in new_order]
+    
+        index_ticks = np.unique(x_values.month, return_index=True)
+        index_ticks = np.sort(index_ticks[1]) + 1
 
         defaults = {'figsize': (10,8), 'dpi': 80,
                     'facecolor': 'w', 'edgecolor': 'k'}
@@ -398,17 +419,19 @@ class Plotter_OR:
             Qq = da.loc[{QUANT_DIM: da[QUANT_DIM].values[q]}]
             for k in range(self.m.K):
                 Qqk = Qq.loc[{CLASS_DIM: k}]
+                if start_month != 0:
+                    Qqk = Qqk.reindex({'feature': new_order_index+1})
                 ax[cnt][0].plot(da[FEATURE_DIM], Qqk.values, label=(
                     "K=%i") % (da[CLASS_DIM][k]), color=cmapK(k))
                 
             ax[cnt][0].set_title(("quantile: %.2f") % (
                 da[QUANT_DIM].values[q]), color=cmap(q), fontsize=12)
             ax[cnt][0].legend(bbox_to_anchor=(1.02, 1), loc='upper left', fontsize=10)
+            ax[cnt][0].set_xticks(index_ticks)
+            ax[cnt][0].set_xticklabels(xaxis_labels)
             ax[cnt][0].set_xlim(xlim)
             ax[cnt][0].set_ylim(ylim)
             ax[cnt][0].set_ylabel(ylabel)
-            if q == q_range[-1]:
-                ax[cnt][0].set_xlabel(xlabel)
             ax[cnt][0].grid(True)
             cnt = cnt+1
 
