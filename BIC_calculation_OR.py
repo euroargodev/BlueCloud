@@ -143,6 +143,29 @@ def mapping_corr_time(corr_time, start_point, time_extent):
 
     return new_time
 
+def BIC_cal(X, k):
+    ''' Function that calculates BIC for a number of classes k
+
+            Parameters
+            ----------
+                X: dataset after preprocessing
+                k: number of classes
+
+            Returns
+            ------
+                BIC: BIC value
+                k: number of classes
+
+            '''
+
+    # create model
+    m = mixture.GaussianMixture(n_components=k+1, covariance_type='full')
+    # fit model
+    m.fit(X)
+    # Calculate BIC
+    BIC = m.bic(X)
+
+    return BIC, k
 
 def BIC_calculation(X, corr_dist, coords_dict, feature_name, var_name, Nrun=10, NK=20):
     '''Calculation of BIC (Bayesian Information Criteria) for a training dataset.
@@ -181,29 +204,7 @@ def BIC_calculation(X, corr_dist, coords_dict, feature_name, var_name, Nrun=10, 
     # this is the list of arguments to iterate over, for instance nb of classes for a PCM
     class_list = np.arange(0, NK)
 
-    def BIC_cal(X, k):
-        ''' Function that calculates BIC for a number of classes k
-
-                Parameters
-                ----------
-                    X: dataset after preprocessing
-                    k: number of classes
-
-                Returns
-                ------
-                    BIC: BIC value
-                    k: number of classes
-
-               '''
-
-        # create model
-        m = mixture.GaussianMixture(n_components=k+1, covariance_type='full')
-        # fit model
-        m.fit(X)
-        # Calculate BIC
-        BIC = m.bic(X)
-
-        return BIC, k
+    
 
     BIC = np.zeros((NK, Nrun))
     for run in range(Nrun):
@@ -222,30 +223,37 @@ def BIC_calculation(X, corr_dist, coords_dict, feature_name, var_name, Nrun=10, 
         X_run_i = X_run_i.where(~X_run_i.isnull(),drop=True).to_dataset()
         
         # BIC computation in parallel
-        results = []
-        ConcurrentExecutor = concurrent.futures.ThreadPoolExecutor(
-            max_workers=100)
-        with ConcurrentExecutor as executor:
-            future_to_url = {executor.submit(
-                BIC_cal, X_run_i[var_name], k): k for k in class_list}
-            futures = concurrent.futures.as_completed(future_to_url)
-            futures = tqdm(futures, total=len(class_list))
-            for future in futures:
-                traj = None
-                try:
-                    traj = future.result()
-                except Exception as e:
-                    # pass
-                    raise
-                finally:
-                    results.append(traj)
+        #results = []
+        #ConcurrentExecutor = concurrent.futures.ThreadPoolExecutor(
+        #    max_workers=100)
+        #with ConcurrentExecutor as executor:
+        #    future_to_url = {executor.submit(
+        #        BIC_cal, X_run_i[var_name], k): k for k in class_list}
+        #   futures = concurrent.futures.as_completed(future_to_url)
+        #    futures = tqdm(futures, total=len(class_list))
+        #   for future in futures:
+        #       traj = None
+        #       try:
+        #           traj = future.result()
+        #        except Exception as e:
+        #            # pass
+        #            raise
+        #        finally:
+        #           results.append(traj)
         # Only keep non-empty results
+        #results = [r for r in results if r is not None]
+        #results.sort(key=lambda x: x[1])
+        #BIC[:, run] = np.array([i[0] for i in results])
+        
+        # serial computation of BIC
+        results = []
+        for k in class_list:
+            results.append(BIC_cal(X_run_i[var_name], k))
+            
         results = [r for r in results if r is not None]
         results.sort(key=lambda x: x[1])
         BIC[:, run] = np.array([i[0] for i in results])
 
-    #end = time.time()
-    #print((end - start)/60)
     BIC_min = np.argmin(np.mean(BIC, axis=1))+1
 
     return BIC, BIC_min
