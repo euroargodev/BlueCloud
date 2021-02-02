@@ -169,15 +169,15 @@ def BIC_cal(X, k):
 
 def BIC_calculation(X, corr_dist, coords_dict, feature_name, var_name, Nrun=10, NK=20):
     '''Calculation of BIC (Bayesian Information Criteria) for a training dataset.
-        The calculation is parallelised using ThreadPoolExecutor.
 
            Parameters
            ----------
                X: preprocessed dataset
                corr_dist: correlation distance
                coords_dict: dictionary with coordinates names
-                    {'depth': 'depth', 'latitude': 'latitude', 'time': 'time', 'longitude': 'longitude'}
+                    {'latitude': 'lat', 'longitude': 'lon'}
                features_name: name of the feature variable
+               var_name: name of the variable in dataset
                Nrun: number of runs
                NK: max number of classes
 
