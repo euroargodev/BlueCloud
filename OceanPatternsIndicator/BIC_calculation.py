@@ -142,54 +142,7 @@ def mapping_corr_time(corr_time, start_point, time_extent):
     return new_time
 
 
-def BIC_calculation(ds, corr_dist, coords_dict, time_steps, pcm_features, features_in_ds, z_dim, Nrun=10, NK=20):
-    '''Calculation of BIC (Bayesian Information Criteria) for a training dataset.
-        The calculation is parallelised using ThreadPoolExecutor.
-
-           Parameters
-           ----------
-               ds: dataset
-               corr_dist: correlation distance
-               coords_dict: dictionary with coordinates names
-                    {'depth': 'depth', 'latitude': 'latitude', 'time': 'time', 'longitude': 'longitude'}
-               time_steps: time steps to be taken in to acount (format %Y-%m)
-               pcm_features: dictionary with pcm features {'temperature': z vector}
-               features_in_ds: dictionary with the name of feaures in the model and in the dataste
-                    {temperature: thetao} 
-               z_dim: name of the z variable
-               Nrun: number of runs
-               NK: max number of classes
-
-           Returns
-           ------
-               BIC: matrix with BIC value for each run and number of classes
-               BIC_min: minimun BIC value calculated from the mean of each number of classes
-
-               '''
-
-    #start = time.time()
-    # TODO: latitude and longitude values
-    # TODO: automatic detection of variables names
-    # TODO: If only one time step?
-
-    # grid extent
-    grid_extent = np.array([ds[coords_dict.get('longitude')].values.min(), ds[coords_dict.get('longitude')].values.max(
-    ), ds[coords_dict.get('latitude')].values.min(), ds[coords_dict.get('latitude')].values.max()])
-
-    # check time steps
-    if len(time_steps) > 1:
-        d1 = datetime.strptime(time_steps[0], "%Y-%m")
-        d2 = datetime.strptime(time_steps[1], "%Y-%m")
-        num_months = abs(d1.year - d2.year) * 12 + abs(d1.month - d2.month)
-        #print(num_months)
-        if num_months < 6:
-            warnings.warn(
-                "Chosen time steps are too near, you may not obtain a minimum in the BIC function. If this is the case, please try with more distant time steps")
-
-    # this is the list of arguments to iterate over, for instance nb of classes for a PCM
-    class_list = np.arange(0, NK)
-
-    def BIC_cal(X, k):
+def BIC_cal(X, k, pcm_features):
         ''' Function that calculates BIC for a number of classes k
 
                 Parameters
@@ -226,6 +179,55 @@ def BIC_calculation(ds, corr_dist, coords_dict, time_steps, pcm_features, featur
         #BIC = m._classifier.bic(X)
 
         return BIC, k
+
+
+def BIC_calculation(ds, corr_dist, coords_dict, time_steps, pcm_features, features_in_ds, z_dim, Nrun=10, NK=20):
+    '''Calculation of BIC (Bayesian Information Criteria) for a training dataset.
+        The calculation is parallelised using ThreadPoolExecutor.
+
+           Parameters
+           ----------
+               ds: dataset
+               corr_dist: correlation distance
+               coords_dict: dictionary with coordinates names
+                    {'depth': 'depth', 'latitude': 'latitude', 'time': 'time', 'longitude': 'longitude'}
+               time_steps: time steps to be taken in to acount (format %Y-%m)
+               pcm_features: dictionary with pcm features {'temperature': z vector}
+               features_in_ds: dictionary with the name of feaures in the model and in the dataste
+                    {temperature: thetao} 
+               z_dim: name of the z variable
+               Nrun: number of runs
+               NK: max number of classes
+
+           Returns
+           ------
+               BIC: matrix with BIC value for each run and number of classes
+               BIC_min: minimun BIC value calculated from the mean of each number of classes
+
+               '''
+
+    # TODO: latitude and longitude values
+    # TODO: automatic detection of variables names
+    # TODO: If only one time step?
+
+    # grid extent
+    grid_extent = np.array([ds[coords_dict.get('longitude')].values.min(), ds[coords_dict.get('longitude')].values.max(
+    ), ds[coords_dict.get('latitude')].values.min(), ds[coords_dict.get('latitude')].values.max()])
+
+    # check time steps
+    if len(time_steps) > 1:
+        d1 = datetime.strptime(time_steps[0], "%Y-%m")
+        d2 = datetime.strptime(time_steps[1], "%Y-%m")
+        num_months = abs(d1.year - d2.year) * 12 + abs(d1.month - d2.month)
+        #print(num_months)
+        if num_months < 6:
+            warnings.warn(
+                "Chosen time steps are too near, you may not obtain a minimum in the BIC function. If this is the case, please try with more distant time steps")
+
+    # this is the list of arguments to iterate over, for instance nb of classes for a PCM
+    class_list = np.arange(0, NK)
+
+    ## Here was the previously nested BIC_cal function
 
     BIC = np.zeros((NK, Nrun))
     for run in range(Nrun):
@@ -268,31 +270,15 @@ def BIC_calculation(ds, corr_dist, coords_dict, time_steps, pcm_features, featur
         X, sampling_dims = m.preprocessing(
             ds_run, features=features_in_ds, dim=z_dim, action='fit')
 
-        # BIC computation in parallel
+        # serial computation of BIC
         results = []
-        ConcurrentExecutor = concurrent.futures.ThreadPoolExecutor(
-            max_workers=100)
-        with ConcurrentExecutor as executor:
-            future_to_url = {executor.submit(
-                BIC_cal, X, k): k for k in class_list}
-            futures = concurrent.futures.as_completed(future_to_url)
-            futures = tqdm(futures, total=len(class_list))
-            for future in futures:
-                traj = None
-                try:
-                    traj = future.result()
-                except Exception as e:
-                    # pass
-                    raise
-                finally:
-                    results.append(traj)
-        # Only keep non-empty results
+        for k in class_list:
+            results.append(BIC_cal(X, k, pcm_features))
+            
         results = [r for r in results if r is not None]
         results.sort(key=lambda x: x[1])
         BIC[:, run] = np.array([i[0] for i in results])
 
-    #end = time.time()
-    #print((end - start)/60)
     BIC_min = np.argmin(np.mean(BIC, axis=1))+1
 
     return BIC, BIC_min
