@@ -1,5 +1,6 @@
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
@@ -458,6 +459,7 @@ class Plotter_OR:
                '''
         # TODO: check if time variable exits if not error (time variable should be 'time' at the moment)
         # TODO: make default values for projection and extent (dataset extent)
+        # TODO: subplot_kw as input
 
         # spatial extent
         if isinstance(extent, str):
@@ -470,8 +472,8 @@ class Plotter_OR:
 
         subplot_kw = {'projection': proj, 'extent': extent}
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(
-            6, 6), dpi=120, facecolor='w', edgecolor='k', subplot_kw=subplot_kw)
-        # TODO: function already in pyxpcm
+            10, 8), dpi=120, facecolor='w', edgecolor='k', subplot_kw=subplot_kw)
+        
         kmap = self.cmap_discretize(
             plt.cm.get_cmap(name=self.cmap_name), self.m.K)
         #kmap = self.m.plot.cmap(name=self.cmap_name)
@@ -486,14 +488,24 @@ class Plotter_OR:
 
         # TODO: function already in pyxpcm
         #ticks=range(k)
-        cbar = plt.colorbar(sc, cmap=kmap)
+        cbar = plt.colorbar(sc, cmap=kmap, shrink=0.3)
         #self.m.plot.colorbar(ax=ax, cmap='Accent', shrink=0.3)
+        
         lon_grid = np.floor_divide((self.ds[self.coords_dict.get('longitude')].max(
         ) - self.ds[self.coords_dict.get('longitude')].min()), 10)
         lat_grid = np.floor_divide((self.ds[self.coords_dict.get('latitude')].max(
         ) - self.ds[self.coords_dict.get('latitude')].min()), 8)
+        
+        ax.set_xticks(np.arange(int(extent[0]),int(extent[1]),lon_grid), crs=ccrs.PlateCarree())
+        ax.set_yticks(np.arange(int(extent[2]),int(extent[3]),lat_grid), crs=ccrs.PlateCarree())
+        lon_formatter = LongitudeFormatter()
+        lat_formatter = LatitudeFormatter()
+        ax.xaxis.set_major_formatter(lon_formatter)
+        ax.yaxis.set_major_formatter(lat_formatter)
+        plt.grid(True,  linestyle='--')
+        
         # TODO: function already in pyxpcm
-        self.m.plot.latlongrid(ax, dx=lon_grid, dy=lat_grid)
+        #self.m.plot.latlongrid(ax, dx=lon_grid, dy=lat_grid)
         land_feature = cfeature.NaturalEarthFeature(
             category='physical', name='land', scale='50m', facecolor=[0.9375, 0.9375, 0.859375])
         ax.add_feature(land_feature, edgecolor='black')
