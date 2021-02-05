@@ -86,18 +86,19 @@ class Plotter_OR:
         """
 
         # loop in k for counting
-        pcm_labels = self.ds['PCM_LABELS']
-        kmap = self.m.plot.cmap(name=self.cmap_name)
+        gmm_labels = self.ds['GMM_labels']
+        kmap = self.cmap_discretize(
+            plt.cm.get_cmap(name=self.cmap_name), self.m.K)
 
         for cl in range(self.m.K):
             # get labels
-            pcm_labels_k = pcm_labels.where(pcm_labels == cl)
+            gmm_labels_k = gmm_labels.where(gmm_labels == cl)
             if cl == 0:
-                counts_k = pcm_labels_k.count(...)
+                counts_k = gmm_labels_k.count(...)
                 pie_labels = list(['K=%i' % cl])
                 table_cn = list([[str(cl), str(counts_k.values)]])
             else:
-                counts_k = xr.concat([counts_k, pcm_labels_k.count(...)], "k")
+                counts_k = xr.concat([counts_k, gmm_labels_k.count(...)], "k")
                 pie_labels.append('K=%i' % cl)
                 table_cn.append([str(cl), str(counts_k[cl].values)])
 
@@ -106,10 +107,10 @@ class Plotter_OR:
         fig, ax = plt.subplots(ncols=2, figsize=(10, 6))
         # fig.set_cmap(kmap)
 
-        cheader = ['$\\bf{K}$', '$\\bf{Number\\ of\\ profiles}$']
+        cheader = ['$\\bf{K}$', '$\\bf{Number\\ of\\ time\\ series}$']
         ccolors = plt.cm.BuPu(np.full(len(cheader), 0.1))
         the_table = plt.table(cellText=table_cn, cellLoc='center', loc='center',
-                              colLabels=cheader, colColours=ccolors, fontsize=14, colWidths=(0.2, 0.45))
+                              colLabels=cheader, colColours=ccolors, fontsize=14, colWidths=(0.2, 0.5))
 
         the_table.auto_set_font_size(False)
         the_table.set_fontsize(12)
