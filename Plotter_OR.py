@@ -489,6 +489,8 @@ class Plotter_OR:
         # TODO: function already in pyxpcm
         #ticks=range(k)
         cbar = plt.colorbar(sc, cmap=kmap, shrink=0.3)
+        cbar.set_ticks(np.arange(0.5, self.m.K+0.5))
+        cbar.set_ticklabels(range(self.m.K))
         #self.m.plot.colorbar(ax=ax, cmap='Accent', shrink=0.3)
         
         lon_grid = np.floor_divide((self.ds[self.coords_dict.get('longitude')].max(
@@ -496,13 +498,16 @@ class Plotter_OR:
         lat_grid = np.floor_divide((self.ds[self.coords_dict.get('latitude')].max(
         ) - self.ds[self.coords_dict.get('latitude')].min()), 8)
         
-        ax.set_xticks(np.arange(int(extent[0]),int(extent[1]),lon_grid), crs=ccrs.PlateCarree())
-        ax.set_yticks(np.arange(int(extent[2]),int(extent[3]),lat_grid), crs=ccrs.PlateCarree())
+        ax.set_xticks(np.arange(int(extent[0]),int(extent[1]+1),lon_grid), crs=ccrs.PlateCarree()) 
+        ax.set_yticks(np.arange(int(extent[2]),int(extent[3]+1),lat_grid), crs=ccrs.PlateCarree()) 
         lon_formatter = LongitudeFormatter()
         lat_formatter = LatitudeFormatter()
         ax.xaxis.set_major_formatter(lon_formatter)
         ax.yaxis.set_major_formatter(lat_formatter)
         plt.grid(True,  linestyle='--')
+        cbar.set_label('Class', fontsize=12)
+        ax.tick_params(axis="x", labelsize=8)
+        ax.tick_params(axis="y", labelsize=8)
         
         # TODO: function already in pyxpcm
         #self.m.plot.latlongrid(ax, dx=lon_grid, dy=lat_grid)
