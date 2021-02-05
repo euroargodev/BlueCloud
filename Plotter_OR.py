@@ -186,7 +186,7 @@ class Plotter_OR:
 
     def tseries_structure(self,
                            q_variable,
-                           ylim=None,
+                           ylim='auto',
                            classdimname='pcm_class',
                            quantdimname='quantile',
                            maxcols=3,
@@ -256,8 +256,9 @@ class Plotter_OR:
                     'facecolor': 'w', 'edgecolor': 'k'}
         fig, ax = plt.subplots(nrows=self.m.K , ncols=1, **{**defaults, **kwargs})
 
-        if not ylim:
-            ylim = np.array([da.min(), da.max()])
+        #if not ylim:
+        #    ylim = np.array([da.min(), da.max()])
+        #    print(ylim)
         if not xlim:
             xlim = np.array([da[FEATURE_DIM].min(), da[FEATURE_DIM].max()])
             
@@ -295,9 +296,11 @@ class Plotter_OR:
             ax[k].legend(loc='lower right')
             ax[k].grid(True)
             
+            if isinstance(ylim, str):
+                ax[k].set_ylim(np.array([Qk.min(),Qk.max()]))
+            
             ax[k].set_xticks(index_ticks)
             ax[k].set_xticklabels(xaxis_labels)
-            ax[k].set_ylim(ylim)
             ax[k].set_xlim(xlim)
             ax[k].set_ylabel(ylabel)
             
