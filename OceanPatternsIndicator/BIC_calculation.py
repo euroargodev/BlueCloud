@@ -284,7 +284,7 @@ def BIC_calculation(ds, corr_dist, coords_dict, time_steps, pcm_features, featur
     return BIC, BIC_min
 
 
-def plot_BIC(BIC, NK):
+def plot_BIC(BIC, NK, bic_min):
     '''Plot of mean BIC (Bayesian Information Criteria) and standard deviation.
 
            Parameters
@@ -312,3 +312,8 @@ def plot_BIC(BIC, NK):
     plt.xticks(np.arange(NK)+1)
     plt.legend()
     plt.title('Bayesian information criteria (BIC)')
+    ax.annotate('min = ' + str(bic_min), xy=(bic_min, BICmean[bic_min - 1]), xycoords='data',
+                xytext=(0.8, 0.8), textcoords='axes fraction',
+                arrowprops=dict(facecolor='black', shrink=0.05, width=3),
+                horizontalalignment='right', verticalalignment='top',
+                )
