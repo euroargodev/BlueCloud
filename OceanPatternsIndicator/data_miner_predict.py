@@ -10,6 +10,14 @@ import dask.array as da
 
 
 def get_args():
+    """
+    Extract arguments from command line
+
+    Returns
+    -------
+    parse.parse_args(): dict of the arguments
+
+    """
     import argparse
 
     parse = argparse.ArgumentParser(description="Ocean patterns method")
@@ -20,6 +28,18 @@ def get_args():
 
 
 def load_data(file_name):
+    """
+    Load dataset into a Xarray dataset
+
+    Parameters
+    ----------
+    file_name : Path to the NetCDF dataset
+
+    Returns
+    -------
+    ds: Xarray dataset
+
+    """
     ds = xr.open_dataset('../datasets/' + file_name)
     ds['depth'] = -np.abs(ds['depth'].values)
     ds.depth.attrs['axis'] = 'Z'
@@ -32,6 +52,20 @@ def load_model(model_path):
 
 
 def predict(m, ds, var_name_mdl, var_name_ds, z_dim):
+    """
+    Predict classes from a dataset
+    Parameters
+    ----------
+    m : Trained model
+    ds : Xarray dataset
+    var_name_mdl : name of variable in model
+    var_name_ds : name of variable in dataset
+    z_dim : z axis dimension (depth)
+
+    Returns
+    -------
+    ds: Xarray dataset with the predicted classification for each profile
+    """
     features_in_ds = {var_name_mdl: var_name_ds}
     m.predict(ds, features=features_in_ds, dim=z_dim, inplace=True)
     m.predict_proba(ds, features=features_in_ds, dim=z_dim, inplace=True)
@@ -43,6 +77,27 @@ def predict(m, ds, var_name_mdl, var_name_ds, z_dim):
 
 
 def generate_plots(m, ds, var_name_ds):
+    """
+    Generates and saves the following plots:
+    - vertical structure: vertical structure of each classes. It draws the mean profile and the 0.05 and 0.95 quantiles
+    - vertical structure comp: vertical structure graph but Quantiles are being plotted together to highlight
+    differences between classes.
+    - Spacial distribution: plot the PCM labels in a map to analyse the spatial coherence of classes.
+    - Robustness: spacial distribution of a scaled probability of a profile to belong to a class.
+    - Pie chart: pie chart showing the percentage of profiles belonging to each class and the number of
+    classified profiles.
+    - Temporal distribution by month: The bar plots represents the percentage of profiles in each class by month.
+    - Temporal distribution by season: The bar plots represents the percentage of profiles in each class by season.
+    Parameters
+    ----------
+    m : trained model
+    ds : Xarray dataset containing the predictions
+    var_name_ds : name of the variable in the dataset
+
+    Returns
+    -------
+    saves all the plots as png
+    """
     file_ext = 'data_miner'
     P = Plotter(ds, m)
     # plot profiles by class

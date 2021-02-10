@@ -11,6 +11,14 @@ import dask.array as da
 
 
 def get_args():
+    """
+    Extract arguments from command line
+
+    Returns
+    -------
+    parse.parse_args(): dict of the arguments
+
+    """
     import argparse
 
     parse = argparse.ArgumentParser(description="Ocean patterns method")
@@ -21,6 +29,18 @@ def get_args():
 
 
 def load_data(file_name):
+    """
+    Load dataset into a Xarray dataset
+
+    Parameters
+    ----------
+    file_name : Path to the NetCDF dataset
+
+    Returns
+    -------
+    ds: Xarray dataset
+
+    """
     ds = xr.open_dataset('../datasets/' + file_name)
     ds['depth'] = -np.abs(ds['depth'].values)
     ds.depth.attrs['axis'] = 'Z'
@@ -28,6 +48,16 @@ def load_data(file_name):
 
 
 def get_coords_dict(ds):
+    """
+    create a dict of coordinates to mapping each dimension of the dataset
+    Parameters
+    ----------
+    ds : Xarray dataset
+
+    Returns
+    -------
+    coords_dict: dict mapping each dimension of the dataset
+    """
     # creates dictionary with coordinates
     coords_list = list(ds.coords.keys())
     coords_dict = {}
@@ -45,6 +75,23 @@ def get_coords_dict(ds):
 
 
 def bic_calculation(ds, features_in_ds, z_dim, var_name_mdl, nk):
+    """
+    The BIC (Bayesian Information Criteria) can be used to optimize the number of classes in the model, trying not to
+    over-fit or under-fit the data. To compute this index, the model is fitted to the training dataset for a range of K
+     values from 0 to 20. A minimum in the BIC curve will give you the optimal number of classes to be used.
+    Parameters
+    ----------
+    ds : Xarray dataset
+    features_in_ds : dict {var_name_mdl: var_name_ds} with var_name_mdl the name of the variable in the model and
+    var_name_ds the name of the variable in the dataset
+    z_dim : z axis dimension (depth)
+    var_name_mdl : name of the variable in the model
+    nk : number of K to explore (always starts at 1 up to nk)
+
+    Returns
+    -------
+    Saves the BIC plot in png with the min of the BIC indicated on it
+    """
     z = ds[z_dim][0:30]
     pcm_features = {var_name_mdl: z}
     corr_dist = 50  # correlation distance in km
