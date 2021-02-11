@@ -12,6 +12,9 @@ import pandas as pd
 
 from PIL import Image, ImageFont, ImageDraw
 
+from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+import matplotlib.ticker as mticker
+
 
 class Plotter_OR:
     '''New class for visualisation of data from pyxpcm
@@ -77,6 +80,54 @@ class Plotter_OR:
             self.data_type = 'gridded'
         else:
             self.data_type = 'profiles'
+
+    
+    def scatter_PDF(self, var_name, n=1000):
+        """Scatter plot 
+
+            var_name: name of the reduced variable
+            n: number of random points to plot
+        """
+        sampling_dims = (self.coords_dict.get('latitude'), self.coords_dict.get('longitude'))
+        #convert colormap to pallete
+        cmap = self.cmap_discretize(
+            plt.cm.get_cmap(name=self.cmap_name), self.m.K)
+        plt.cm.register_cmap("mycolormap", cmap)
+        cpal = sns.color_palette("mycolormap", n_colors=self.m.K)
+        
+        #convert to dataframe
+        ds_p = self.ds[var_name]
+        if len(ds_p.coords) > 3:
+            ds_p = ds_p.drop_vars({'depth','time'})
+        df = ds_p.to_dataframe(name = var_name).unstack(0)
+        #select first and second components
+        df = df.take([0, 1], axis=1)
+        #add labels
+        df['labels'] = self.ds['GMM_labels'].stack({'sampling': sampling_dims})
+        # do not use NaNs
+        df = df.dropna()
+
+        # random selection of points to make clear plots
+        random_rows = np.random.choice(range(df.shape[0]), np.min((n, df.shape[0])), replace=False)
+        df = df.iloc[random_rows]
+        # format to simple dataframe
+        df = df.reset_index(drop=True)
+        df.columns = df.columns.droplevel(0)
+        df = df.rename_axis(None, axis=1)
+        df = df.rename(columns={0: "feature_reduced_0", 1: "feature_reduced_1", '': "labels"})
+        #f = df.rename(columns={1: "feature_reduced_0", 2: "feature_reduced_1", '': "labels"})
+
+        #defaults = {'height':2.5, 'aspect':1, 'hue':'labels', 'palette': m.plot.cmap(palette=True),
+        #                    'vars':m._xlabel, 'despine':False}
+        defaults = {'height':2.5, 'aspect':1, 'hue':'labels', 'despine':False, 'palette': cpal}
+        #defaults = {'height':2.5, 'aspect':1, 'despine':False, 'palette': cpal}
+        g = sns.PairGrid(df, **defaults)
+
+        g.map_diag(sns.histplot, edgecolor=None, alpha=0.75)
+        g = g.map_upper(plt.scatter, s=3)
+
+        g.add_legend()
+
 
     def pie_classes(self):
         """Pie chart of classes
@@ -620,6 +671,13 @@ class Plotter_OR:
            '''
         # TODO: class colors in title in subplots using colormap
         # TODO: time should be called time in dataset. use coords_dict
+        ###########################################################
+        from pyxpcm.models import pcm
+        z = np.arange(0,30)
+        pcm_features = {'var_name': z}
+        m = pcm(K=self.m.K, features=pcm_features)
+        cmap = m.plot.cmap(usage='robustness')
+        ###########################################################
 
         if 'time' in self.coords_dict and self.data_type == 'gridded':
             dsp = self.ds.sel(time=time_slice, method='nearest').squeeze()
@@ -634,8 +692,8 @@ class Plotter_OR:
                 dsp[self.coords_dict.get('latitude')]), max(dsp[self.coords_dict.get('latitude')])]) + np.array([-0.1, +0.1, -0.1, +0.1])
 
         # check if PCM_ROBUSTNESS variable exists
-        assert ("PCM_ROBUSTNESS" in dsp), "Dataset should include PCM_ROBUSTNESS varible to be plotted. Use pyxpcm.robustness function with inplace=True option"
-        assert ("PCM_ROBUSTNESS_CAT" in dsp), "Dataset should include PCM_ROBUSTNESS_CAT varible to be plotted. Use pyxpcm.robustness_digit function with inplace=True option"
+        #assert ("PCM_ROBUSTNESS" in dsp), "Dataset should include PCM_ROBUSTNESS varible to be plotted. Use pyxpcm.robustness function with inplace=True option"
+        #assert ("PCM_ROBUSTNESS_CAT" in dsp), "Dataset should include PCM_ROBUSTNESS_CAT varible to be plotted. Use pyxpcm.robustness_digit function with inplace=True option"
 
         subplot_kw = {'projection': proj, 'extent': extent}
         land_feature = cfeature.NaturalEarthFeature(
@@ -651,60 +709,78 @@ class Plotter_OR:
         wi = 10    # width of the whole figure in inches
         hi = wi * ar  # height in inches
         rows, cols = 1 + np.int(self.m.K / maxcols), maxcols
+        dx=4
+        dy=4
 
         # TODO: function already in pyxpcm
-        fig, ax = self.m.plot.subplots(
-            figsize=(wi, hi), maxcols=2, facecolor='w', edgecolor='k', dpi=120, subplot_kw=subplot_kw)
+        fig, ax = plt.subplots(figsize=(10, 20), nrows=self.m.K, ncols=1, facecolor='w', edgecolor='k', dpi=120, subplot_kw={'projection': ccrs.PlateCarree(), 'extent': extent})
+        #fig, ax = self.m.plot.subplots(
+        #    figsize=(wi, hi), maxcols=2, facecolor='w', edgecolor='k', dpi=120, subplot_kw=subplot_kw)
         plt.subplots_adjust(wspace=0.2, hspace=0.4)
         plt.rcParams['figure.constrained_layout.use'] = True
 
-        cmap = self.m.plot.cmap(usage='robustness')
-        kmap = self.m.plot.cmap(name=self.cmap_name)
+        #cmap = self.m.plot.cmap(usage='robustness')
+        #kmap = self.m.plot.cmap(name=self.cmap_name)
 
-        for k in self.m:
-            if self.data_type == 'profiles':
-                sc = ax[k].scatter(dsp[self.coords_dict.get('longitude')], self.ds[self.coords_dict.get('latitude')], s=3, c=dsp['PCM_ROBUSTNESS_CAT'].where(dsp['PCM_LABELS'] == k),
-                                   cmap=cmap, transform=proj, vmin=0, vmax=5)
-            if self.data_type == 'gridded':
-                sc = ax[k].pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp['PCM_ROBUSTNESS_CAT'].where(dsp['PCM_LABELS'] == k),
-                                      cmap=cmap, transform=proj, vmin=0, vmax=5)
+        for k in range(self.m.K):
+            sc = ax[k].pcolormesh(self.ds[self.coords_dict.get('longitude')], self.ds[self.coords_dict.get('latitude')], self.ds['GMM_robustness_cat'].where(self.ds['GMM_labels'] == k),
+                            cmap=cmap, transform=ccrs.PlateCarree(), vmin=0, vmax=5)
 
-            self.m.plot.latlongrid(ax[k], fontsize=6, dx=lon_grid, dy=lat_grid)
+            #self.m.plot.latlongrid(ax[k], fontsize=6, dx=lon_grid, dy=lat_grid)
             ax[k].add_feature(land_feature, edgecolor='black')
             #ax[k].set_title('k=%i' % k, color=kmap(k), fontweight='bold', x=1.05, y=0.84)
-            ax[k].set_title('k=%i' % k, color=kmap(k), fontweight='bold')
+            #ax[k].set_title('k=%i' % k, color=kmap(k), fontweight='bold')
+            ax[k].set_title('k=%i' % k, color=cmap(k), fontweight='bold')    
+            defaults = {'linewidth':.5, 'color':'gray', 'alpha':0.5, 'linestyle':'--'}
+            gl=ax[k].gridlines(crs=ax[k].projection, draw_labels=True, **defaults)
+            gl.xlocator = mticker.FixedLocator(np.arange(-180, 180+1, dx))
+            gl.ylocator = mticker.FixedLocator(np.arange(-90, 90+1, dy))
+            gl.xformatter = LONGITUDE_FORMATTER
+            gl.yformatter = LATITUDE_FORMATTER
+            gl.xlabels_top = False
+            gl.xlabel_style = {'fontsize':5}
+            gl.ylabels_right = False
+            gl.ylabel_style = {'fontsize':5}
 
+        
+        rowl0 = self.ds['GMM_robustness_cat'].attrs['legend']
+        cl = plt.colorbar(sc, ax=ax, fraction=0.02, pad=0.05)
+        cl.set_ticks([0,1,2,3,4,5])
+        cl.set_ticklabels([0,0.33,0.66,0.9,0.99,1])
+        for (i, j) in zip(np.arange(0.5, 5, 1), rowl0):
+                cl.ax.text(6, i, j, ha='left', va='center', fontsize=8)
+                
         # aspect ratio
-        plt.draw()
-        xmin, xmax = ax[0].get_xbound()
-        ymin, ymax = ax[0].get_ybound()
-        y2x_ratio = (ymax-ymin)/(xmax-xmin) * rows/cols
-        fig.set_figheight(wi * y2x_ratio)
+        #plt.draw()
+        #xmin, xmax = ax[0].get_xbound()
+        #ymin, ymax = ax[0].get_ybound()
+        #y2x_ratio = (ymax-ymin)/(xmax-xmin) * rows/cols
+        #fig.set_figheight(wi * y2x_ratio)
         #print(wi * y2x_ratio)
         # fig.subplots_adjust(top=0.90)
         # fig.tight_layout()
         #fig.tight_layout(rect=[0, 0, 1, 0.90])
 
-        fig.subplots_adjust(top=0.90)
+        #fig.subplots_adjust(top=0.90)
         #plt.subplots_adjust(wspace = 0.2, hspace=0.4)
-        fig.suptitle(title_string, fontsize=10)
+        #fig.suptitle(title_string, fontsize=10)
 
         # plt.subplots_adjust(hspace=0.3)
         #plt.subplots_adjust(wspace = 0.2, hspace=0.4)
 
         #boundaries = dsp['PCM_ROBUSTNESS_CAT'].attrs['bins']
-        rowl0 = dsp['PCM_ROBUSTNESS_CAT'].attrs['legend']
+        #rowl0 = dsp['PCM_ROBUSTNESS_CAT'].attrs['legend']
         #cl = fig.colorbar(sc, ax=ax.ravel().tolist(),fraction=0.02)
-        cl = plt.colorbar(sc, ax=ax, fraction=0.02, pad=0.05)
-        cl.set_ticks([0,1,2,3,4,5])
-        cl.set_ticklabels([0,0.33,0.66,0.9,0.99,1])
-        for (i, j) in zip(np.arange(0.5, 5, 1), rowl0):
-            cl.ax.text(6, i, j, ha='left', va='center', fontsize=8)
+        #cl = plt.colorbar(sc, ax=ax, fraction=0.02, pad=0.05)
+        #cl.set_ticks([0,1,2,3,4,5])
+        #cl.set_ticklabels([0,0.33,0.66,0.9,0.99,1])
+        #for (i, j) in zip(np.arange(0.5, 5, 1), rowl0):
+        #    cl.ax.text(6, i, j, ha='left', va='center', fontsize=8)
 
         # fig.canvas.draw()
         # fig.tight_layout()
         # fig.subplots_adjust(top=0.95)
-        plt.rcParams['figure.constrained_layout.use'] = False
+        #plt.rcParams['figure.constrained_layout.use'] = False
 
     def temporal_distribution(self, time_bins, start_month=0):
         '''Plot temporal distribution of classes by moth or by season
