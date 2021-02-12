@@ -5,9 +5,9 @@ import pyxpcm
 from pyxpcm.models import pcm
 import Plotter
 from Plotter import Plotter
-from BIC_calculation import *
 import dask
 import dask.array as da
+import time
 
 
 def get_args():
@@ -24,6 +24,8 @@ def get_args():
     parse = argparse.ArgumentParser(description="Ocean patterns method")
     parse.add_argument('k', type=int, help="number of clusters K")
     parse.add_argument('file_name', type=str, help='input dataset')
+    parse.add_argument('var_name_ds', type=str, help='name of variable in dataset')
+    parse.add_argument('var_name_mdl', type=str, help='name of variable in model')
 
     return parse.parse_args()
 
@@ -39,12 +41,42 @@ def load_data(file_name):
     Returns
     -------
     ds: Xarray dataset
-
+    first_date: string, first time slice of the dataset
+    coord_dict: coordinate dictionary for pyXpcm
     """
-    ds = xr.open_dataset('../datasets/' + file_name)
-    ds['depth'] = -np.abs(ds['depth'].values)
+    ds = xr.open_dataset(file_name)
+    first_date = str(ds.time.min().values)[0:7]
+    coord_dict = get_coords_dict(ds)
+    ds['depth'] = -np.abs(ds[coord_dict['depth']].values)
     ds.depth.attrs['axis'] = 'Z'
-    return ds
+    return ds, first_date, coord_dict
+
+
+def get_coords_dict(ds):
+    """
+    create a dict of coordinates to mapping each dimension of the dataset
+    Parameters
+    ----------
+    ds : Xarray dataset
+
+    Returns
+    -------
+    coords_dict: dict mapping each dimension of the dataset
+    """
+    # creates dictionary with coordinates
+    coords_list = list(ds.coords.keys())
+    coords_dict = {}
+    for c in coords_list:
+        axis_at = ds[c].attrs.get('axis')
+        if axis_at == 'Y':
+            coords_dict.update({'latitude': c})
+        if axis_at == 'X':
+            coords_dict.update({'longitude': c})
+        if axis_at == 'T':
+            coords_dict.update({'time': c})
+        if axis_at == 'Z':
+            coords_dict.update({'depth': c})
+    return coords_dict
 
 
 def train_model(k, ds, var_name_mdl, var_name_ds, z_dim):
@@ -65,6 +97,7 @@ def train_model(k, ds, var_name_mdl, var_name_ds, z_dim):
     ds: Xarray dataset with predicted values
     """
     # create model
+    # TODO see profile range option
     z = ds[z_dim][0:30]
     pcm_features = {var_name_mdl: z}
     m = pcm(K=k, features=pcm_features)
@@ -74,9 +107,9 @@ def train_model(k, ds, var_name_mdl, var_name_ds, z_dim):
     return m, ds
 
 
-def robustness(m, ds, features_in_ds, z_dim):
+def robustness(m, ds, features_in_ds, z_dim, first_date):
     """
-    Compute the robustness of the trained model: The PCM robustness represents a usefull scaled probability of a profile
+    Compute the robustness of the trained model: The PCM robustness represents a useful scaled probability of a profile
     to belong to a class. If a lot of profiles show very low values you should maybe change the number of classes.
     Parameters
     ----------
@@ -85,6 +118,7 @@ def robustness(m, ds, features_in_ds, z_dim):
     features_in_ds : dict {var_name_mdl: var_name_ds} with var_name_mdl the name of the variable in the model and
     var_name_ds the name of the variable in the dataset
     z_dim : z axis dimension (depth)
+    first_date : first time slice from dataset
     Returns
     -------
     Saves the robustness plot to png
@@ -93,22 +127,32 @@ def robustness(m, ds, features_in_ds, z_dim):
     m.predict_proba(ds, features=features_in_ds, dim=z_dim, inplace=True)
     ds.pyxpcm.robustness(m, inplace=True)
     ds.pyxpcm.robustness_digit(m, inplace=True)
-    p.plot_robustness(time_slice="2018-01-01")
-    p.save_BlueCloud('dataminer_out/robustness.png', bic_fig='yes')
+    p.plot_robustness(time_slice=first_date)
+    p.save_BlueCloud('robustness.png', bic_fig='yes')
 
 
 def main():
-    z_dim = 'depth'
-    var_name_ds = 'thetao'  # name in dataset
-    var_name_mdl = 'temperature'  # name in model
-    features_in_ds = {var_name_mdl: var_name_ds}
     args = get_args()
+    var_name_ds = args.var_name_ds
+    var_name_mdl = args.var_name_mdl
+    features_in_ds = {var_name_mdl: var_name_ds}
     k = args.k
     file_name = args.file_name
-    ds = load_data(file_name)
+    print("loading the dataset")
+    start_time = time.time()
+    ds, first_date, coord_dict = load_data(file_name)
+    z_dim = coord_dict['depth']
+    load_time = time.time() - start_time
+    print("load finished in " + str(load_time) + "sec")
+    print("starting computation")
+    start_time = time.time()
     m, ds = train_model(k=k, ds=ds, var_name_mdl=var_name_mdl, var_name_ds=var_name_ds, z_dim=z_dim)
-    robustness(m=m, ds=ds, features_in_ds=features_in_ds, z_dim=z_dim)
-    m.to_netcdf('dataminer_out/model.nc')
+    train_time = time.time() - start_time
+    print("computation finished in " + str(train_time) + "sec")
+    robustness(m=m, ds=ds, features_in_ds=features_in_ds, z_dim=z_dim, first_date=first_date)
+    print("robustness computation finished, plot saved")
+    m.to_netcdf('model.nc')
+    print("model saved")
 
 
 if __name__ == '__main__':
