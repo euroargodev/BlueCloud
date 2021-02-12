@@ -7,6 +7,7 @@ import Plotter
 from Plotter import Plotter
 import dask
 import dask.array as da
+import time
 
 
 def get_args():
@@ -23,6 +24,8 @@ def get_args():
     parse = argparse.ArgumentParser(description="Ocean patterns method")
     parse.add_argument('k', type=int, help="number of clusters K")
     parse.add_argument('file_name', type=str, help='input dataset')
+    parse.add_argument('var_name_ds', type=str, help='name of variable in dataset')
+    parse.add_argument('var_name_mdl', type=str, help='name of variable in model')
 
     return parse.parse_args()
 
@@ -38,12 +41,42 @@ def load_data(file_name):
     Returns
     -------
     ds: Xarray dataset
-
+    first_date: string, first time slice of the dataset
+    coord_dict: coordinate dictionary for pyXpcm
     """
-    ds = xr.open_dataset('../datasets/' + file_name)
-    ds['depth'] = -np.abs(ds['depth'].values)
+    ds = xr.open_dataset(file_name)
+    first_date = str(ds.time.min().values)[0:7]
+    coord_dict = get_coords_dict(ds)
+    ds['depth'] = -np.abs(ds[coord_dict['depth']].values)
     ds.depth.attrs['axis'] = 'Z'
-    return ds
+    return ds, first_date, coord_dict
+
+
+def get_coords_dict(ds):
+    """
+    create a dict of coordinates to mapping each dimension of the dataset
+    Parameters
+    ----------
+    ds : Xarray dataset
+
+    Returns
+    -------
+    coords_dict: dict mapping each dimension of the dataset
+    """
+    # creates dictionary with coordinates
+    coords_list = list(ds.coords.keys())
+    coords_dict = {}
+    for c in coords_list:
+        axis_at = ds[c].attrs.get('axis')
+        if axis_at == 'Y':
+            coords_dict.update({'latitude': c})
+        if axis_at == 'X':
+            coords_dict.update({'longitude': c})
+        if axis_at == 'T':
+            coords_dict.update({'time': c})
+        if axis_at == 'Z':
+            coords_dict.update({'depth': c})
+    return coords_dict
 
 
 def train_model(k, ds, var_name_mdl, var_name_ds, z_dim):
@@ -97,7 +130,7 @@ def predict(m, ds, var_name_mdl, var_name_ds, z_dim):
     return ds
 
 
-def generate_plots(m, ds, var_name_ds):
+def generate_plots(m, ds, var_name_ds, first_date):
     """
     Generates and saves the following plots:
     - vertical structure: vertical structure of each classes. It draws the mean profile and the 0.05 and 0.95 quantiles
@@ -114,49 +147,67 @@ def generate_plots(m, ds, var_name_ds):
     m : trained model
     ds : Xarray dataset containing the predictions
     var_name_ds : name of the variable in the dataset
-
+    first_date: date of first time slice
     Returns
     -------
     saves all the plots as png
     """
-    file_ext = 'data_miner'
+    if ds[var_name_ds].attrs['unit_long'] and ds[var_name_ds].attrs['long_name']:
+        x_label = ds[var_name_ds].attrs['long_name'] + " in " + ds[var_name_ds].attrs['unit_long']
+    else:
+        x_label = var_name_ds
     P = Plotter(ds, m)
     # plot profiles by class
-    P.vertical_structure(q_variable=var_name_ds + '_Q', sharey=True, xlabel='Temperature (°C)')
-    P.save_BlueCloud('dataminer_out/vertical_struc_EX' + file_ext + '.png')
+    P.vertical_structure(q_variable=var_name_ds + '_Q', sharey=True, xlabel=x_label)
+    P.save_BlueCloud('vertical_struc.png')
     # plot profiles by quantile
-    P.vertical_structure_comp(q_variable=var_name_ds + '_Q', plot_q='all', xlabel='Temperature (°C)', ylim=[-1000, 0])
-    P.save_BlueCloud('dataminer_out/vertical_struc_comp_EX' + file_ext + '.png')
+    P.vertical_structure_comp(q_variable=var_name_ds + '_Q', plot_q='all', xlabel=x_label, ylim=[-1000, 0])
+    P.save_BlueCloud('vertical_struc_comp.png')
     # spacial distribution
     P.spatial_distribution(time_slice='most_freq_label')
-    P.save_BlueCloud('dataminer_out/spatial_distr_freq_EX' + file_ext + '.png')
+    P.save_BlueCloud('spatial_distr_freq.png')
     # robustness
-    # P.plot_robustness(time_slice="2018-08") # can't use it because it requires a time_slice
-    # P.save_BlueCloud('dataminer_out/robustness_EX.png')
+    P.plot_robustness(time_slice=first_date)
+    P.save_BlueCloud('robustness.png')
     # pie chart of the classes distribution
     P.pie_classes()
-    P.save_BlueCloud('dataminer_out/pie_chart_EX' + file_ext + '.png')
+    P.save_BlueCloud('pie_chart.png')
     # temporal distribution (monthly)
     P.temporal_distribution(time_bins='month')
-    P.save_BlueCloud('dataminer_out/temporal_distr_months_EX' + file_ext + '.png')
+    P.save_BlueCloud('temporal_distr_months.png')
     # temporal distribution (seasonally)
     P.temporal_distribution(time_bins='season')
-    P.save_BlueCloud('dataminer_out/temporal_distr_season_EX' + file_ext + '.png')
+    P.save_BlueCloud('temporal_distr_season.png')
     # save data
-    ds.to_netcdf('dataminer_out/predicted_dataset_' + file_ext + '.nc', format='NETCDF4')
+    ds.to_netcdf('predicted_dataset.nc', format='NETCDF4')
 
 
 def main():
-    z_dim = 'depth'
-    var_name_ds = 'thetao'  # name in dataset
-    var_name_mdl = 'temperature'  # name in model
     args = get_args()
+    var_name_ds = args.var_name_ds
+    var_name_mdl = args.var_name_mdl
+    features_in_ds = {var_name_mdl: var_name_ds}
     k = args.k
     file_name = args.file_name
-    ds = load_data(file_name)
+    print("loading the dataset")
+    start_time = time.time()
+    ds, first_date, coord_dict = load_data(file_name)
+    z_dim = coord_dict['depth']
+    load_time = time.time() - start_time
+    print("load finished in " + str(load_time) + "sec")
+    print("starting computation")
+    start_time = time.time()
     m = train_model(k=k, ds=ds, var_name_mdl=var_name_mdl, var_name_ds=var_name_ds, z_dim=z_dim)
+    train_time = time.time() - start_time
+    print("training finished in " + str(train_time) + "sec")
+    start_time = time.time()
     ds = predict(m=m, ds=ds, var_name_mdl=var_name_mdl, var_name_ds=var_name_ds, z_dim=z_dim)
-    generate_plots(m=m, ds=ds, var_name_ds=var_name_ds)
+    generate_plots(m=m, ds=ds, var_name_ds=var_name_ds, first_date=first_date)
+    train_time = time.time() - start_time
+    print("prediction finished in " + str(train_time) + "sec")
+    # save model
+    m.to_netcdf('model.nc')
+    print("model saved")
 
 
 if __name__ == '__main__':
