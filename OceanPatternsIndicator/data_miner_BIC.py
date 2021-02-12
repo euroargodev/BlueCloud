@@ -8,6 +8,7 @@ from Plotter import Plotter
 from BIC_calculation import *
 import dask
 import dask.array as da
+import time
 
 
 def get_args():
@@ -24,7 +25,9 @@ def get_args():
     parse = argparse.ArgumentParser(description="Ocean patterns method")
     parse.add_argument('file_name', type=str, help='input dataset')
     parse.add_argument('nk', type=int, help='number max of clusters')
-
+    parse.add_argument('var_name_ds', type=str, help='name of variable in dataset')
+    parse.add_argument('var_name_mdl', type=str, help='name of variable in model')
+    parse.add_argument('corr_dist', type=int, help='correlation distance used for BIC')
     return parse.parse_args()
 
 
@@ -41,10 +44,12 @@ def load_data(file_name):
     ds: Xarray dataset
 
     """
-    ds = xr.open_dataset('../datasets/' + file_name)
-    ds['depth'] = -np.abs(ds['depth'].values)
+    ds = xr.open_dataset(file_name)
+    first_date = str(ds.time.min().values)[0:7]
+    coord_dict = get_coords_dict(ds)
+    ds['depth'] = -np.abs(ds[coord_dict['depth']].values)
     ds.depth.attrs['axis'] = 'Z'
-    return ds
+    return ds, first_date, coord_dict
 
 
 def get_coords_dict(ds):
@@ -74,7 +79,7 @@ def get_coords_dict(ds):
     return coords_dict
 
 
-def bic_calculation(ds, features_in_ds, z_dim, var_name_mdl, nk):
+def bic_calculation(ds, features_in_ds, z_dim, var_name_mdl, nk, corr_dist, coord_dict):
     """
     The BIC (Bayesian Information Criteria) can be used to optimize the number of classes in the model, trying not to
     over-fit or under-fit the data. To compute this index, the model is fitted to the training dataset for a range of K
@@ -94,27 +99,38 @@ def bic_calculation(ds, features_in_ds, z_dim, var_name_mdl, nk):
     """
     z = ds[z_dim][0:30]
     pcm_features = {var_name_mdl: z}
-    corr_dist = 50  # correlation distance in km
+    # TODO choose one time frame if short or choose one winter/summer pair
     time_steps = ['2018-01', '2018-07']  # time steps to be used into account
     nrun = 10  # number of runs for each k
-    bic, bic_min = BIC_calculation(ds=ds, coords_dict=get_coords_dict(ds),
+    bic, bic_min = BIC_calculation(ds=ds, coords_dict=coord_dict,
                                    corr_dist=corr_dist, time_steps=time_steps,
                                    pcm_features=pcm_features, features_in_ds=features_in_ds, z_dim=z_dim,
                                    Nrun=nrun, NK=nk)
     plot_BIC(BIC=bic, NK=nk, bic_min=bic_min)
-    plt.savefig('dataminer_out/BIC.png', bbox_inches='tight', pad_inches=0.1)
+    print("computation finished, saving png")
+    plt.savefig('bic.png', bbox_inches='tight', pad_inches=0.1)
 
 
 def main():
-    z_dim = 'depth'
-    var_name_ds = 'thetao'  # name in dataset
-    var_name_mdl = 'temperature'  # name in model
-    features_in_ds = {var_name_mdl: var_name_ds}
     args = get_args()
     file_name = args.file_name
     nk = args.nk
-    ds = load_data(file_name)
-    bic_calculation(ds=ds, features_in_ds=features_in_ds, z_dim=z_dim, var_name_mdl=var_name_mdl, nk=nk)
+    var_name_ds = args.var_name_ds
+    var_name_mdl = args.var_name_mdl
+    corr_dist = args.corr_dist
+    features_in_ds = {var_name_mdl: var_name_ds}
+    print("loading the dataset")
+    start_time = time.time()
+    ds, first_date, coord_dict = load_data(file_name)
+    z_dim = coord_dict['depth']
+    load_time = time.time() - start_time
+    print("load finished in " + str(load_time) + "sec")
+    print("starting computation")
+    start_time = time.time()
+    bic_calculation(ds=ds, features_in_ds=features_in_ds, z_dim=z_dim, var_name_mdl=var_name_mdl, nk=nk,
+                    corr_dist=corr_dist, coord_dict=coord_dict)
+    bic_time = time.time() - start_time
+    print("computation finished in " + str(bic_time) + "sec")
 
 
 if __name__ == '__main__':
