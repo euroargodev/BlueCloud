@@ -42,7 +42,8 @@ def load_data(file_name):
     Returns
     -------
     ds: Xarray dataset
-
+    first_date: string, first time slice of the dataset
+    coord_dict: coordinate dictionary for pyXpcm
     """
     ds = xr.open_dataset(file_name)
     first_date = str(ds.time.min().values)[0:7]
