@@ -96,7 +96,8 @@ def bic_calculation(ds, features_in_ds, z_dim, var_name_mdl, nk, corr_dist, coor
 
     Returns
     -------
-    Saves the BIC plot in png with the min of the BIC indicated on it
+    bic: all values for the bic graph
+    bic_min: min value of the bic
     """
     z = ds[z_dim][0:30]
     pcm_features = {var_name_mdl: z}
@@ -107,9 +108,7 @@ def bic_calculation(ds, features_in_ds, z_dim, var_name_mdl, nk, corr_dist, coor
                                    corr_dist=corr_dist, time_steps=time_steps,
                                    pcm_features=pcm_features, features_in_ds=features_in_ds, z_dim=z_dim,
                                    Nrun=nrun, NK=nk)
-    plot_BIC(BIC=bic, NK=nk, bic_min=bic_min)
-    print("computation finished, saving png")
-    plt.savefig('bic.png', bbox_inches='tight', pad_inches=0.1)
+    return bic, bic_min
 
 
 def main():
@@ -128,10 +127,13 @@ def main():
     print("load finished in " + str(load_time) + "sec")
     print("starting computation")
     start_time = time.time()
-    bic_calculation(ds=ds, features_in_ds=features_in_ds, z_dim=z_dim, var_name_mdl=var_name_mdl, nk=nk,
-                    corr_dist=corr_dist, coord_dict=coord_dict)
+    bic, bic_min = bic_calculation(ds=ds, features_in_ds=features_in_ds, z_dim=z_dim, var_name_mdl=var_name_mdl, nk=nk,
+                                   corr_dist=corr_dist, coord_dict=coord_dict)
     bic_time = time.time() - start_time
     print("computation finished in " + str(bic_time) + "sec")
+    plot_BIC(BIC=bic, NK=nk, bic_min=bic_min)
+    print("computation finished, saving png")
+    plt.savefig('bic.png', bbox_inches='tight', pad_inches=0.1)
 
 
 if __name__ == '__main__':
