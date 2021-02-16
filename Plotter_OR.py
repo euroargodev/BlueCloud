@@ -60,17 +60,15 @@ class Plotter_OR:
                     coords_dict.update({'longitude': c})
                 if axis_at == 'T':
                     coords_dict.update({'time': c})
-                if axis_at == 'Z':
-                    coords_dict.update({'depth': c})
-
+                
             self.coords_dict = coords_dict
-
-            if 'latitude' not in coords_dict or 'longitude' not in coords_dict:
-                raise ValueError(
-                    'Coordinates not found in dataset. Please, define coordinates using coord_dict input')
 
         else:
             self.coords_dict = coords_dict
+            
+        if 'latitude' not in coords_dict or 'longitude' not in coords_dict:
+            raise ValueError(
+                'Coordinates not found in dataset. Please, define coordinates using coord_dict input')
 
         # assign a data type
         dims_dict = list(ds.dims.keys())
@@ -573,87 +571,6 @@ class Plotter_OR:
         fig.tight_layout()
         plt.margins(0.1)
 
-    def plot_posteriors(self, proj=ccrs.PlateCarree(), extent='auto', time_slice=0):
-        '''Plot posteriors in a map
-
-           Parameters
-           ----------
-               proj: projection (default ccrs.PlateCarree())
-               extent: map extent (default 'auto')
-               time_slice: time snapshot to be plot (default 0)
-
-           Returns
-           -------
-
-           '''
-        # TODO: class colors in title in subplots using colormap
-        # TODO: time should be called time in dataset. use coords_dict
-
-        if 'time' in self.coords_dict and self.data_type == 'gridded':
-            dsp = self.ds.isel(time=time_slice)
-        else:
-            dsp = self.ds
-
-        # spatial extent
-        if isinstance(extent, str):
-            extent = np.array([min(dsp[self.coords_dict.get('longitude')]), max(dsp[self.coords_dict.get('longitude')]), min(
-                dsp[self.coords_dict.get('latitude')]), max(dsp[self.coords_dict.get('latitude')])]) + np.array([-0.1, +0.1, -0.1, +0.1])
-
-        # check if PCM_POST variable exists
-        assert ("PCM_POST" in dsp), "Dataset should include PCM_POST varible to be plotted. Use pyxpcm.predict_proba function with inplace=True option"
-
-        cmap = sns.light_palette("blue", as_cmap=True)
-        subplot_kw = {'projection': proj, 'extent': extent}
-        land_feature = cfeature.NaturalEarthFeature(
-            category='physical', name='land', scale='50m', facecolor=[0.9375, 0.9375, 0.859375])
-        lon_grid = np.floor_divide((self.ds[self.coords_dict.get('longitude')].max(
-        ) - self.ds[self.coords_dict.get('longitude')].min()), 5)
-        lat_grid = np.floor_divide((self.ds[self.coords_dict.get('latitude')].max(
-        ) - self.ds[self.coords_dict.get('latitude')].min()), 5)
-
-        # aspect ratio
-        maxcols = 2
-        ar = 1.0  # initial aspect ratio for first trial
-        wi = 12    # width of the whole figure in inches
-        hi = wi * ar  # height in inches
-        rows, cols = 1 + np.int(self.m.K / maxcols), maxcols
-
-        fig, ax = self.m.plot.subplots(
-            figsize=(wi, hi), maxcols=maxcols, subplot_kw=subplot_kw)  # TODO: function already in pyxpcm
-
-        for k in self.m:
-            if self.data_type == 'profiles':
-                sc = ax[k].scatter(dsp[self.coords_dict.get('longitude')], self.ds[self.coords_dict.get('latitude')], s=3, c=dsp['PCM_POST'].sel(pcm_class=k),
-                                   cmap=cmap, transform=proj, vmin=0, vmax=1)
-            if self.data_type == 'gridded':
-                sc = ax[k].pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp['PCM_POST'].sel(pcm_class=k),
-                                      cmap=cmap, transform=proj, vmin=0, vmax=1)
-
-            plt.colorbar(sc, ax=ax[k], fraction=0.03, shrink=0.7)
-            self.m.plot.latlongrid(ax[k], fontsize=8, dx=lon_grid, dy=lat_grid)
-            ax[k].add_feature(land_feature, edgecolor='black')
-            ax[k].set_title('PCM Posteriors for k=%i' % k)
-            ax[k].tick_params(axis='both', labelsize=5)
-
-        # aspect ratio
-        plt.draw()
-        xmin, xmax = ax.get_xbound()
-        ymin, ymax = ax.get_ybound()
-        y2x_ratio = (ymax-ymin)/(xmax-xmin) * rows/cols
-        fig.set_figheight(wi * y2x_ratio)
-        print(wi * y2x_ratio)
-
-        if 'time' in self.coords_dict:
-            fig.suptitle('$\\bf{PCM\\  Posteriors}$' + ' \n probability of a profile to belong to a class k'
-                         + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')')
-        else:
-            fig.suptitle('$\\bf{PCM\\  Posteriors}$' +
-                         ' \n probability of a profile to belong to a class k')
-
-        #plt.subplots_adjust(wspace=0.1, hspace=0.1)
-        # fig.canvas.draw()
-        fig.tight_layout()
-        # fig.subplots_adjust(top=0.95)
 
     def plot_robustness(self, proj=ccrs.PlateCarree(), extent='auto', time_slice=0):
         '''Plot posteriors in a map
@@ -680,12 +597,8 @@ class Plotter_OR:
         kmap = self.cmap_discretize(
             plt.cm.get_cmap(name=self.cmap_name), self.m.K) 
 
-        if 'time' in self.coords_dict and self.data_type == 'gridded':
-            dsp = self.ds.sel(time=time_slice, method='nearest').squeeze()
-            title_string = '$\\bf{PCM\\  Robustness}$' + ' \n probability of a profile to belong to a class k' + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')'
-        else:
-            dsp = self.ds
-            title_string = '$\\bf{PCM\\  Robustness}$' + ' \n probability of a profile to belong to a class k'
+        dsp = self.ds
+        title_string = '$\\bf{PCM\\  Robustness}$' + ' \n probability of a profile to belong to a class k'
 
         # spatial extent
         if isinstance(extent, str):
