@@ -97,8 +97,8 @@ class Plotter_OR:
         
         #convert to dataframe
         ds_p = self.ds[var_name]
-        if len(ds_p.coords) > 3:
-            ds_p = ds_p.drop_vars({'depth','time'})
+        if 'depth' in ds_p.coords:
+            ds_p = ds_p.drop_vars('depth')
         df = ds_p.to_dataframe(name = var_name).unstack(0)
         #select first and second components
         df = df.take([0, 1], axis=1)
@@ -370,7 +370,7 @@ class Plotter_OR:
                                 maxcols=3, cmap=None,
                                 ylabel='variable',
                                 start_month=6,
-                                ylim=None,
+                                ylim='auto',
                                 **kwargs):
         '''Plot vertical structure of each class
 
@@ -440,8 +440,6 @@ class Plotter_OR:
         if not cmap:
             cmap = self.cmap_discretize(plt.cm.get_cmap(name='brg'), nQ)
 
-        if not ylim:
-            ylim = np.array([da.min(), da.max()])
         if not xlim:
             xlim = np.array([da[FEATURE_DIM].min(), da[FEATURE_DIM].max()])
             
@@ -486,7 +484,8 @@ class Plotter_OR:
             ax[cnt][0].set_xticks(index_ticks)
             ax[cnt][0].set_xticklabels(xaxis_labels)
             ax[cnt][0].set_xlim(xlim)
-            ax[cnt][0].set_ylim(ylim)
+            if isinstance(ylim, str):
+                ax[cnt][0].set_ylim(np.array([Qq.min(),Qq.max()]))
             ax[cnt][0].set_ylabel(ylabel)
             ax[cnt][0].grid(True)
             cnt = cnt+1
@@ -678,6 +677,8 @@ class Plotter_OR:
         m = pcm(K=self.m.K, features=pcm_features)
         cmap = m.plot.cmap(usage='robustness')
         ###########################################################
+        kmap = self.cmap_discretize(
+            plt.cm.get_cmap(name=self.cmap_name), self.m.K) 
 
         if 'time' in self.coords_dict and self.data_type == 'gridded':
             dsp = self.ds.sel(time=time_slice, method='nearest').squeeze()
@@ -730,7 +731,7 @@ class Plotter_OR:
             ax[k].add_feature(land_feature, edgecolor='black')
             #ax[k].set_title('k=%i' % k, color=kmap(k), fontweight='bold', x=1.05, y=0.84)
             #ax[k].set_title('k=%i' % k, color=kmap(k), fontweight='bold')
-            ax[k].set_title('k=%i' % k, color=cmap(k), fontweight='bold')    
+            ax[k].set_title('k=%i' % k, color=kmap(k), fontweight='bold')    
             defaults = {'linewidth':.5, 'color':'gray', 'alpha':0.5, 'linestyle':'--'}
             gl=ax[k].gridlines(crs=ax[k].projection, draw_labels=True, **defaults)
             gl.xlocator = mticker.FixedLocator(np.arange(-180, 180+1, dx))
@@ -900,18 +901,15 @@ class Plotter_OR:
             outfname : string
                 output figure file
         """
-        def pcm1liner(this_pcm):
+        def pcm1liner(model):
             def prtval(x): return "%0.2f" % x
             def getrge(x): return [np.max(x), np.min(x)]
             def prtrge(x): return "[%s:%s]" % (
                 prtval(getrge(x)[0]), prtval(getrge(x)[1]))
             def prtfeatures(p): return "{%s}" % ", ".join(
                 ["'%s':%s" % (k, prtrge(v)) for k, v in p.features.items()])
-            return "PCM model information: K:%i, F:%i%s, %s" % (this_pcm.K,
-                                                                this_pcm.F,
-                                                                prtfeatures(
-                                                                    this_pcm),
-                                                                this_pcm._props['with_classifier'].upper())
+            #TODO maybe include other information about the model
+            return "Model information: K:%i, %s" % (model.K, 'GMM')
 
         font_path = "logos/Calibri_Regular.ttf"
         lfname2 = "logos/Blue-cloud_compact_color_W.jpg"
@@ -939,15 +937,15 @@ class Plotter_OR:
 
         # Add dataset and model information
         # time extent
-        if 'time' not in self.coords_dict:
+        if 'time' not in self.ds.coords:
             time_string = 'Period: Unknown'
-        elif len(self.ds[self.coords_dict.get('time')].sizes) == 0:
+        elif len(self.ds['time'].sizes) == 0:
             # TODO: when using isel hours information is lost
-            time_extent = self.ds[self.coords_dict.get('time')].dt.strftime("%Y/%m/%d %H:%M")
+            time_extent = self.ds['time'].dt.strftime("%Y/%m/%d %H:%M")
             time_string = 'Period: %s' % time_extent.values
         else:
-            time_extent = [min(self.ds[self.coords_dict.get('time')].dt.strftime(
-                "%Y/%m/%d")), max(self.ds[self.coords_dict.get('time')].dt.strftime("%Y/%m/%d"))]
+            time_extent = [min(self.ds['time'].dt.strftime(
+                "%Y/%m/%d")), max(self.ds['time'].dt.strftime("%Y/%m/%d"))]
             time_string = 'Period: from %s to %s' % (
                 time_extent[0].values, time_extent[1].values)
 
@@ -956,15 +954,15 @@ class Plotter_OR:
             self.ds[self.coords_dict.get('latitude')].values)]
         lon_extent = [min(self.ds[self.coords_dict.get('longitude')].values), max(
             self.ds[self.coords_dict.get('longitude')].values)]
-        spatial_string = 'Domain: lat:%s, lon:%s' % (
-            str(lat_extent), str(lon_extent))
+        spatial_string = 'Domain: lat:[%.2f,%.2f], lon:[%.2f,%.2f]' % (
+            lat_extent[0], lat_extent[1], lon_extent[0], lon_extent[1])
 
         if bic_fig == 'no':
             txtA = "User selection:\n   %s\n   %s\n   %s\nSource: %s\n%s" % (self.ds.attrs.get(
-                'title'), time_string, spatial_string, self.ds.attrs.get('credit'), pcm1liner(self.m))
+                'title'), time_string, spatial_string, 'CMEMS', pcm1liner(self.m))
         else:
             txtA = "User selection:\n   %s\n   %s\n   %s\nSource: %s" % (self.ds.attrs.get(
-                'title'), time_string, spatial_string, self.ds.attrs.get('credit'))
+                'title'), time_string, spatial_string, 'CMEMS')
 
         fontA = ImageFont.truetype(font_path, 10)
 
