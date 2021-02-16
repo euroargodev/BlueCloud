@@ -117,14 +117,14 @@ class Plotter_OR:
 
         #defaults = {'height':2.5, 'aspect':1, 'hue':'labels', 'palette': m.plot.cmap(palette=True),
         #                    'vars':m._xlabel, 'despine':False}
-        defaults = {'height':2.5, 'aspect':1, 'hue':'labels', 'despine':False, 'palette': cpal}
+        defaults = {'height':4, 'aspect':1, 'hue':'labels', 'despine':False, 'palette': cpal}
         #defaults = {'height':2.5, 'aspect':1, 'despine':False, 'palette': cpal}
         g = sns.PairGrid(df, **defaults)
 
         g.map_diag(sns.histplot, edgecolor=None, alpha=0.75)
         g = g.map_upper(plt.scatter, s=3)
 
-        g.add_legend()
+        g.add_legend(labels = range(self.m.K))
 
 
     def pie_classes(self):
