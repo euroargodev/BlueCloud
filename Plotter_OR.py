@@ -331,7 +331,7 @@ class Plotter_OR:
             ax[k].legend(loc='lower right')
             ax[k].grid(True)
 
-            if isinstance(ylim, str):
+            if isinstance(ylim, str) and not np.isnan(Qk.min()):
                 ax[k].set_ylim(np.array([Qk.min(), Qk.max()]))
 
             ax[k].set_xticks(index_ticks)
@@ -621,12 +621,14 @@ class Plotter_OR:
             gl.ylabels_right = False
             gl.ylabel_style = {'fontsize': 5}
 
-        rowl0 = self.ds['GMM_robustness_cat'].attrs['legend']
-        cl = plt.colorbar(sc, ax=ax, fraction=0.02, pad=0.05)
-        cl.set_ticks([0, 1, 2, 3, 4, 5])
-        cl.set_ticklabels([0, 0.33, 0.66, 0.9, 0.99, 1])
-        for (i, j) in zip(np.arange(0.5, 5, 1), rowl0):
-                cl.ax.text(6, i, j, ha='left', va='center', fontsize=8)
+            rowl0 = self.ds['GMM_robustness_cat'].attrs['legend']
+            #cl = plt.colorbar(sc, ax=ax[k], fraction=0.02, pad=0.05)
+            cl = plt.colorbar(sc, ax=ax[k])
+            cl.set_ticks([0, 1, 2, 3, 4, 5])
+            cl.set_ticklabels([0, 0.33, 0.66, 0.9, 0.99, 1])
+            cl.ax.tick_params(labelsize=6)
+            for (i, j) in zip(np.arange(0.5, 5, 1), rowl0):
+                    cl.ax.text(7, i, j, ha='left', va='center', fontsize=6)
 
         # TODO spect ratio
         #plt.draw()
