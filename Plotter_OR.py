@@ -331,7 +331,7 @@ class Plotter_OR:
             ax[k].legend(loc='lower right')
             ax[k].grid(True)
 
-            if isinstance(ylim, str):
+            if isinstance(ylim, str) and not np.isnan(Qk.min()):
                 ax[k].set_ylim(np.array([Qk.min(), Qk.max()]))
 
             ax[k].set_xticks(index_ticks)
