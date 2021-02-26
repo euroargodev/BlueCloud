@@ -179,7 +179,7 @@ def apply_PCA(X, plot_var=False):
 
     return X
 
-def unstack_dataset():
+def unstack_dataset(ds, X, mask):
     ''' UNstack dataste
 
             Parameters
@@ -194,6 +194,24 @@ def unstack_dataset():
 
             '''
 
-    # TODO: 
+    # TODO: detect var_name
+    var_name = 'CHL'
+    
+    ds_labels = X.unstack('sampling')
+    # TODO: maybe sortby is not always necesary
+    ds_labels = ds_labels.sortby(['lat','lon'])
+    # same lat and lon values in mask and in results
+    # the mask we are using or the mask create in delate NaNs function
+    # mask = stacked_mask.unstack()
+    ds_labels = ds_labels.reindex_like(mask)
+    
+    #copy atributtes
+    ds_labels.attrs = ds.attrs
+    #TODO: coordinates recognintion
+    ds_labels.lat.attrs = ds.lat.attrs
+    ds_labels.lon.attrs = ds.lon.attrs
+    #include time coord for save_BlueCloud function
+    ds_labels = ds_labels.assign_coords({'time': ds.time.values})
+    
 
-    return BIC, k
+    return ds_labels
