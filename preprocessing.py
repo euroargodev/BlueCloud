@@ -5,7 +5,7 @@ import pandas as pd
 
 import matplotlib.pyplot as plt
 
-def weekly_mean(ds):
+def weekly_mean(ds, var_name, time_var='auto'):
     '''Weekly mean in dataset
 
            Parameters
@@ -26,8 +26,19 @@ def weekly_mean(ds):
     #TODO: detect time variable
     #TODO: detect var_name
     
-    var_name = 'CHL'
-    X = ds.groupby("time.week").mean()
+    #detect time variable from attributes
+    if 'auto' in time_var:
+        coords_list = list(ds.coords.keys())
+        for c in coords_list:
+            axis_at = ds[c].attrs.get('axis')
+            if axis_at == 'T':
+                time_var = c
+                print(time_var)
+        if 'auto' in time_var:
+            raise ValueError(
+                'Time variable could not be detected. Please, provide it using time_var input.')
+    
+    X = ds.groupby(time_var + ".week").mean()
     X = X.rename_dims({'week': 'feature'})
     X = X.rename({'week': 'feature'})
     
