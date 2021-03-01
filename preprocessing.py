@@ -218,7 +218,7 @@ def scaler(X, var_name, scaler_name='StandardScaler'):
 
     return X
 
-def apply_PCA(X, plot_var=False):
+def apply_PCA(X, var_name, n_components=0.99, plot_var=False):
     ''' Principal components analysis
 
             Parameters
@@ -232,15 +232,19 @@ def apply_PCA(X, plot_var=False):
                 k: number of classes
 
             '''
-
-    # TODO: detect var_name
-    var_name = 'CHL'
+    
+    if 'sampling' not in list(X.coords.keys()):
+            raise ValueError(
+                'Dataset should contains sampling coordinate. Please, use function reduce_dims to stack coordinates in you dataset.')
+    if 'feature' not in list(X.coords.keys()):
+            raise ValueError(
+                'Dataset should contains feature coordinate. Please, change the name of your feature coordinate to "feature" or use weekly_mean function.')
     
     # Check dimensions order
     X = X.transpose("sampling", "feature")
     
     from sklearn.decomposition import PCA
-    pca = PCA(n_components = 0.99, svd_solver = 'full')
+    pca = PCA(n_components = n_components, svd_solver = 'full')
     pca = pca.fit(X[var_name + "_scaled"])
     X_reduced = pca.transform(X[var_name + "_scaled"])
     X = X.assign(variables={var_name + "_reduced":(('sampling', 'feature_reduced'),X_reduced)})
