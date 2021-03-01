@@ -79,7 +79,7 @@ def hist_2D(X, var_name, bins=None, xlabel='Weeks'):
 
 
 
-def reduce_dims(X):
+def reduce_dims(X, sampling_dims='auto'):
     '''Reduce lat lon dimensions to sampling dimension 
 
            Parameters
@@ -94,10 +94,22 @@ def reduce_dims(X):
                new_time: new time vector with points separeted the time correlation
 
                '''
-
-    #TODO: dimensions detection
-    sampling_dims = list(X.dims)
-    sampling_dims.remove('feature')
+    
+    #detect sampling coordinates from attributes
+    if 'auto' in sampling_dims:
+        coords_list = list(X.coords.keys())
+        sampling_dims = []
+        for c in coords_list:
+            axis_at = X[c].attrs.get('axis')
+            if axis_at == 'Y':
+                sampling_dims.append(c)
+            if axis_at == 'X':
+                sampling_dims.append(c)
+        print(sampling_dims)
+        if not sampling_dims:
+            raise ValueError(
+                'Sampling dimensions could not be detected. Please, provide them using sampling_dims input.')
+            
     X = X.stack({'sampling': sampling_dims})
     
     return X
