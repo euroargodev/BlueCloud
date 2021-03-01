@@ -93,7 +93,7 @@ def reduce_dims(X):
     
     return X
 
-def delate_NaNs():
+def delate_NaNs(ds, X, mask_path='auto'):
     ''' Delate NaNs in dataset
 
             Parameters
@@ -111,8 +111,50 @@ def delate_NaNs():
     # TODO: option use mask or create a mask from dataset
     # TODO: delate all time series totally NaNs
     # TODO: If there are encore the NaNs make interpolation
+    # mask should be a boolean dataarray with dimensions lat lon with the same name an same arrays than the dataset
+    
+    #TODO: detect var_name
+    #var_name = 'CHL'
+    var_name = 'analysed_sst'
+    # TODO: detect coordinates
+    sampling_dims = {'lat', 'lon'}
+    #check if we have a mask or not
+    if 'auto' in mask_path: 
+        #create mask
+        print('create mask')
+        stacked_mask = X[var_name].notnull()
+        mask = stacked_mask.unstack('sampling')
+    else:
+        #use mask
+        print('use mask')
+        #open mask
+        mask = xr.open_dataset(mask_path)
+        # TODO: maybe do the format of the mask? or ask for a mask with options? other notebook to crete a mask from a dataset?
+        #stack mask
+        stacked_mask = mask['mask'].stack({'sampling': sampling_dims})
+        
+    #apply mask
+    X = X[var_name].where(stacked_mask == True, drop=True).to_dataset()
+    
+    # if lines are totally NaN
+    if np.any(np.isnan(X[var_name].values)):
+        #delate time series all NaNs
+        print('delate time series all NaNs')
+        X = X[var_name].where(~X[var_name].isnull(),drop=True).to_dataset()
+        
+    # interpolation
+    if np.any(np.isnan(X[var_name].values)):
+        #delate time series all NaNs
+        print('interpolation')
+        X = X[var_name].interpolate_na(dim = 'feature', method="linear", fill_value="extrapolate").to_dataset(name = var_name)
+        
+    # check if NaNs in dataset
+    if np.any(np.isnan(X[var_name].values)):
+        #TODO: warning
+        print('Dataset contains NaNs after preprocessing. Please, try the option without mask')
 
-    return BIC, k
+
+    return X, mask
 
 def scaler(X):
     ''' Scale data
