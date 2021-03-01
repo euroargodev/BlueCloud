@@ -175,7 +175,7 @@ def delate_NaNs(X, var_name, mask_path='auto'):
 
     return X, mask
 
-def scaler(X):
+def scaler(X, var_name, scaler_name='StandardScaler'):
     ''' Scale data
 
             Parameters
@@ -189,17 +189,31 @@ def scaler(X):
                 k: number of classes
 
             '''
-
-    # TODO: option more than one scaler
-    #TODO: detect var_name
-    var_name = 'CHL'
+    
+    if 'sampling' not in list(X.coords.keys()):
+            raise ValueError(
+                'Dataset should contains sampling coordinate. Please, use function reduce_dims to stack coordinates in you dataset.')
+    if 'feature' not in list(X.coords.keys()):
+            raise ValueError(
+                'Dataset should contains feature coordinate. Please, change the name of your feature coordinate to "feature" or use weekly_mean function.')
     
     # Check dimensions order
     X = X.transpose("sampling", "feature")
     
     # Apply Standard Scaler
-    from sklearn.preprocessing import StandardScaler
-    X_scale = StandardScaler().fit_transform(X[var_name])
+    if 'StandardScaler' in scaler_name:
+        from sklearn.preprocessing import StandardScaler
+        X_scale = StandardScaler().fit_transform(X[var_name])
+    elif 'Normalizer' in scaler_name:
+        from sklearn.preprocessing import Normalizer
+        X_scale = Normalizer().fit_transform(X[var_name])
+    elif 'MinMaxScaler' in scaler_name:
+        from sklearn.preprocessing import MinMaxScaler
+        X_scale = MinMaxScaler().fit_transform(X[var_name])
+    else:
+        raise ValueError(
+                'scaler_name is not valid. Please, chose between these options: "StandardScaler",  "Normalizer" or "MinMaxScaler".')
+        
     X = X.assign(variables={var_name + "_scaled":(('sampling', 'feature'), X_scale)})
 
     return X
