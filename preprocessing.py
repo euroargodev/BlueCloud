@@ -59,6 +59,7 @@ def hist_2D(X, var_name, bins=None, xlabel='Weeks'):
                new_lons: new longitude vector with points separeted the correlation distance
 
                '''
+    #TODO: plot reduced feature
     if 'feature' not in list(X.coords.keys()):
             raise ValueError(
                 'Dataset should contains feature coordinate. Please, change the name of your feature coordinate to "feature" or use weekly_mean function.')
@@ -258,7 +259,7 @@ def apply_PCA(X, var_name, n_components=0.99, plot_var=False):
 
     return X
 
-def unstack_dataset(ds, X, mask):
+def unstack_dataset(ds, X, mask, var_name, time_var='auto'):
     ''' UNstack dataste
 
             Parameters
@@ -273,24 +274,35 @@ def unstack_dataset(ds, X, mask):
 
             '''
 
-    # TODO: detect var_name
-    var_name = 'CHL'
     
+    if 'sampling' not in list(X.coords.keys()):
+            raise ValueError(
+                'Dataset should contains sampling coordinate. Please, use function reduce_dims to stack coordinates in you dataset.')
+            
+    sampling_dims = X.get_index('sampling').names
     ds_labels = X.unstack('sampling')
-    # TODO: maybe sortby is not always necesary
-    ds_labels = ds_labels.sortby(['lat','lon'])
+    # sometimes it is necessary to sort let and lon
+    ds_labels = ds_labels.sortby([sampling_dims[0], sampling_dims[1]])
     # same lat and lon values in mask and in results
-    # the mask we are using or the mask create in delate NaNs function
-    # mask = stacked_mask.unstack()
     ds_labels = ds_labels.reindex_like(mask)
     
-    #copy atributtes
+    #copy atributtes from input dataset
     ds_labels.attrs = ds.attrs
-    #TODO: coordinates recognintion
-    ds_labels.lat.attrs = ds.lat.attrs
-    ds_labels.lon.attrs = ds.lon.attrs
-    #include time coord for save_BlueCloud function
-    ds_labels = ds_labels.assign_coords({'time': ds.time.values})
+    ds_labels[sampling_dims[0]].attrs = ds[sampling_dims[0]].attrs
+    ds_labels[sampling_dims[1]].attrs = ds[sampling_dims[0]].attrs
+    
+    # detect time variable
+    if 'auto' in time_var:
+        ds_coords_list = list(ds.coords.keys())
+        for c in ds_coords_list:
+            axis_at = ds[c].attrs.get('axis')
+            if axis_at == 'T':
+                time_var = c
+        if 'auto' in time_var:
+            raise ValueError(
+                'Time variable could not be detected. Please, provide it using time_var input.')
+    #include time coord for save_BlueCloud function in Plotter_OR class
+    ds_labels = ds_labels.assign_coords({'time': ds[time_var].values})
     
 
     return ds_labels
