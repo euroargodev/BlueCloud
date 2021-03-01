@@ -60,7 +60,7 @@ def hist_2D(X, var_name, bins=None, xlabel='Weeks'):
 
                '''
     #TODO: plot reduced feature
-    if 'feature' not in list(X.coords.keys()):
+    if 'feature' not in list(X.coords.keys()) and 'feature_reduced' not in list(X.coords.keys()) :
             raise ValueError(
                 'Dataset should contains feature coordinate. Please, change the name of your feature coordinate to "feature" or use weekly_mean function.')
     
@@ -68,13 +68,21 @@ def hist_2D(X, var_name, bins=None, xlabel='Weeks'):
         bins = np.linspace(X[var_name].min().values, X[var_name].max().values,num=50)
 
     histo_2d = [] 
-    for iweek in range(np.size(X.feature)):
-        hist_values, bin_edges = np.histogram(X[var_name].isel(feature=iweek).values, bins=bins)
-        histo_2d.append(hist_values)
     
+    if '_reduced' in var_name:
+        feature_name = 'feature_reduced'
+        for iweek in range(np.size(X.feature_reduced)):
+            hist_values, bin_edges = np.histogram(X[var_name].isel(feature_reduced=iweek).values, bins=bins)
+            histo_2d.append(hist_values)
+    else:
+        feature_name = 'feature'
+        for iweek in range(np.size(X.feature)):
+            hist_values, bin_edges = np.histogram(X[var_name].isel(feature=iweek).values, bins=bins)
+            histo_2d.append(hist_values)
+            
     fig, ax = plt.subplots(figsize=(12,10))
 
-    plt.pcolormesh(X.feature.values, bins, np.transpose(histo_2d), cmap='Reds', edgecolors='black')
+    plt.pcolormesh(X[feature_name].values, bins, np.transpose(histo_2d), cmap='Reds', edgecolors='black')
     cbar = plt.colorbar()
     ax.set_ylabel(var_name)
     ax.set_xlabel(xlabel)
