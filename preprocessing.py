@@ -5,6 +5,8 @@ import pandas as pd
 
 import matplotlib.pyplot as plt
 
+import warnings
+
 def weekly_mean(ds, var_name, time_var='auto'):
     '''Weekly mean in dataset
 
@@ -105,7 +107,6 @@ def reduce_dims(X, sampling_dims='auto'):
                 sampling_dims.append(c)
             if axis_at == 'X':
                 sampling_dims.append(c)
-        print(sampling_dims)
         if not sampling_dims:
             raise ValueError(
                 'Sampling dimensions could not be detected. Please, provide them using sampling_dims input.')
@@ -114,7 +115,7 @@ def reduce_dims(X, sampling_dims='auto'):
     
     return X
 
-def delate_NaNs(ds, X, mask_path='auto'):
+def delate_NaNs(X, var_name, mask_path='auto'):
     ''' Delate NaNs in dataset
 
             Parameters
@@ -129,51 +130,48 @@ def delate_NaNs(ds, X, mask_path='auto'):
 
             '''
 
-    # TODO: option use mask or create a mask from dataset
-    # TODO: delate all time series totally NaNs
-    # TODO: If there are encore the NaNs make interpolation
-    # mask should be a boolean dataarray with dimensions lat lon with the same name an same arrays than the dataset
+    # TODO: input mask should be:
+    #       a boolean dataset
+    #       variable name should be "mask"
+    #       lat and lon dimensition should have the same name than in dataset
+    #       lat and lon dimensions should have the same values than in dataset
+    # do we ask too many things for the mask? can we format the mask in the function? or should we create another notebook where we can create a mask as we want to be?
     
-    #TODO: detect var_name
-    #var_name = 'CHL'
-    var_name = 'analysed_sst'
-    # TODO: detect coordinates
-    sampling_dims = {'lat', 'lon'}
+    if 'sampling' not in list(X.coords.keys()):
+            raise ValueError(
+                'Dataset should contains sampling coordinate. Please, use function reduce_dims to stack coordinates in you dataset.')
+    
+    sampling_dims = X.get_index('sampling').names 
+    
     #check if we have a mask or not
     if 'auto' in mask_path: 
         #create mask
-        print('create mask')
         stacked_mask = X[var_name].notnull()
-        mask = stacked_mask.unstack('sampling')
+        mask = stacked_mask.unstack('sampling').to_dataset()
+        mask = mask.rename({var_name: 'mask'})
     else:
         #use mask
-        print('use mask')
-        #open mask
         mask = xr.open_dataset(mask_path)
-        # TODO: maybe do the format of the mask? or ask for a mask with options? other notebook to crete a mask from a dataset?
-        #stack mask
         stacked_mask = mask['mask'].stack({'sampling': sampling_dims})
         
     #apply mask
     X = X[var_name].where(stacked_mask == True, drop=True).to_dataset()
     
-    # if lines are totally NaN
+    #delate time series all NaNs
     if np.any(np.isnan(X[var_name].values)):
-        #delate time series all NaNs
-        print('delate time series all NaNs')
         X = X[var_name].where(~X[var_name].isnull(),drop=True).to_dataset()
         
     # interpolation
     if np.any(np.isnan(X[var_name].values)):
-        #delate time series all NaNs
-        print('interpolation')
+        print('Interpolation is applied')
+        if 'feature' not in list(X.coords.keys()):
+            raise ValueError(
+                'Dataset should contains feature coordinate. Please, change the name of your feature coordinate to "feature" or use weekly_mean function.')
         X = X[var_name].interpolate_na(dim = 'feature', method="linear", fill_value="extrapolate").to_dataset(name = var_name)
         
     # check if NaNs in dataset
     if np.any(np.isnan(X[var_name].values)):
-        #TODO: warning
-        print('Dataset contains NaNs after preprocessing. Please, try the option without mask')
-
+        warnings.warn('Dataset contains NaNs after preprocessing. Please, try the option mask_path="auto"')
 
     return X, mask
 
