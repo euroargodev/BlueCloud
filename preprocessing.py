@@ -23,8 +23,6 @@ def weekly_mean(ds, var_name, time_var='auto'):
                '''
 
     #TODO: when more than one year in dataset
-    #TODO: detect time variable
-    #TODO: detect var_name
     
     #detect time variable from attributes
     if 'auto' in time_var:
@@ -33,7 +31,6 @@ def weekly_mean(ds, var_name, time_var='auto'):
             axis_at = ds[c].attrs.get('axis')
             if axis_at == 'T':
                 time_var = c
-                print(time_var)
         if 'auto' in time_var:
             raise ValueError(
                 'Time variable could not be detected. Please, provide it using time_var input.')
@@ -44,7 +41,7 @@ def weekly_mean(ds, var_name, time_var='auto'):
     
     return X
     
-def hist_2D(X, bins=None):
+def hist_2D(X, var_name, bins=None, xlabel='Weeks'):
     '''Plot 2D histogram
 
            Parameters
@@ -60,8 +57,9 @@ def hist_2D(X, bins=None):
                new_lons: new longitude vector with points separeted the correlation distance
 
                '''
-    #TODO: detect var_name
-    var_name = 'CHL'
+    if 'feature' not in list(X.coords.keys()):
+            raise ValueError(
+                'Dataset should contains feature coordinate. Please, change the name of your feature coordinate to "feature" or use weekly_mean function.')
     
     if np.any(bins) == None: 
         bins = np.linspace(X[var_name].min().values, X[var_name].max().values,num=50)
@@ -76,7 +74,7 @@ def hist_2D(X, bins=None):
     plt.pcolormesh(X.feature.values, bins, np.transpose(histo_2d), cmap='Reds', edgecolors='black')
     cbar = plt.colorbar()
     ax.set_ylabel(var_name)
-    ax.set_xlabel('Weeks')
+    ax.set_xlabel(xlabel)
     cbar.ax.set_ylabel('Counts')
 
 
