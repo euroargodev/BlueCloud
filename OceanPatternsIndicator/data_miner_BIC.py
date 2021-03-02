@@ -80,7 +80,7 @@ def get_coords_dict(ds):
     return coords_dict
 
 
-def bic_calculation(ds, features_in_ds, z_dim, var_name_mdl, nk, corr_dist, coord_dict):
+def bic_calculation(ds, features_in_ds, z_dim, var_name_mdl, nk, corr_dist, coord_dict, first_date):
     """
     The BIC (Bayesian Information Criteria) can be used to optimize the number of classes in the model, trying not to
     over-fit or under-fit the data. To compute this index, the model is fitted to the training dataset for a range of K
@@ -102,7 +102,8 @@ def bic_calculation(ds, features_in_ds, z_dim, var_name_mdl, nk, corr_dist, coor
     z = ds[z_dim][0:30]
     pcm_features = {var_name_mdl: z}
     # TODO choose one time frame if short or choose one winter/summer pair
-    time_steps = ['2018-01', '2018-07']  # time steps to be used into account
+    time_steps = [first_date]
+    # time_steps = ['2018-01', '2018-07']  # time steps to be used into account
     nrun = 10  # number of runs for each k
     bic, bic_min = BIC_calculation(ds=ds, coords_dict=coord_dict,
                                    corr_dist=corr_dist, time_steps=time_steps,
@@ -128,7 +129,7 @@ def main():
     print("starting computation")
     start_time = time.time()
     bic, bic_min = bic_calculation(ds=ds, features_in_ds=features_in_ds, z_dim=z_dim, var_name_mdl=var_name_mdl, nk=nk,
-                                   corr_dist=corr_dist, coord_dict=coord_dict)
+                                   corr_dist=corr_dist, coord_dict=coord_dict, first_date=first_date)
     bic_time = time.time() - start_time
     print("computation finished in " + str(bic_time) + "sec")
     plot_BIC(BIC=bic, NK=nk, bic_min=bic_min)
