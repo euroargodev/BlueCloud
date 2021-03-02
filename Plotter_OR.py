@@ -30,7 +30,7 @@ class Plotter_OR:
 
            '''
 
-    def __init__(self, ds, model, coords_dict=None, cmap_name='Accent'):
+    def __init__(self, ds, model, coords_dict=None, cmap_name='Accent', K=None):
 
         # TODO: automatic detection of GMM_LABELS and quantils ?
         # TODO: automatic detection of variable name
@@ -38,7 +38,10 @@ class Plotter_OR:
 
         self.ds = ds
         self.m = model  # diferent model than in pyxpcm
-        self.m.K = model.n_components
+        if not K:
+            self.m.K = model.n_components
+        else:
+            self.m.K = K
         if cmap_name == 'Accent' and self.m.K > 8:
             self.cmap_name = 'tab20'
         else:
