@@ -289,10 +289,10 @@ def unstack_dataset(ds, X, mask, var_name, time_var='auto'):
             
     sampling_dims = X.get_index('sampling').names
     ds_labels = X.unstack('sampling')
-    # sometimes it is necessary to sort let and lon
-    ds_labels = ds_labels.sortby([sampling_dims[0], sampling_dims[1]])
     # same lat and lon values in mask and in results
     ds_labels = ds_labels.reindex_like(mask)
+    # sometimes it is necessary to sort lat and lon
+    ds_labels = ds_labels.sortby([sampling_dims[0], sampling_dims[1]])
     
     #copy atributtes from input dataset
     ds_labels.attrs = ds.attrs
