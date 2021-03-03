@@ -124,6 +124,32 @@ def reduce_dims(X, sampling_dims='auto'):
     
     return X
 
+def  check_mask(X, mask, sampling_dims):
+    
+    m_ok = True
+    # name of variable should be "mask"
+    if 'mask' not in list(mask.keys()):
+        m_ok = False
+        raise ValueError(
+                'Variable in mask should be called "mask".')
+    # boolean dataset
+    if mask['mask'].values.dtype.name != 'bool':
+        m_ok = False
+        raise ValueError(
+                'Variable in mask should be a boolean array.')
+    # lat and lon dims should have the same name in dataset and mask
+    if not set(sampling_dims).issubset(set(list(mask.coords.keys()))):
+        m_ok = False
+        raise ValueError(
+                'Coordinates in mask should have the same name than coordinates in dataset.')
+    # lat and lon dims should have the same values in dataset and mask
+    if not set(mask[sampling_dims[0]].values).issubset(set(X[sampling_dims[0]].values)) or not set(mask[sampling_dims[1]].values).issubset(set(X[sampling_dims[1]].values)):
+        m_ok = False
+        raise ValueError(
+                'Coordinates values in mask should contained in coordinates values in dataset.')
+
+    return m_ok
+
 def delate_NaNs(X, var_name, mask_path='auto'):
     ''' Delate NaNs in dataset
 
@@ -161,7 +187,19 @@ def delate_NaNs(X, var_name, mask_path='auto'):
     else:
         #use mask
         mask = xr.open_dataset(mask_path)
-        stacked_mask = mask['mask'].stack({'sampling': sampling_dims})
+        m_ok = check_mask(X, mask, sampling_dims)
+        if m_ok:
+            # if mask is smaller than dataset
+            mask_extent = [mask[sampling_dims[0]].values.min(), mask[sampling_dims[0]].values.max(), mask[sampling_dims[1]].values.min(), mask[sampling_dims[1]].values.max()]
+            dataset_extent = [X[sampling_dims[0]].values.min(), X[sampling_dims[0]].values.max(), X[sampling_dims[1]].values.min(), X[sampling_dims[1]].values.max()]
+            if mask_extent != dataset_extent:
+                #I need to unstack and stack the dataset: not very performant
+                X = X.unstack('sampling')
+                X = X.sortby([sampling_dims[0], sampling_dims[1]])
+                X = X.sel({sampling_dims[0]: slice(mask_extent[0], mask_extent[1]), sampling_dims[1]: slice(mask_extent[2], mask_extent[3])})
+                X = X.stack({'sampling': sampling_dims})
+                
+            stacked_mask = mask['mask'].stack({'sampling': sampling_dims})
         
     #apply mask
     X = X[var_name].where(stacked_mask == True, drop=True).to_dataset()
