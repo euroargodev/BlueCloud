@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 import warnings
 
-def weekly_mean(ds, var_name, time_var='auto'):
+def OR_weekly_mean(ds, var_name, time_var='auto'):
     '''Weekly mean in dataset
 
            Parameters
@@ -43,7 +43,7 @@ def weekly_mean(ds, var_name, time_var='auto'):
     
     return X
     
-def hist_2D(X, var_name, bins=None, xlabel='Weeks'):
+def OR_hist_2D(X, var_name, bins=None, xlabel='Weeks'):
     '''Plot 2D histogram
 
            Parameters
@@ -90,7 +90,7 @@ def hist_2D(X, var_name, bins=None, xlabel='Weeks'):
 
 
 
-def reduce_dims(X, sampling_dims='auto'):
+def OR_reduce_dims(X, sampling_dims='auto'):
     '''Reduce lat lon dimensions to sampling dimension 
 
            Parameters
@@ -124,7 +124,7 @@ def reduce_dims(X, sampling_dims='auto'):
     
     return X
 
-def  check_mask(X, mask, sampling_dims):
+def OR_check_mask(X, mask, sampling_dims):
     
     m_ok = True
     # name of variable should be "mask"
@@ -150,7 +150,7 @@ def  check_mask(X, mask, sampling_dims):
 
     return m_ok
 
-def delate_NaNs(X, var_name, mask_path='auto'):
+def OR_delate_NaNs(X, var_name, mask_path='auto'):
     ''' Delate NaNs in dataset
 
             Parameters
@@ -187,7 +187,7 @@ def delate_NaNs(X, var_name, mask_path='auto'):
     else:
         #use mask
         mask = xr.open_dataset(mask_path)
-        m_ok = check_mask(X, mask, sampling_dims)
+        m_ok = OR_check_mask(X, mask, sampling_dims)
         if m_ok:
             # if mask is smaller than dataset
             mask_extent = [mask[sampling_dims[0]].values.min(), mask[sampling_dims[0]].values.max(), mask[sampling_dims[1]].values.min(), mask[sampling_dims[1]].values.max()]
@@ -222,7 +222,7 @@ def delate_NaNs(X, var_name, mask_path='auto'):
 
     return X, mask
 
-def scaler(X, var_name, scaler_name='StandardScaler'):
+def OR_scaler(X, var_name, scaler_name='StandardScaler'):
     ''' Scale data
 
             Parameters
@@ -265,7 +265,7 @@ def scaler(X, var_name, scaler_name='StandardScaler'):
 
     return X
 
-def apply_PCA(X, var_name, n_components=0.99, plot_var=False):
+def OR_apply_PCA(X, var_name, n_components=0.99, plot_var=False):
     ''' Principal components analysis
 
             Parameters
@@ -305,7 +305,7 @@ def apply_PCA(X, var_name, n_components=0.99, plot_var=False):
 
     return X
 
-def unstack_dataset(ds, X, mask, var_name, time_var='auto'):
+def OR_unstack_dataset(ds, X, mask, var_name, time_var='auto'):
     ''' UNstack dataste
 
             Parameters
