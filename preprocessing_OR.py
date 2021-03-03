@@ -12,19 +12,15 @@ def OR_weekly_mean(ds, var_name, time_var='auto'):
 
            Parameters
            ----------
-               corr_dist: correlation distance
-               start_point: latitude and longitude of the start point 
-               grid_extent: max and min latitude and longitude of the grid to be remapped 
-                    [min lon, max lon, min let, max lat]
+               ds: input dataset
+               var_name: variable we want to use
+               time_var: name of time varible. Default: 'auto', variable is automatically detected
 
            Returns
            ------
-               new_lats: new latitude vector with points separeted the correlation distance 
-               new_lons: new longitude vector with points separeted the correlation distance
+               X: dataset with a new time dimension 'feature' corresponding to the weekly mean
 
                '''
-
-    #TODO: when more than one year in dataset
     
     #detect time variable from attributes
     if 'auto' in time_var:
@@ -48,18 +44,13 @@ def OR_hist_2D(X, var_name, bins=None, xlabel='Weeks'):
 
            Parameters
            ----------
-               corr_dist: correlation distance
-               start_point: latitude and longitude of the start point 
-               grid_extent: max and min latitude and longitude of the grid to be remapped 
-                    [min lon, max lon, min let, max lat]
-
-           Returns
-           ------
-               new_lats: new latitude vector with points separeted the correlation distance 
-               new_lons: new longitude vector with points separeted the correlation distance
+               X: input dataset. It should contain 'feature' or 'feature_reduced' dimension
+               var_name: variable we want to plot 
+               bins: bins to be used in the plot. Default: None, 50 bins are used
+               xlabel: label in x axis. Default: 'Weeks'
 
                '''
-    #TODO: plot reduced feature
+
     if 'feature' not in list(X.coords.keys()) and 'feature_reduced' not in list(X.coords.keys()) :
             raise ValueError(
                 'Dataset should contains feature coordinate. Please, change the name of your feature coordinate to "feature" or use weekly_mean function.')
@@ -91,18 +82,16 @@ def OR_hist_2D(X, var_name, bins=None, xlabel='Weeks'):
 
 
 def OR_reduce_dims(X, sampling_dims='auto'):
-    '''Reduce lat lon dimensions to sampling dimension 
+    '''Reduce latitude and longitude dimensions to sampling dimension 
 
            Parameters
            ----------
-               corr_time: correlation time
-               start_point: date of the start point 
-               time_extent: max and min time of the vector to be remapped 
-                    [min time, max time]
+               X: input dataset
+               sampling_dims: dimentions to be stacked. Default: 'auto', latitude and longitude dimensions are automatically detected 
 
            Returns
            ------
-               new_time: new time vector with points separeted the time correlation
+               X: stacked dataset with new dimension 'sampling'
 
                '''
     
@@ -125,6 +114,19 @@ def OR_reduce_dims(X, sampling_dims='auto'):
     return X
 
 def OR_check_mask(X, mask, sampling_dims):
+    '''Check if mask can be used 
+
+           Parameters
+           ----------
+               X: input dataset
+               mask: mask 
+               sampling_dims: latitude and longitude dimensions names in dataset
+
+           Returns
+           ------
+               m_ok: if True, mask can be used
+
+               '''
     
     m_ok = True
     # name of variable should be "mask"
@@ -142,7 +144,7 @@ def OR_check_mask(X, mask, sampling_dims):
         m_ok = False
         raise ValueError(
                 'Coordinates in mask should have the same name than coordinates in dataset.')
-    # lat and lon dims should have the same values in dataset and mask
+    # lat and lon values should be contained in dataset lat and lon values
     if not set(mask[sampling_dims[0]].values).issubset(set(X[sampling_dims[0]].values)) or not set(mask[sampling_dims[1]].values).issubset(set(X[sampling_dims[1]].values)):
         m_ok = False
         raise ValueError(
@@ -155,23 +157,22 @@ def OR_delate_NaNs(X, var_name, mask_path='auto'):
 
             Parameters
             ----------
-                X: dataset after preprocessing
-                k: number of classes
+                X: input dataset. It should be stacked including 'sampling' dimension
+                var_name: variable we want to use
+                mask_path: path to mask. It should be:
+                            - a boolean dataset
+                            - variable name should be "mask"
+                            - lat and lon dimensition should have the same name than in dataset
+                            - lat and lon values should be contained in dataset lat and lon values
+                           Default: 'auto', mask is created from input dataset
 
             Returns
             ------
-                BIC: BIC value
-                k: number of classes
+                X: dataset without NaNs
+                mask: mask used to delate NaNs. It will be used in OR_unstack_dataset function.
 
             '''
 
-    # TODO: input mask should be:
-    #       a boolean dataset
-    #       variable name should be "mask"
-    #       lat and lon dimensition should have the same name than in dataset
-    #       lat and lon dimensions should have the same values than in dataset
-    # do we ask too many things for the mask? can we format the mask in the function? or should we create another notebook where we can create a mask as we want to be?
-    
     if 'sampling' not in list(X.coords.keys()):
             raise ValueError(
                 'Dataset should contains sampling coordinate. Please, use function reduce_dims to stack coordinates in you dataset.')
@@ -192,6 +193,7 @@ def OR_delate_NaNs(X, var_name, mask_path='auto'):
             # if mask is smaller than dataset
             mask_extent = [mask[sampling_dims[0]].values.min(), mask[sampling_dims[0]].values.max(), mask[sampling_dims[1]].values.min(), mask[sampling_dims[1]].values.max()]
             dataset_extent = [X[sampling_dims[0]].values.min(), X[sampling_dims[0]].values.max(), X[sampling_dims[1]].values.min(), X[sampling_dims[1]].values.max()]
+            #if mask smaller then dataset extent
             if mask_extent != dataset_extent:
                 #I need to unstack and stack the dataset: not very performant
                 X = X.unstack('sampling')
@@ -227,13 +229,13 @@ def OR_scaler(X, var_name, scaler_name='StandardScaler'):
 
             Parameters
             ----------
-                X: dataset after preprocessing
-                k: number of classes
+                X: input dataset. It should include 'sampling' and 'feature' dimensions
+                var_name: variable we want to use
+                scaler_name: options are 'StandardScaler', 'Normalizer' and 'MinMaxScaler'. Default: 'StandardScaler' 
 
             Returns
             ------
-                BIC: BIC value
-                k: number of classes
+                X: dataset including scaled variable
 
             '''
     
@@ -247,7 +249,6 @@ def OR_scaler(X, var_name, scaler_name='StandardScaler'):
     # Check dimensions order
     X = X.transpose("sampling", "feature")
     
-    # Apply Standard Scaler
     if 'StandardScaler' in scaler_name:
         from sklearn.preprocessing import StandardScaler
         X_scale = StandardScaler().fit_transform(X[var_name])
@@ -270,13 +271,14 @@ def OR_apply_PCA(X, var_name, n_components=0.99, plot_var=False):
 
             Parameters
             ----------
-                X: dataset after preprocessing
-                k: number of classes
+                X: input dataset. It should include 'sampling' and 'feature' dimensions
+                var_name: variable we want to use
+                n_components: percentage of variance to be explained by all components. Default: 0.99
+                plot_var: if True, the percentage of variance explained by each of the components is plotted. Default: False.
 
             Returns
             ------
-                BIC: BIC value
-                k: number of classes
+                X: dataset including reduced variable and new dimension feature_reduced
 
             '''
     
@@ -305,18 +307,19 @@ def OR_apply_PCA(X, var_name, n_components=0.99, plot_var=False):
 
     return X
 
-def OR_unstack_dataset(ds, X, mask, var_name, time_var='auto'):
-    ''' UNstack dataste
+def OR_unstack_dataset(ds, X, mask, time_var='auto'):
+    ''' Unstack dataset and recover attributes
 
             Parameters
             ----------
-                X: dataset after preprocessing
-                k: number of classes
+                ds: not preprocessed input dataset
+                X: dataset after preprocessing and including model variables
+                mask: mask used during preprocesing for delating NaNs
+                time_var: name of time variable in ds dataset. Default: 'auto', variable is automatically detected 
 
             Returns
             ------
-                BIC: BIC value
-                k: number of classes
+                ds_labels: unstack dataset including ds attributes
 
             '''
 
