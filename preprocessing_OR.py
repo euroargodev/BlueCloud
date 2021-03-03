@@ -333,7 +333,7 @@ def OR_unstack_dataset(ds, X, mask, time_var='auto'):
     # same lat and lon values in mask and in results
     ds_labels = ds_labels.reindex_like(mask)
     # sometimes it is necessary to sort lat and lon
-    ds_labels = ds_labels.sortby([sampling_dims[0], sampling_dims[1]])
+    ds_labels = ds_labels.sortby([sampling_dims[0], sampling_dims[1]]) 
     
     #copy atributtes from input dataset
     ds_labels.attrs = ds.attrs
