@@ -191,6 +191,7 @@ def OR_delate_NaNs(X, var_name, mask_path='auto'):
         #create mask
         stacked_mask = X[var_name].notnull()
         mask = stacked_mask.unstack('sampling').to_dataset()
+        mask = mask.sortby([sampling_dims[0], sampling_dims[1]])
         mask = mask.rename({var_name: 'mask'})
     else:
         #use mask
