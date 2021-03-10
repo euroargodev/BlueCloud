@@ -192,6 +192,10 @@ def OR_delate_NaNs(X, var_name, mask_path='auto'):
         stacked_mask = X[var_name].notnull()
         mask = stacked_mask.unstack('sampling').to_dataset()
         mask = mask.sortby([sampling_dims[0], sampling_dims[1]])
+        print(np.shape(mask[var_name]))
+        if 'lon' in sampling_dims[0]:
+            mask = mask.transpose(sampling_dims[1], sampling_dims[0], ...)
+        print(np.shape(mask[var_name]))
         mask = mask.rename({var_name: 'mask'})
     else:
         #use mask

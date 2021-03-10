@@ -90,6 +90,7 @@ class Plotter_OR:
             plt.cm.get_cmap(name=self.cmap_name), self.m.K)
         plt.cm.register_cmap("mycolormap", cmap)
         cpal = sns.color_palette("mycolormap", n_colors=self.m.K)
+        print(cpal)
 
         #convert to dataframe
         ds_p = self.ds[var_name]
