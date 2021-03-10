@@ -159,7 +159,7 @@ def OR_check_mask(X, mask, sampling_dims):
     return m_ok
 
 
-def OR_delate_NaNs(X, var_name, mask_path='auto'):
+def OR_delate_NaNs(X, var_name, mask_path='auto', interp=False):
     ''' Delate NaNs in dataset
 
             Parameters
@@ -172,6 +172,7 @@ def OR_delate_NaNs(X, var_name, mask_path='auto'):
                             - lat and lon dimensition should have the same name than in dataset
                             - lat and lon values should be contained in dataset lat and lon values
                            Default: 'auto', mask is created from input dataset
+                interp: if True interpolation is applied. Default: False
 
             Returns
             ------
@@ -222,21 +223,23 @@ def OR_delate_NaNs(X, var_name, mask_path='auto'):
     #delate time series all NaNs
     if np.any(np.isnan(X[var_name].values)):
         X = X[var_name].where(~X[var_name].isnull(), drop=True).to_dataset()
-    print(X)
         
-    #delate time series with any NaN     
-    if np.any(np.isnan(X[var_name].values)):
-         X = X.dropna('sampling', how='any')
-    print(X)  
+    #delate time series with any NaN
+    if interp:
+        # interpolation
+        if np.any(np.isnan(X[var_name].values)):
+            print('Interpolation is applied')
+            if 'feature' not in list(X.coords.keys()):
+                raise ValueError(
+                    'Dataset should contains feature coordinate. Please, change the name of your feature coordinate to "feature" or use weekly_mean function.')
+            X = X[var_name].interpolate_na(
+                dim='feature', method="linear", fill_value="extrapolate").to_dataset(name=var_name)
+    else:
+        #delate time series with any NaN
+        if np.any(np.isnan(X[var_name].values)):
+             X = X.dropna('sampling', how='any')  
 
-    # interpolation
-    #if np.any(np.isnan(X[var_name].values)):
-    #    print('Interpolation is applied')
-    #    if 'feature' not in list(X.coords.keys()):
-    #        raise ValueError(
-    #            'Dataset should contains feature coordinate. Please, change the name of your feature coordinate to "feature" or use weekly_mean function.')
-    #    X = X[var_name].interpolate_na(
-    #        dim='feature', method="linear", fill_value="extrapolate").to_dataset(name=var_name)
+    
 
     # check if NaNs in dataset
     if np.any(np.isnan(X[var_name].values)):
