@@ -192,10 +192,8 @@ def OR_delate_NaNs(X, var_name, mask_path='auto'):
         stacked_mask = X[var_name].notnull()
         mask = stacked_mask.unstack('sampling').to_dataset()
         mask = mask.sortby([sampling_dims[0], sampling_dims[1]])
-        print(np.shape(mask[var_name]))
         if 'lon' in sampling_dims[0]:
             mask = mask.transpose(sampling_dims[1], sampling_dims[0], ...)
-        print(np.shape(mask[var_name]))
         mask = mask.rename({var_name: 'mask'})
     else:
         #use mask
@@ -224,15 +222,21 @@ def OR_delate_NaNs(X, var_name, mask_path='auto'):
     #delate time series all NaNs
     if np.any(np.isnan(X[var_name].values)):
         X = X[var_name].where(~X[var_name].isnull(), drop=True).to_dataset()
+    print(X)
+        
+    #delate time series with any NaN     
+    if np.any(np.isnan(X[var_name].values)):
+         X = X.dropna('sampling', how='any')
+    print(X)  
 
     # interpolation
-    if np.any(np.isnan(X[var_name].values)):
-        print('Interpolation is applied')
-        if 'feature' not in list(X.coords.keys()):
-            raise ValueError(
-                'Dataset should contains feature coordinate. Please, change the name of your feature coordinate to "feature" or use weekly_mean function.')
-        X = X[var_name].interpolate_na(
-            dim='feature', method="linear", fill_value="extrapolate").to_dataset(name=var_name)
+    #if np.any(np.isnan(X[var_name].values)):
+    #    print('Interpolation is applied')
+    #    if 'feature' not in list(X.coords.keys()):
+    #        raise ValueError(
+    #            'Dataset should contains feature coordinate. Please, change the name of your feature coordinate to "feature" or use weekly_mean function.')
+    #    X = X[var_name].interpolate_na(
+    #        dim='feature', method="linear", fill_value="extrapolate").to_dataset(name=var_name)
 
     # check if NaNs in dataset
     if np.any(np.isnan(X[var_name].values)):
