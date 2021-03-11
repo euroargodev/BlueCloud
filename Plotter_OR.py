@@ -30,7 +30,7 @@ class Plotter_OR:
 
            '''
 
-    def __init__(self, ds, model, coords_dict=None, cmap_name='Accent'):
+    def __init__(self, ds, model, coords_dict=None, cmap_name='Accent', K=None):
 
         # TODO: automatic detection of GMM_LABELS and quantils ?
         # TODO: automatic detection of variable name
@@ -38,7 +38,10 @@ class Plotter_OR:
 
         self.ds = ds
         self.m = model  # diferent model than in pyxpcm
-        self.m.K = model.n_components
+        if not K:
+            self.m.K = model.n_components
+        else:
+            self.m.K = K
         if cmap_name == 'Accent' and self.m.K > 8:
             self.cmap_name = 'tab20'
         else:
@@ -129,6 +132,7 @@ class Plotter_OR:
         gmm_labels = self.ds['GMM_labels']
         kmap = self.cmap_discretize(
             plt.cm.get_cmap(name=self.cmap_name), self.m.K)
+        #kmap = self.cmap_discretize(name=self.cmap_name, K=self.m.K)
 
         for cl in range(self.m.K):
             # get labels
@@ -283,8 +287,9 @@ class Plotter_OR:
 
         nQ = len(da[QUANT_DIM])  # Nb of quantiles
 
-        cmapK = self.cmap_discretize(
+        kmap = self.cmap_discretize(
             plt.cm.get_cmap(name=self.cmap_name), self.m.K)
+        #kmap = self.cmap_discretize(name=self.cmap_name, K=self.m.K)
         if not cmap:
             cmap = self.cmap_discretize(plt.cm.get_cmap(name='brg'), nQ)
 
@@ -327,7 +332,7 @@ class Plotter_OR:
                     "q=%0.2f") % da[QUANT_DIM][iq], color=cmap(iq))
 
             ax[k].set_title(("k = %i") %
-                            (k), color=cmapK(k), fontweight="bold")
+                            (k), color=kmap(k), fontweight="bold")
             ax[k].legend(loc='lower right')
             ax[k].grid(True)
 
@@ -414,8 +419,9 @@ class Plotter_OR:
 
         nQ_p = len(q_range)  # Nb of plots
 
-        cmapK = self.cmap_discretize(
+        kmap = self.cmap_discretize(
             plt.cm.get_cmap(name=self.cmap_name), self.m.K)
+        #kmap = self.cmap_discretize(name=self.cmap_name, K=self.m.K)
         if not cmap:
             cmap = self.cmap_discretize(plt.cm.get_cmap(name='brg'), nQ)
 
@@ -456,7 +462,7 @@ class Plotter_OR:
                 if start_month != 0:
                     Qqk = Qqk.reindex({'feature': new_order_index+1})
                 ax[cnt][0].plot(da[FEATURE_DIM], Qqk.values, label=(
-                    "K=%i") % (da[CLASS_DIM][k]), color=cmapK(k))
+                    "K=%i") % (da[CLASS_DIM][k]), color=kmap(k))
 
             ax[cnt][0].set_title(("quantile: %.2f") % (
                 da[QUANT_DIM].values[q]), color=cmap(q), fontsize=12)
@@ -498,9 +504,11 @@ class Plotter_OR:
             extent = np.array([min(self.ds[self.coords_dict.get('longitude')]), max(self.ds[self.coords_dict.get('longitude')]), min(
                 self.ds[self.coords_dict.get('latitude')]), max(self.ds[self.coords_dict.get('latitude')])]) + np.array([-0.1, +0.1, -0.1, +0.1])
 
-        dsp = self.ds
+        dsp = self.ds['GMM_labels']
         title_str = '$\\bf{Spatial\\ ditribution\\ of\\ classes}$'
-        var_name = 'GMM_labels'
+        
+        #check coordinates order
+        dsp = dsp.transpose(self.coords_dict.get('latitude'), self.coords_dict.get('longitude'))
 
         subplot_kw = {'projection': proj, 'extent': extent}
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(
@@ -508,8 +516,8 @@ class Plotter_OR:
 
         kmap = self.cmap_discretize(
             plt.cm.get_cmap(name=self.cmap_name), self.m.K)
-
-        sc = ax.pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp[var_name],
+       
+        sc = ax.pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp,
                            cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
 
         cbar = plt.colorbar(sc, cmap=kmap, shrink=0.3)
@@ -574,6 +582,9 @@ class Plotter_OR:
         dsp = self.ds
         title_string = '$\\bf{PCM\\  Robustness}$' + \
             ' \n probability of a profile to belong to a class k'
+        
+        # Check dimensions order
+        dsp = dsp.transpose(self.coords_dict.get('latitude'), self.coords_dict.get('longitude'), ...)
 
         # spatial extent
         if isinstance(extent, str):
@@ -602,7 +613,7 @@ class Plotter_OR:
         plt.rcParams['figure.constrained_layout.use'] = True
 
         for k in range(self.m.K):
-            sc = ax[k].pcolormesh(self.ds[self.coords_dict.get('longitude')], self.ds[self.coords_dict.get('latitude')], self.ds['GMM_robustness_cat'].where(self.ds['GMM_labels'] == k),
+            sc = ax[k].pcolormesh(self.ds[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp['GMM_robustness_cat'].where(self.ds['GMM_labels'] == k),
                                   cmap=cmap, transform=ccrs.PlateCarree(), vmin=0, vmax=5)
 
             ax[k].add_feature(land_feature, edgecolor='black')
