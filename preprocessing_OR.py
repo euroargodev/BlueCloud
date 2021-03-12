@@ -34,7 +34,8 @@ def OR_weekly_mean(ds, var_name, time_var='auto'):
             raise ValueError(
                 'Time variable could not be detected. Please, provide it using time_var input.')
 
-    X = ds.groupby(time_var + ".week").mean()
+    #X = ds.groupby(time_var + ".week").mean()
+    X = ds.groupby(ds[time_var].dt.isocalendar().week).mean()
     X = X.rename_dims({'week': 'feature'})
     X = X.rename({'week': 'feature'})
 
