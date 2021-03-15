@@ -274,6 +274,7 @@ def plot_BIC(BIC, NK):
                '''
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 5), dpi=90)
     BICmean = np.mean(BIC, axis=1)
+    bic_min = np.argmin(BICmean)+1
     BICstd = np.std(BIC, axis=1)
     normBICmean = (BICmean-np.mean(BICmean))/np.std(BICmean)
     #normBICstd = np.std(normBICmean)
@@ -287,3 +288,9 @@ def plot_BIC(BIC, NK):
     plt.xticks(np.arange(NK)+1)
     plt.legend()
     plt.title('Bayesian information criteria (BIC)')
+    if bic_min > -1:
+        ax.annotate('min = ' + str(bic_min), xy=(bic_min, BICmean[bic_min - 1]), xycoords='data',
+                    xytext=(0.8, 0.8), textcoords='axes fraction',
+                    arrowprops=dict(facecolor='black', shrink=0.05, width=3),
+                    horizontalalignment='right', verticalalignment='top',
+                    )
