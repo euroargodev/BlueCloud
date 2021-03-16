@@ -629,9 +629,9 @@ class Plotter_OR:
             gl.ylocator = mticker.FixedLocator(np.arange(-90, 90+1,  lat_grid))
             gl.xformatter = LONGITUDE_FORMATTER
             gl.yformatter = LATITUDE_FORMATTER
-            gl.xlabels_top = False
+            gl.top_labels = False
             gl.xlabel_style = {'fontsize': 5}
-            gl.ylabels_right = False
+            gl.right_labels = False
             gl.ylabel_style = {'fontsize': 5}
 
             rowl0 = self.ds['GMM_robustness_cat'].attrs['legend']
