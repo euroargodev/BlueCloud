@@ -90,7 +90,6 @@ class Plotter_OR:
             plt.cm.get_cmap(name=self.cmap_name), self.m.K)
         plt.cm.register_cmap("mycolormap", cmap)
         cpal = sns.color_palette("mycolormap", n_colors=self.m.K)
-        print(cpal)
 
         #convert to dataframe
         ds_p = self.ds[var_name]
@@ -115,9 +114,7 @@ class Plotter_OR:
         df = df.rename(columns={0: "feature_reduced_0",
                                 1: "feature_reduced_1", '': "labels"})
         # when not all classes in subset
-        print(np.unique(df["labels"]).astype(int))
         cpal = [cpal[i] for i in np.unique(df["labels"]).astype(int)]
-        print(cpal)
 
         defaults = {'height': 4, 'aspect': 1, 'hue': 'labels',
                     'despine': False, 'palette': cpal}
@@ -126,7 +123,7 @@ class Plotter_OR:
         g.map_diag(sns.histplot, edgecolor=None, alpha=0.75)
         g = g.map_upper(plt.scatter, s=3)
 
-        g.add_legend(labels=range(self.m.K))
+        g.add_legend()
 
     def pie_classes(self):
         """Pie chart of classes
