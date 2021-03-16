@@ -150,12 +150,15 @@ def generate_plots(m, ds, var_name_ds, first_date):
     # pie chart of the classes distribution
     P.pie_classes()
     P.save_BlueCloud('pie_chart.png')
-    # temporal distribution (monthly)
-    P.temporal_distribution(time_bins='month')
-    P.save_BlueCloud('temporal_distr_months.png')
-    # temporal distribution (seasonally)
-    P.temporal_distribution(time_bins='season')
-    P.save_BlueCloud('temporal_distr_season.png')
+    if len(ds.time) > 1:
+        P.temporal_distribution(time_bins='month')
+        P.save_BlueCloud('temporal_distr_months.png')
+        # temporal distribution (seasonally)
+        P.temporal_distribution(time_bins='season')
+        P.save_BlueCloud('temporal_distr_season.png')
+    else:
+        open('temporal_distr_months.png', 'w').close()
+        open('temporal_distr_season.png', 'w').close()
     # save data
     ds.to_netcdf('predicted_dataset.nc', format='NETCDF4')
 
