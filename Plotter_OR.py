@@ -184,7 +184,7 @@ class Plotter_OR:
         plt.box(on=None)
         the_table.scale(1, 1.5)
         fig.suptitle('$\\bf{Classes\\ distribution}$', fontsize=14)
-        plt.tight_layout()
+        #plt.tight_layout()
 
     @staticmethod
     def cmap_discretize(name, K):
@@ -522,7 +522,7 @@ class Plotter_OR:
         sc = ax.pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp,
                            cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
 
-        cbar = plt.colorbar(sc, cmap=kmap, shrink=0.3)
+        cbar = plt.colorbar(sc, shrink=0.3)
         cbar.set_ticks(np.arange(0.5, self.m.K+0.5))
         cbar.set_ticklabels(range(self.m.K))
 
