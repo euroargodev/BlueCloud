@@ -45,11 +45,9 @@ def load_data(file_name):
     coord_dict: coordinate dictionary for pyXpcm
     """
     ds = xr.open_dataset(file_name)
-    first_date = str(ds.time.min().values)[0:7]
-    coord_dict = get_coords_dict(ds)
-    ds['depth'] = -np.abs(ds[coord_dict['depth']].values)
-    ds.depth.attrs['axis'] = 'Z'
-    return ds, first_date, coord_dict
+    ds['time'] = ds.indexes['time'].to_datetimeindex()
+    ds.time.attrs['axis'] = 'T'
+    return ds
 
 
 def get_coords_dict(ds):
@@ -152,9 +150,9 @@ def generate_plots(m, ds, var_name_ds, first_date):
     -------
     saves all the plots as png
     """
-    if ds[var_name_ds].attrs['unit_long'] and ds[var_name_ds].attrs['long_name']:
+    try:
         x_label = ds[var_name_ds].attrs['long_name'] + " in " + ds[var_name_ds].attrs['unit_long']
-    else:
+    except KeyError:
         x_label = var_name_ds
     P = Plotter(ds, m)
     # plot profiles by class

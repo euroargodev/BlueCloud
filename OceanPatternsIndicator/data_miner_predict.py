@@ -130,9 +130,9 @@ def generate_plots(m, ds, var_name_ds, first_date):
     -------
     saves all the plots as png
     """
-    if ds[var_name_ds].attrs['unit_long'] and ds[var_name_ds].attrs['long_name']:
+    try:
         x_label = ds[var_name_ds].attrs['long_name'] + " in " + ds[var_name_ds].attrs['unit_long']
-    else:
+    except KeyError:
         x_label = var_name_ds
     P = Plotter(ds, m)
     # plot profiles by class
