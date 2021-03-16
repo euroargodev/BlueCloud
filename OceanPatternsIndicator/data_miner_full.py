@@ -45,9 +45,11 @@ def load_data(file_name):
     coord_dict: coordinate dictionary for pyXpcm
     """
     ds = xr.open_dataset(file_name)
-    ds['time'] = ds.indexes['time'].to_datetimeindex()
-    ds.time.attrs['axis'] = 'T'
-    return ds
+    first_date = str(ds.time.min().values)[0:7]
+    coord_dict = get_coords_dict(ds)
+    ds['depth'] = -np.abs(ds[coord_dict['depth']].values)
+    ds.depth.attrs['axis'] = 'Z'
+    return ds, first_date, coord_dict
 
 
 def get_coords_dict(ds):
