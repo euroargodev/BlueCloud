@@ -366,7 +366,7 @@ def OR_unstack_dataset(ds, X, mask, time_var='auto'):
     #copy atributtes from input dataset
     ds_labels.attrs = ds.attrs
     ds_labels[sampling_dims[0]].attrs = ds[sampling_dims[0]].attrs
-    ds_labels[sampling_dims[1]].attrs = ds[sampling_dims[0]].attrs
+    ds_labels[sampling_dims[1]].attrs = ds[sampling_dims[1]].attrs
 
     # detect time variable
     if 'auto' in time_var:
@@ -380,5 +380,6 @@ def OR_unstack_dataset(ds, X, mask, time_var='auto'):
                 'Time variable could not be detected. Please, provide it using time_var input.')
     #include time coord for save_BlueCloud function in Plotter_OR class
     ds_labels = ds_labels.assign_coords({'time': ds[time_var].values})
+    ds_labels['time'].attrs = ds['time'].attrs
 
     return ds_labels

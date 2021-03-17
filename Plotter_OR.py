@@ -32,9 +32,7 @@ class Plotter_OR:
 
     def __init__(self, ds, model, coords_dict=None, cmap_name='Accent', K=None):
 
-        # TODO: automatic detection of GMM_LABELS and quantils ?
-        # TODO: automatic detection of variable name
-        # not data type function because Ocean Regimes only difined for gridded data
+        # not data type function because Ocean Regimes only defined for gridded data
 
         self.ds = ds
         self.m = model  # diferent model than in pyxpcm
@@ -50,7 +48,6 @@ class Plotter_OR:
         # check if dataset includes GMM variables
         assert ("GMM_labels" in self.ds), "Dataset should include GMM_labels variable to be plotted. Please go back to prediction step"
 
-        #TODO: recognition of feature variable?
         if coords_dict == None:
             # creates dictionary with coordinates
             coords_list = list(self.ds.coords.keys())
@@ -304,7 +301,7 @@ class Plotter_OR:
             xlim = np.array([da[FEATURE_DIM].min(), da[FEATURE_DIM].max()])
 
         #ticks in months
-        dates = 2019*1000 + da.feature*10 + 0
+        dates = 2019*1000 + da[FEATURE_DIM]*10 + 0
         dates = dates.astype(str)
         dates = pd.to_datetime(dates.values, format='%Y%W%w')
 
@@ -329,7 +326,7 @@ class Plotter_OR:
             for (iq, q) in zip(np.arange(nQ), Qk[QUANT_DIM]):
                 Qkq = Qk.loc[{QUANT_DIM: q}]
                 if start_month != 0:
-                    Qkq = Qkq.reindex({'feature': new_order_index+1})
+                    Qkq = Qkq.reindex({FEATURE_DIM: new_order_index+1})
                 ax[k].plot(da[FEATURE_DIM], Qkq.values, label=(
                     "q=%0.2f") % da[QUANT_DIM][iq], color=cmap(iq))
 
@@ -431,7 +428,7 @@ class Plotter_OR:
             xlim = np.array([da[FEATURE_DIM].min(), da[FEATURE_DIM].max()])
 
         #ticks in months
-        dates = 2019*1000 + da.feature*10 + 0
+        dates = 2019*1000 + da[FEATURE_DIM]*10 + 0
         dates = dates.astype(str)
         dates = pd.to_datetime(dates.values, format='%Y%W%w')
 
@@ -462,7 +459,7 @@ class Plotter_OR:
             for k in range(self.m.K):
                 Qqk = Qq.loc[{CLASS_DIM: k}]
                 if start_month != 0:
-                    Qqk = Qqk.reindex({'feature': new_order_index+1})
+                    Qqk = Qqk.reindex({FEATURE_DIM: new_order_index+1})
                 ax[cnt][0].plot(da[FEATURE_DIM], Qqk.values, label=(
                     "K=%i") % (da[CLASS_DIM][k]), color=kmap(k))
 
