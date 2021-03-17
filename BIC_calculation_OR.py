@@ -143,6 +143,7 @@ def mapping_corr_time(corr_time, start_point, time_extent):
 
     return new_time
 
+
 def BIC_cal(X, k):
     ''' Function that calculates BIC for a number of classes k
 
@@ -166,6 +167,7 @@ def BIC_cal(X, k):
     BIC = m.bic(X)
 
     return BIC, k
+
 
 def BIC_calculation(X, corr_dist, coords_dict, feature_name, var_name, Nrun=10, NK=20):
     '''Calculation of BIC (Bayesian Information Criteria) for a training dataset.
@@ -192,10 +194,11 @@ def BIC_calculation(X, corr_dist, coords_dict, feature_name, var_name, Nrun=10, 
     # TODO: latitude and longitude values
     # TODO: automatic detection of variables names
     # TODO: If only one time step?
-    
-    #Unstack dataset
+
+    # Unstack dataset
     X_unstack = X[var_name].unstack('sampling')
-    X_unstack = X_unstack.sortby([coords_dict.get('latitude'),coords_dict.get('longitude')])
+    X_unstack = X_unstack.sortby(
+        [coords_dict.get('latitude'), coords_dict.get('longitude')])
 
     # grid extent
     grid_extent = np.array([X_unstack[coords_dict.get('longitude')].values.min(), X_unstack[coords_dict.get('longitude')].values.max(
@@ -204,52 +207,30 @@ def BIC_calculation(X, corr_dist, coords_dict, feature_name, var_name, Nrun=10, 
     # this is the list of arguments to iterate over, for instance nb of classes for a PCM
     class_list = np.arange(0, NK)
 
-    
-
     BIC = np.zeros((NK, Nrun))
     for run in range(Nrun):
 
         # random fist point
-        latp = np.random.choice(X_unstack[coords_dict.get('latitude')].values, 1, replace=False)
-        lonp = np.random.choice(X_unstack[coords_dict.get('longitude')].values, 1, replace=False)
+        latp = np.random.choice(
+            X_unstack[coords_dict.get('latitude')].values, 1, replace=False)
+        lonp = np.random.choice(
+            X_unstack[coords_dict.get('longitude')].values, 1, replace=False)
         # remapping
         new_lats, new_lons = mapping_corr_dist(
-            corr_dist=corr_dist, start_point=np.concatenate((lonp, latp)), grid_extent=grid_extent)        
+            corr_dist=corr_dist, start_point=np.concatenate((lonp, latp)), grid_extent=grid_extent)
 
-        ds_run_i = X_unstack.sel({coords_dict.get('latitude'):list(new_lats), coords_dict.get('longitude'):list(new_lons)}, method='nearest')
+        ds_run_i = X_unstack.sel({coords_dict.get('latitude'): list(
+            new_lats), coords_dict.get('longitude'): list(new_lons)}, method='nearest')
         X_run_i = ds_run_i.stack({'sampling': ('lat', 'lon')})
         X_run_i = X_run_i.transpose("sampling", feature_name)
-        #no NaNs
-        X_run_i = X_run_i.where(~X_run_i.isnull(),drop=True).to_dataset()
-        
-        # BIC computation in parallel
-        #results = []
-        #ConcurrentExecutor = concurrent.futures.ThreadPoolExecutor(
-        #    max_workers=100)
-        #with ConcurrentExecutor as executor:
-        #    future_to_url = {executor.submit(
-        #        BIC_cal, X_run_i[var_name], k): k for k in class_list}
-        #   futures = concurrent.futures.as_completed(future_to_url)
-        #    futures = tqdm(futures, total=len(class_list))
-        #   for future in futures:
-        #       traj = None
-        #       try:
-        #           traj = future.result()
-        #        except Exception as e:
-        #            # pass
-        #            raise
-        #        finally:
-        #           results.append(traj)
-        # Only keep non-empty results
-        #results = [r for r in results if r is not None]
-        #results.sort(key=lambda x: x[1])
-        #BIC[:, run] = np.array([i[0] for i in results])
-        
+        # no NaNs
+        X_run_i = X_run_i.where(~X_run_i.isnull(), drop=True).to_dataset()
+
         # serial computation of BIC
         results = []
         for k in class_list:
             results.append(BIC_cal(X_run_i[var_name], k))
-            
+
         results = [r for r in results if r is not None]
         results.sort(key=lambda x: x[1])
         BIC[:, run] = np.array([i[0] for i in results])
