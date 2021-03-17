@@ -23,7 +23,7 @@ def OR_weekly_mean(ds, var_name, time_var='auto'):
 
                '''
 
-    #detect time variable from attributes
+    # detect time variable from attributes
     if 'auto' in time_var:
         coords_list = list(ds.coords.keys())
         for c in coords_list:
@@ -55,8 +55,8 @@ def OR_hist_2D(X, var_name, bins=None, xlabel='Weeks'):
                '''
 
     if 'feature' not in list(X.coords.keys()) and 'feature_reduced' not in list(X.coords.keys()):
-            raise ValueError(
-                'Dataset should contains feature coordinate. Please, change the name of your feature coordinate to "feature" or use weekly_mean function.')
+        raise ValueError(
+            'Dataset should contains feature coordinate. Please, change the name of your feature coordinate to "feature" or use weekly_mean function.')
 
     if np.any(bins) == None:
         bins = np.linspace(X[var_name].min().values,
@@ -101,7 +101,7 @@ def OR_reduce_dims(X, sampling_dims='auto'):
 
                '''
 
-    #detect sampling coordinates from attributes
+    # detect sampling coordinates from attributes
     if 'auto' in sampling_dims:
         coords_list = list(X.coords.keys())
         sampling_dims = []
@@ -183,25 +183,25 @@ def OR_delate_NaNs(X, var_name, mask_path='auto', interp=False):
             '''
 
     if 'sampling' not in list(X.coords.keys()):
-            raise ValueError(
-                'Dataset should contains sampling coordinate. Please, use function reduce_dims to stack coordinates in you dataset.')
+        raise ValueError(
+            'Dataset should contains sampling coordinate. Please, use function reduce_dims to stack coordinates in you dataset.')
     if 'feature' not in list(X.coords.keys()):
-            raise ValueError(
-                'Dataset should contains feature coordinate. Please, change the name of your feature coordinate to "feature" or use weekly_mean function.')
+        raise ValueError(
+            'Dataset should contains feature coordinate. Please, change the name of your feature coordinate to "feature" or use weekly_mean function.')
 
     sampling_dims = X.get_index('sampling').names
 
-    #check if we have a mask or not
+    # check if we have a mask or not
     if 'auto' in mask_path:
-        #create mask
-        stacked_mask = X[var_name].isel(feature=0).notnull() #2D mask
+        # create mask
+        stacked_mask = X[var_name].isel(feature=0).notnull()  # 2D mask
         mask = stacked_mask.unstack('sampling').to_dataset()
         mask = mask.sortby([sampling_dims[0], sampling_dims[1]])
         if 'lon' in sampling_dims[0]:
             mask = mask.transpose(sampling_dims[1], sampling_dims[0], ...)
         mask = mask.rename({var_name: 'mask'})
     else:
-        #use mask
+        # use mask
         mask = xr.open_dataset(mask_path)
         m_ok = OR_check_mask(X, mask, sampling_dims)
         if m_ok:
@@ -210,9 +210,9 @@ def OR_delate_NaNs(X, var_name, mask_path='auto', interp=False):
             ), mask[sampling_dims[1]].values.min(), mask[sampling_dims[1]].values.max()]
             dataset_extent = [X[sampling_dims[0]].values.min(), X[sampling_dims[0]].values.max(
             ), X[sampling_dims[1]].values.min(), X[sampling_dims[1]].values.max()]
-            #if mask smaller then dataset extent
+            # if mask smaller then dataset extent
             if mask_extent != dataset_extent:
-                #I need to unstack and stack the dataset: not very performant
+                # I need to unstack and stack the dataset: not very performant
                 X = X.unstack('sampling')
                 X = X.sortby([sampling_dims[0], sampling_dims[1]])
                 X = X.sel({sampling_dims[0]: slice(
@@ -221,14 +221,14 @@ def OR_delate_NaNs(X, var_name, mask_path='auto', interp=False):
 
             stacked_mask = mask['mask'].stack({'sampling': sampling_dims})
 
-    #apply mask
+    # apply mask
     X = X[var_name].where(stacked_mask == True, drop=True).to_dataset()
 
-    #delate time series all NaNs
+    # delate time series all NaNs
     if np.any(np.isnan(X[var_name].values)):
         X = X[var_name].where(~X[var_name].isnull(), drop=True).to_dataset()
-        
-    #delate time series with any NaN
+
+    # delate time series with any NaN
     if interp:
         # interpolation
         if np.any(np.isnan(X[var_name].values)):
@@ -236,9 +236,9 @@ def OR_delate_NaNs(X, var_name, mask_path='auto', interp=False):
             X = X[var_name].interpolate_na(
                 dim='feature', method="linear", fill_value="extrapolate").to_dataset(name=var_name)
     else:
-        #delate time series with any NaN
+        # delate time series with any NaN
         if np.any(np.isnan(X[var_name].values)):
-             X = X.dropna('sampling', how='any')  
+            X = X.dropna('sampling', how='any')
 
     # check if NaNs in dataset
     if np.any(np.isnan(X[var_name].values)):
@@ -264,11 +264,11 @@ def OR_scaler(X, var_name, scaler_name='StandardScaler'):
             '''
 
     if 'sampling' not in list(X.coords.keys()):
-            raise ValueError(
-                'Dataset should contains sampling coordinate. Please, use function reduce_dims to stack coordinates in you dataset.')
+        raise ValueError(
+            'Dataset should contains sampling coordinate. Please, use function reduce_dims to stack coordinates in you dataset.')
     if 'feature' not in list(X.coords.keys()):
-            raise ValueError(
-                'Dataset should contains feature coordinate. Please, change the name of your feature coordinate to "feature" or use weekly_mean function.')
+        raise ValueError(
+            'Dataset should contains feature coordinate. Please, change the name of your feature coordinate to "feature" or use weekly_mean function.')
 
     # Check dimensions order
     X = X.transpose("sampling", "feature")
@@ -309,11 +309,11 @@ def OR_apply_PCA(X, var_name, n_components=0.99, plot_var=False):
             '''
 
     if 'sampling' not in list(X.coords.keys()):
-            raise ValueError(
-                'Dataset should contains sampling coordinate. Please, use function reduce_dims to stack coordinates in you dataset.')
+        raise ValueError(
+            'Dataset should contains sampling coordinate. Please, use function reduce_dims to stack coordinates in you dataset.')
     if 'feature' not in list(X.coords.keys()):
-            raise ValueError(
-                'Dataset should contains feature coordinate. Please, change the name of your feature coordinate to "feature" or use weekly_mean function.')
+        raise ValueError(
+            'Dataset should contains feature coordinate. Please, change the name of your feature coordinate to "feature" or use weekly_mean function.')
 
     # Check dimensions order
     X = X.transpose("sampling", "feature")
@@ -353,8 +353,8 @@ def OR_unstack_dataset(ds, X, mask, time_var='auto'):
             '''
 
     if 'sampling' not in list(X.coords.keys()):
-            raise ValueError(
-                'Dataset should contains sampling coordinate. Please, use function reduce_dims to stack coordinates in you dataset.')
+        raise ValueError(
+            'Dataset should contains sampling coordinate. Please, use function reduce_dims to stack coordinates in you dataset.')
 
     sampling_dims = X.get_index('sampling').names
     ds_labels = X.unstack('sampling')
@@ -363,10 +363,10 @@ def OR_unstack_dataset(ds, X, mask, time_var='auto'):
     # sometimes it is necessary to sort lat and lon
     ds_labels = ds_labels.sortby([sampling_dims[0], sampling_dims[1]])
 
-    #copy atributtes from input dataset
+    # copy atributtes from input dataset
     ds_labels.attrs = ds.attrs
     ds_labels[sampling_dims[0]].attrs = ds[sampling_dims[0]].attrs
-    ds_labels[sampling_dims[1]].attrs = ds[sampling_dims[0]].attrs
+    ds_labels[sampling_dims[1]].attrs = ds[sampling_dims[1]].attrs
 
     # detect time variable
     if 'auto' in time_var:
@@ -378,7 +378,8 @@ def OR_unstack_dataset(ds, X, mask, time_var='auto'):
         if 'auto' in time_var:
             raise ValueError(
                 'Time variable could not be detected. Please, provide it using time_var input.')
-    #include time coord for save_BlueCloud function in Plotter_OR class
+    # include time coord for save_BlueCloud function in Plotter_OR class
     ds_labels = ds_labels.assign_coords({'time': ds[time_var].values})
+    ds_labels['time'].attrs = ds['time'].attrs
 
     return ds_labels

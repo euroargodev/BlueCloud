@@ -32,9 +32,7 @@ class Plotter_OR:
 
     def __init__(self, ds, model, coords_dict=None, cmap_name='Accent', K=None):
 
-        # TODO: automatic detection of GMM_LABELS and quantils ?
-        # TODO: automatic detection of variable name
-        # not data type function because Ocean Regimes only difined for gridded data
+        # not data type function because Ocean Regimes only defined for gridded data
 
         self.ds = ds
         self.m = model  # diferent model than in pyxpcm
@@ -50,7 +48,6 @@ class Plotter_OR:
         # check if dataset includes GMM variables
         assert ("GMM_labels" in self.ds), "Dataset should include GMM_labels variable to be plotted. Please go back to prediction step"
 
-        #TODO: recognition of feature variable?
         if coords_dict == None:
             # creates dictionary with coordinates
             coords_list = list(self.ds.coords.keys())
@@ -75,31 +72,30 @@ class Plotter_OR:
 
     def scatter_PDF(self, var_name, n=1000):
         """Scatter plot 
-        
+
             Parameters
             ----------
             var_name: name of the reduced variable
             n: number of random points to plot
-            
+
         """
 
         sampling_dims = (self.coords_dict.get('latitude'),
                          self.coords_dict.get('longitude'))
-        #convert colormap to pallete
+        # convert colormap to pallete
         cmap = self.cmap_discretize(
             plt.cm.get_cmap(name=self.cmap_name), self.m.K)
         plt.cm.register_cmap("mycolormap", cmap)
         cpal = sns.color_palette("mycolormap", n_colors=self.m.K)
-        print(cpal)
 
-        #convert to dataframe
+        # convert to dataframe
         ds_p = self.ds[var_name]
         if 'depth' in ds_p.coords:
             ds_p = ds_p.drop_vars('depth')
         df = ds_p.to_dataframe(name=var_name).unstack(0)
-        #select first and second components
+        # select first and second components
         df = df.take([0, 1], axis=1)
-        #add labels
+        # add labels
         df['labels'] = self.ds['GMM_labels'].stack({'sampling': sampling_dims})
         # do not use NaNs
         df = df.dropna()
@@ -115,9 +111,7 @@ class Plotter_OR:
         df = df.rename(columns={0: "feature_reduced_0",
                                 1: "feature_reduced_1", '': "labels"})
         # when not all classes in subset
-        print(np.unique(df["labels"]).astype(int))
         cpal = [cpal[i] for i in np.unique(df["labels"]).astype(int)]
-        print(cpal)
 
         defaults = {'height': 4, 'aspect': 1, 'hue': 'labels',
                     'despine': False, 'palette': cpal}
@@ -126,7 +120,7 @@ class Plotter_OR:
         g.map_diag(sns.histplot, edgecolor=None, alpha=0.75)
         g = g.map_upper(plt.scatter, s=3)
 
-        g.add_legend(labels=range(self.m.K))
+        g.add_legend()
 
     def pie_classes(self):
         """Pie chart of classes
@@ -187,7 +181,7 @@ class Plotter_OR:
         plt.box(on=None)
         the_table.scale(1, 1.5)
         fig.suptitle('$\\bf{Classes\\ distribution}$', fontsize=14)
-        plt.tight_layout()
+        # plt.tight_layout()
 
     @staticmethod
     def cmap_discretize(name, K):
@@ -268,8 +262,6 @@ class Plotter_OR:
 
                '''
 
-        # TODO: detection of quantile variable?
-
         # select quantile variable
         da = self.ds[q_variable]
 
@@ -307,19 +299,19 @@ class Plotter_OR:
             xlim = np.array([da[FEATURE_DIM].min(), da[FEATURE_DIM].max()])
 
         #ticks in months
-        dates = 2019*1000 + da.feature*10 + 0
+        dates = 2019*1000 + da[FEATURE_DIM]*10 + 0
         dates = dates.astype(str)
         dates = pd.to_datetime(dates.values, format='%Y%W%w')
 
         xaxis_labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May',
                         'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
         if start_month != 1:
-            #reorder x values
+            # reorder x values
             start_index = np.where(dates.month == 7)[0][0]
             new_order_index = np.concatenate(
                 (np.arange(start_index, np.shape(dates)), np.arange(0, start_index)))
             x_values = pd.to_datetime([dates[i] for i in new_order_index])
-            #reorder xlabels
+            # reorder xlabels
             new_order = np.concatenate(
                 (np.arange(start_month, 13), np.arange(1, start_month)))
             xaxis_labels = [xaxis_labels[i-1] for i in new_order]
@@ -332,7 +324,7 @@ class Plotter_OR:
             for (iq, q) in zip(np.arange(nQ), Qk[QUANT_DIM]):
                 Qkq = Qk.loc[{QUANT_DIM: q}]
                 if start_month != 0:
-                    Qkq = Qkq.reindex({'feature': new_order_index+1})
+                    Qkq = Qkq.reindex({FEATURE_DIM: new_order_index+1})
                 ax[k].plot(da[FEATURE_DIM], Qkq.values, label=(
                     "q=%0.2f") % da[QUANT_DIM][iq], color=cmap(iq))
 
@@ -352,9 +344,9 @@ class Plotter_OR:
         plt.subplots_adjust(hspace=0.4)
         #fig.suptitle('$\\bf{Time\\ series\\ structure}$')
         #fig_size = fig.get_size_inches()
-        #plt.draw()
+        # plt.draw()
         # print(fig_size)
-        #plt.tight_layout()
+        # plt.tight_layout()
 
     def tseries_structure_comp(self, q_variable,
                                plot_q='all',
@@ -392,8 +384,6 @@ class Plotter_OR:
                     keyword.
 
                '''
-
-        # TODO: merge with vertical_structure function?
 
         # select quantile variable
         da = self.ds[q_variable]
@@ -434,19 +424,19 @@ class Plotter_OR:
             xlim = np.array([da[FEATURE_DIM].min(), da[FEATURE_DIM].max()])
 
         #ticks in months
-        dates = 2019*1000 + da.feature*10 + 0
+        dates = 2019*1000 + da[FEATURE_DIM]*10 + 0
         dates = dates.astype(str)
         dates = pd.to_datetime(dates.values, format='%Y%W%w')
 
         xaxis_labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May',
                         'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
         if start_month != 1:
-            #reorder x values
+            # reorder x values
             start_index = np.where(dates.month == 7)[0][0]
             new_order_index = np.concatenate(
                 (np.arange(start_index, np.shape(dates)), np.arange(0, start_index)))
             x_values = pd.to_datetime([dates[i] for i in new_order_index])
-            #reorder xlabels
+            # reorder xlabels
             new_order = np.concatenate(
                 (np.arange(start_month, 13), np.arange(1, start_month)))
             xaxis_labels = [xaxis_labels[i-1] for i in new_order]
@@ -465,7 +455,7 @@ class Plotter_OR:
             for k in range(self.m.K):
                 Qqk = Qq.loc[{CLASS_DIM: k}]
                 if start_month != 0:
-                    Qqk = Qqk.reindex({'feature': new_order_index+1})
+                    Qqk = Qqk.reindex({FEATURE_DIM: new_order_index+1})
                 ax[cnt][0].plot(da[FEATURE_DIM], Qqk.values, label=(
                     "K=%i") % (da[CLASS_DIM][k]), color=kmap(k))
 
@@ -502,8 +492,6 @@ class Plotter_OR:
 
                '''
 
-        # TODO: subplot_kw as input?
-
         # spatial extent
         if isinstance(extent, str):
             extent = np.array([min(self.ds[self.coords_dict.get('longitude')]), max(self.ds[self.coords_dict.get('longitude')]), min(
@@ -511,9 +499,10 @@ class Plotter_OR:
 
         dsp = self.ds['GMM_labels']
         title_str = '$\\bf{Spatial\\ ditribution\\ of\\ classes}$'
-        
-        #check coordinates order
-        dsp = dsp.transpose(self.coords_dict.get('latitude'), self.coords_dict.get('longitude'))
+
+        # check coordinates order
+        dsp = dsp.transpose(self.coords_dict.get('latitude'),
+                            self.coords_dict.get('longitude'))
 
         subplot_kw = {'projection': proj, 'extent': extent}
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(
@@ -521,11 +510,11 @@ class Plotter_OR:
 
         kmap = self.cmap_discretize(
             plt.cm.get_cmap(name=self.cmap_name), self.m.K)
-       
+
         sc = ax.pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp,
                            cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
 
-        cbar = plt.colorbar(sc, cmap=kmap, shrink=0.3)
+        cbar = plt.colorbar(sc, shrink=0.3)
         cbar.set_ticks(np.arange(0.5, self.m.K+0.5))
         cbar.set_ticklabels(range(self.m.K))
 
@@ -572,14 +561,8 @@ class Plotter_OR:
         assert (
             "GMM_robustness_cat" in self.ds), "Dataset should include GMM_robustness_cat varible to be plotted"
 
-        #TODO: not to use pyxpcm for the colorbar
-        ###########################################################
-        from pyxpcm.models import pcm
-        z = np.arange(0, 30)
-        pcm_features = {'var_name': z}
-        m = pcm(K=self.m.K, features=pcm_features)
-        cmap = m.plot.cmap(usage='robustness')
-        ###########################################################
+        cmap = mpl.colors.ListedColormap(
+            ['#FF0000', '#CC00FF', '#0066FF', '#CCFF00', '#00FF66'])
 
         kmap = self.cmap_discretize(
             plt.cm.get_cmap(name=self.cmap_name), self.m.K)
@@ -587,9 +570,10 @@ class Plotter_OR:
         dsp = self.ds
         title_string = '$\\bf{PCM\\  Robustness}$' + \
             ' \n probability of a profile to belong to a class k'
-        
+
         # Check dimensions order
-        dsp = dsp.transpose(self.coords_dict.get('latitude'), self.coords_dict.get('longitude'), ...)
+        dsp = dsp.transpose(self.coords_dict.get('latitude'),
+                            self.coords_dict.get('longitude'), ...)
 
         # spatial extent
         if isinstance(extent, str):
@@ -605,12 +589,12 @@ class Plotter_OR:
 
         # TODO: aspect ratio
         #maxcols = 2
-        #ar = 1.0  # initial aspect ratio for first trial
-        #wi = 10    # width of the whole figure in inches
-        #hi = wi * ar  # height in inches
+        # ar = 1.0  # initial aspect ratio for first trial
+        # wi = 10    # width of the whole figure in inches
+        # hi = wi * ar  # height in inches
         #rows, cols = 1 + np.int(self.m.K / maxcols), maxcols
-        #dx=4
-        #dy=4
+        # dx=4
+        # dy=4
 
         fig, ax = plt.subplots(figsize=(10, 20), nrows=self.m.K, ncols=1, facecolor='w', edgecolor='k',
                                dpi=120, subplot_kw={'projection': ccrs.PlateCarree(), 'extent': extent})
@@ -628,13 +612,14 @@ class Plotter_OR:
                         'alpha': 0.5, 'linestyle': '--'}
             gl = ax[k].gridlines(crs=ax[k].projection,
                                  draw_labels=True, **defaults)
-            gl.xlocator = mticker.FixedLocator(np.arange(-180, 180+1, lon_grid ))
+            gl.xlocator = mticker.FixedLocator(
+                np.arange(-180, 180+1, lon_grid))
             gl.ylocator = mticker.FixedLocator(np.arange(-90, 90+1,  lat_grid))
             gl.xformatter = LONGITUDE_FORMATTER
             gl.yformatter = LATITUDE_FORMATTER
-            gl.xlabels_top = False
+            gl.top_labels = False
             gl.xlabel_style = {'fontsize': 5}
-            gl.ylabels_right = False
+            gl.right_labels = False
             gl.ylabel_style = {'fontsize': 5}
 
             rowl0 = self.ds['GMM_robustness_cat'].attrs['legend']
@@ -644,10 +629,10 @@ class Plotter_OR:
             cl.set_ticklabels([0, 0.33, 0.66, 0.9, 0.99, 1])
             cl.ax.tick_params(labelsize=6)
             for (i, j) in zip(np.arange(0.5, 5, 1), rowl0):
-                    cl.ax.text(7, i, j, ha='left', va='center', fontsize=6)
+                cl.ax.text(7, i, j, ha='left', va='center', fontsize=6)
 
         # TODO spect ratio
-        #plt.draw()
+        # plt.draw()
         #xmin, xmax = ax[0].get_xbound()
         #ymin, ymax = ax[0].get_ybound()
         #y2x_ratio = (ymax-ymin)/(xmax-xmin) * rows/cols
@@ -657,7 +642,7 @@ class Plotter_OR:
         # fig.tight_layout()
         #fig.tight_layout(rect=[0, 0, 1, 0.90])
 
-        #fig.subplots_adjust(top=0.90)
+        # fig.subplots_adjust(top=0.90)
         #plt.subplots_adjust(wspace = 0.2, hspace=0.4)
         #fig.suptitle(title_string, fontsize=10)
 
@@ -680,7 +665,6 @@ class Plotter_OR:
             outfname : string
                 output figure file
         """
-        # TODO: do I need to use self here?
         image = Image.open(mfname, 'r')
         image_size = image.size
         width = image_size[0]
@@ -706,7 +690,7 @@ class Plotter_OR:
                 prtval(getrge(x)[0]), prtval(getrge(x)[1]))
             def prtfeatures(p): return "{%s}" % ", ".join(
                 ["'%s':%s" % (k, prtrge(v)) for k, v in p.features.items()])
-            #TODO maybe include other information about the model
+            # TODO maybe include other information about the model
             return "Model information: K:%i, %s" % (model.K, 'GMM')
 
         font_path = "logos/Calibri_Regular.ttf"
