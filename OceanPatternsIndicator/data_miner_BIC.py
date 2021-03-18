@@ -99,7 +99,7 @@ def bic_calculation(ds, features_in_ds, z_dim, var_name_mdl, nk, corr_dist, coor
     bic: all values for the bic graph
     bic_min: min value of the bic
     """
-    z = ds[z_dim][0:30]
+    z = ds[z_dim]
     pcm_features = {var_name_mdl: z}
     # TODO choose one time frame if short or choose one winter/summer pair
     time_steps = [first_date]

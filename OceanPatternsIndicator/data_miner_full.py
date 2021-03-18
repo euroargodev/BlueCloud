@@ -96,7 +96,7 @@ def train_model(k, ds, var_name_mdl, var_name_ds, z_dim):
     m: Trained model
     """
     # create model
-    z = ds[z_dim][0:30]
+    z = ds[z_dim]
     pcm_features = {var_name_mdl: z}
     m = pcm(K=k, features=pcm_features)
     # fit model
