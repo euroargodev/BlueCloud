@@ -45,8 +45,8 @@ def train_model(k, x, var_name_ds, algo):
     return model
 
 
-def predict(x, m, var_name_ds, k):
-    classif = m.predict(x[var_name_ds])
+def predict(x, m, var_name_ds, k, var_predict):
+    classif = m.predict(x[var_predict])
     x = x.assign(variables={"labels": ('sample_dim', classif)})
     q = [0.05, 0.5, 0.95]
     x = compute_quantile(x, var_name_ds, k, q)
@@ -55,7 +55,7 @@ def predict(x, m, var_name_ds, k):
     return x
 
 
-def generate_plots(ds, var_name_ds, k):
+def generate_plots(ds, var_name_ds, k, algorithm):
     """
     Generates and saves the following plots:
     - vertical structure: vertical structure of each classes. It draws the mean profile and the 0.05 and 0.95 quantiles
@@ -76,9 +76,9 @@ def generate_plots(ds, var_name_ds, k):
     -------
     saves all the plots as png
     """
-    if ds[var_name_ds].attrs['unit_long'] and ds[var_name_ds].attrs['long_name']:
+    try:
         x_label = ds[var_name_ds].attrs['long_name'] + " in " + ds[var_name_ds].attrs['unit_long']
-    else:
+    except KeyError:
         x_label = var_name_ds
 
     # create a pyXpcm model to use the Plotter class
@@ -132,22 +132,23 @@ def main():
         print("load finished in " + str(load_time) + "sec")
         print("starting computation")
         start_time = time.time()
-        m = train_model(k=k, x=x, var_name_ds=var_name_ds, algo=algorithm)
+        m = train_model(k=k, x=x, var_name_ds=var_name_ds + "_scaled_reduced", algo=algorithm)
         train_time = time.time() - start_time
         print("training finished in " + str(train_time) + "sec")
         start_time = time.time()
-        ds = predict(m=m, x=x, var_name_ds=var_name_ds, k=k)
+        ds = predict(m=m, x=x, var_name_ds=var_name_ds, var_predict = var_name_ds + "_scaled_reduced", k=k)
         prediction_time = time.time() - start_time
         print("prediction finished in " + str(prediction_time) + "sec")
         start_time = time.time()
-        generate_plots(ds=ds, var_name_ds=var_name_ds, k=k)
+        generate_plots(ds=ds, var_name_ds=var_name_ds, k=k, algorithm=algorithm)
         plot_time = time.time() - start_time
         print("plot finished in " + str(plot_time) + "sec")
         tmp_log = {
             'exec_nb': i,
             'ncpu': 8,
             'ram': 16,
-            'platform': "local",
+            'algorithm': algorithm,
+            'platform': "Datarmor",
             'time_load': load_time,
             'time_train': train_time,
             'time_prediction': prediction_time,

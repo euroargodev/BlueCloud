@@ -27,8 +27,8 @@ def select_var(ds_full, var_name, multiple, backend):
     return ds
 
 
-def filter_profiles(ds):
-    x = ds.isel(depth=slice(0, 30))
+def filter_profiles(x):
+    x = x.isel(depth=slice(0, 30))
     x = x.stack(sample_dim=('time', 'latitude', 'longitude'))
     x = x.dropna(dim='sample_dim', how='any')
     return x
@@ -56,7 +56,7 @@ def drop_all_NaN(x):
 
 def apply_pca(x, n_comp, var_name, backend):
     if backend == 'sk':
-        pca = sk_pca(n_components=0.99, svd_solver='full')
+        pca = sk_pca(n_components=n_comp, svd_solver='full')
     else:
         pca = dask_pca(n_components=n_comp, svd_solver='full')
     pca.fit(x[var_name].data)
@@ -87,9 +87,9 @@ def preprocessing_allin(path, scaling, backend, multiple, var_name):
     x = x.transpose()
     if scaling:
         x = standard_scaling(x, backend, var_name)
-        x = apply_pca(x=x, n_comp=3, var_name=var_name + '_scaled', backend=backend)
+        x = apply_pca(x=x, n_comp=15, var_name=var_name + '_scaled', backend=backend)
     else:
-        x = apply_pca(x=x, n_comp=3, var_name=var_name, backend=backend)
+        x = apply_pca(x=x, n_comp=15, var_name=var_name, backend=backend)
     return x
 
 
