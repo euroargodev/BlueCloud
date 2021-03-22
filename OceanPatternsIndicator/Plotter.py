@@ -28,8 +28,6 @@ class Plotter:
         # TODO: automatic detection of PCM_LABELS and q_variable ?
         # TODO: Check if the PCM is trained:
         # validation.check_is_fitted(m, 'fitted')
-        # TODO: automatic detection of vertical dimension
-        # TODO: check if datatype works with different datasets
 
         self.ds = ds
         self.m = m
@@ -77,8 +75,6 @@ class Plotter:
     def pie_classes(self):
         """Pie chart of classes
 
-            name: name of the colormap, eg 'Paired' or 'jet'
-            K: number of colors in the final discrete colormap
         """
 
         # loop in k for counting
@@ -201,6 +197,7 @@ class Plotter:
                maxcols: (optional) max number of column (default = 3)
                cmap: (optional) colormap name for quantiles (default = 'brg')
                ylabel: (optional) y axis label (default = 'depth (m)')
+               xlabel: (optional) x axis label (default = 'feature')
                ylim: (optional) y axis limits (default = 'auto')
                **kwargs
 
@@ -215,14 +212,9 @@ class Plotter:
 
                '''
 
-        # copy of pyxpcm.plot.quantile function
-        # TODO: Is it neccesary to use all this options in function?
-        # TODO: detection of quantile variable?
-
         # select quantile variable
         da = self.ds[q_variable]
 
-        ###########################################################################
         # da must be 3D with a dimension for: CLASS, QUANTILES and a vertical axis
         # The QUANTILES dimension is called "quantile"
         # The CLASS dimension is identified as the one matching m.K length.
@@ -237,7 +229,6 @@ class Plotter:
         QUANT_DIM = quantdimname
         VERTICAL_DIM = list(
             set(da.dims) - set([CLASS_DIM]) - set([QUANT_DIM]))[0]
-        ############################################################################
 
         nQ = len(da[QUANT_DIM])  # Nb of quantiles
 
@@ -304,17 +295,15 @@ class Plotter:
            ----------
                q_variable: quantile variable calculated with pyxpcm.quantile function (inplace=True option)
                plot_q: quantiles to be plotted
-               classdimname
-
-               quantdimname
-
-               maxcols
-
-               ylim
-
-               Returns
-
-
+               xlim: (optional) x axis limits 
+               classdimname: (optional) pcm classes dimension name (default = 'pcm_class')
+               quantdimname: (optional) pcm quantiles dimension name (default = 'quantiles')
+               maxcols: (optional) max number of column (default = 3)
+               cmap: (optional) colormap name for quantiles (default = 'brg')
+               ylabel: (optional) y axis label (default = 'depth (m)')
+               xlabel: (optional) x axis label (default = 'feature')
+               ylim: (optional) y axis limits (default = 'auto'
+               
            Returns
            ------
                fig : :class:`matplotlib.pyplot.figure.Figure`
@@ -328,12 +317,10 @@ class Plotter:
                '''
 
         # TODO: merge with vertical_structure function
-        # TODO: automatic number of rows
 
         # select quantile variable
         da = self.ds[q_variable]
 
-        ###########################################################################
         # da must be 3D with a dimension for: CLASS, QUANTILES and a vertical axis
         # The QUANTILES dimension is called "quantile"
         # The CLASS dimension is identified as the one matching m.K length.
@@ -348,7 +335,6 @@ class Plotter:
         QUANT_DIM = quantdimname
         VERTICAL_DIM = list(
             set(da.dims) - set([CLASS_DIM]) - set([QUANT_DIM]))[0]
-        ############################################################################
 
         nQ = len(da[QUANT_DIM])  # Nb of quantiles
 
@@ -421,10 +407,15 @@ class Plotter:
 
            Returns
            -------
+               fig : :class:`matplotlib.pyplot.figure.Figure`
+
+               ax : :class:`matplotlib.axes.Axes` object or array of Axes objects.
+                    *ax* can be either a single :class:`matplotlib.axes.Axes` object or an
+                    array of Axes objects if more than one subplot was created.  The
+                    dimensions of the resulting array can be controlled with the squeeze
+                    keyword.
 
                '''
-        # TODO: check if time variable exits if not error (time variable should be 'time' at the moment)
-        # TODO: make default values for projection and extent (dataset extent)
 
         def get_most_freq_labels(this_ds):
             this_ds = this_ds.stack(
@@ -509,10 +500,15 @@ class Plotter:
 
            Returns
            -------
+               fig : :class:`matplotlib.pyplot.figure.Figure`
+
+               ax : :class:`matplotlib.axes.Axes` object or array of Axes objects.
+                    *ax* can be either a single :class:`matplotlib.axes.Axes` object or an
+                    array of Axes objects if more than one subplot was created.  The
+                    dimensions of the resulting array can be controlled with the squeeze
+                    keyword.
 
            '''
-        # TODO: class colors in title in subplots using colormap
-        # TODO: time should be called time in dataset. use coords_dict
 
         if 'time' in self.coords_dict and self.data_type == 'gridded':
             dsp = self.ds.isel(time=time_slice)
@@ -591,10 +587,15 @@ class Plotter:
 
            Returns
            -------
+               fig : :class:`matplotlib.pyplot.figure.Figure`
+
+               ax : :class:`matplotlib.axes.Axes` object or array of Axes objects.
+                    *ax* can be either a single :class:`matplotlib.axes.Axes` object or an
+                    array of Axes objects if more than one subplot was created.  The
+                    dimensions of the resulting array can be controlled with the squeeze
+                    keyword.
 
            '''
-        # TODO: class colors in title in subplots using colormap
-        # TODO: time should be called time in dataset. use coords_dict
 
         if 'time' in self.coords_dict and self.data_type == 'gridded':
             dsp = self.ds.sel(time=time_slice, method='nearest').squeeze()
@@ -691,6 +692,13 @@ class Plotter:
 
             Returns
             -------
+               fig : :class:`matplotlib.pyplot.figure.Figure`
+
+               ax : :class:`matplotlib.axes.Axes` object or array of Axes objects.
+                    *ax* can be either a single :class:`matplotlib.axes.Axes` object or an
+                    array of Axes objects if more than one subplot was created.  The
+                    dimensions of the resulting array can be controlled with the squeeze
+                    keyword.
 
         '''
 
@@ -699,7 +707,6 @@ class Plotter:
                 1), "Length of time variable should be > 1"
 
         # data to be plot
-        # TODO: is it the best way??
         pcm_labels = self.ds['PCM_LABELS']
         kmap = self.m.plot.cmap(name=self.cmap_name)
 
