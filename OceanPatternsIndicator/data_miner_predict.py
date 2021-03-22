@@ -8,6 +8,7 @@ from Plotter import Plotter
 import dask
 import dask.array as da
 import time
+import matplotlib.pyplot as plt
 
 
 def get_args():
@@ -29,12 +30,13 @@ def get_args():
     return parse.parse_args()
 
 
-def load_data(file_name):
+def load_data(file_name, var_name_ds):
     """
     Load dataset into a Xarray dataset
 
     Parameters
     ----------
+    var_name_ds : name of variable in dataset
     file_name : Path to the NetCDF dataset
 
     Returns
@@ -44,10 +46,19 @@ def load_data(file_name):
     coord_dict: coordinate dictionary for pyXpcm
     """
     ds = xr.open_dataset(file_name)
+    # select var
+    ds = ds[var_name_ds].to_dataset()
     first_date = str(ds.time.min().values)[0:7]
-    coord_dict = get_coords_dict(ds)
-    ds['depth'] = -np.abs(ds[coord_dict['depth']].values)
-    ds.depth.attrs['axis'] = 'Z'
+    # exception to handle missing depth dim: setting depth to 0 because the dataset most likely represents surface data
+    try:
+        coord_dict = get_coords_dict(ds)
+        ds['depth'] = -np.abs(ds[coord_dict['depth']].values)
+        ds.depth.attrs['axis'] = 'Z'
+    except KeyError as e:
+        ds = ds.expand_dims('depth').assign_coords(depth=("depth", [0]))
+        ds.depth.attrs['axis'] = 'Z'
+        coord_dict = get_coords_dict(ds)
+        print(f"{e} dimension was missing,it has been initialized to 0 for surface data")
     return ds, first_date, coord_dict
 
 
@@ -108,6 +119,23 @@ def predict(m, ds, var_name_mdl, var_name_ds, z_dim):
     return ds
 
 
+def save_empty_plot(name):
+    text = "This figure is not available,\n please refer to the logs to understand why."
+    x = np.arange(0, 8, 0.1)
+    y = np.sin(x)
+    plt.plot(x, y)
+    plt.figtext(0.5, 0.5,
+                text,
+                horizontalalignment="center",
+                verticalalignment="center",
+                wrap=True, fontsize=14,
+                color="red",
+                bbox={'facecolor': 'grey',
+                      'alpha': 0.8, 'pad': 5})
+    plt.savefig(f"{name}.png")
+    return 0
+
+
 def generate_plots(m, ds, var_name_ds, first_date):
     """
     Generates and saves the following plots:
@@ -135,6 +163,7 @@ def generate_plots(m, ds, var_name_ds, first_date):
     except KeyError:
         x_label = var_name_ds
     P = Plotter(ds, m)
+
     # plot profiles by class
     P.vertical_structure(q_variable=var_name_ds + '_Q', sharey=True, xlabel=x_label)
     P.save_BlueCloud('vertical_struc.png')
@@ -150,15 +179,22 @@ def generate_plots(m, ds, var_name_ds, first_date):
     # pie chart of the classes distribution
     P.pie_classes()
     P.save_BlueCloud('pie_chart.png')
-    if len(ds.time) > 1:
+    # temporal distribution (monthly)
+    try:
         P.temporal_distribution(time_bins='month')
         P.save_BlueCloud('temporal_distr_months.png')
-        # temporal distribution (seasonally)
+    except ValueError as e:
+        save_empty_plot('temporal_distr_months')
+        print('plot monthly temporal distribution is not available, the following error occurred:')
+        print(e)
+    # temporal distribution (seasonally)
+    try:
         P.temporal_distribution(time_bins='season')
         P.save_BlueCloud('temporal_distr_season.png')
-    else:
-        open('temporal_distr_months.png', 'w').close()
-        open('temporal_distr_season.png', 'w').close()
+    except ValueError as e:
+        save_empty_plot('temporal_distr_season')
+        print('plot seasonal temporal distribution is not available, the following error occurred:')
+        print(e)
     # save data
     ds.to_netcdf('predicted_dataset.nc', format='NETCDF4')
 

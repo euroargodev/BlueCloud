@@ -31,12 +31,13 @@ def get_args():
     return parse.parse_args()
 
 
-def load_data(file_name):
+def load_data(file_name, var_name_ds):
     """
     Load dataset into a Xarray dataset
 
     Parameters
     ----------
+    var_name_ds : name of variable in dataset
     file_name : Path to the NetCDF dataset
 
     Returns
@@ -46,10 +47,19 @@ def load_data(file_name):
     coord_dict: coordinate dictionary for pyXpcm
     """
     ds = xr.open_dataset(file_name)
+    # select var
+    ds = ds[var_name_ds].to_dataset()
     first_date = str(ds.time.min().values)[0:7]
-    coord_dict = get_coords_dict(ds)
-    ds['depth'] = -np.abs(ds[coord_dict['depth']].values)
-    ds.depth.attrs['axis'] = 'Z'
+    # exception to handle missing depth dim: setting depth to 0 because the dataset most likely represents surface data
+    try:
+        coord_dict = get_coords_dict(ds)
+        ds['depth'] = -np.abs(ds[coord_dict['depth']].values)
+        ds.depth.attrs['axis'] = 'Z'
+    except KeyError as e:
+        ds = ds.expand_dims('depth').assign_coords(depth=("depth", [0]))
+        ds.depth.attrs['axis'] = 'Z'
+        coord_dict = get_coords_dict(ds)
+        print(f"{e} dimension was missing,it has been initialized to 0 for surface data")
     return ds, first_date, coord_dict
 
 
