@@ -693,9 +693,9 @@ class Plotter_OR:
             # TODO maybe include other information about the model
             return "Model information: K:%i, %s" % (model.K, 'GMM')
 
-        font_path = "logos/Calibri_Regular.ttf"
-        lfname2 = "logos/Blue-cloud_compact_color_W.jpg"
-        lfname1 = "logos/Logo-LOPS_transparent_W.jpg"
+        font_path = "../logos/Calibri_Regular.ttf"
+        lfname2 = "../logos/Blue-cloud_compact_color_W.jpg"
+        lfname1 = "../logos/Logo-LOPS_transparent_W.jpg"
 
         mimage = Image.open(mfname)
 
