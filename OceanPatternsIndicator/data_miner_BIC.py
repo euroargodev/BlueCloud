@@ -9,6 +9,7 @@ from BIC_calculation import *
 import dask
 import dask.array as da
 import time
+from PIL import Image, ImageFont, ImageDraw
 
 
 def get_args():
@@ -48,7 +49,7 @@ def load_data(file_name, var_name_ds):
     """
     ds = xr.open_dataset(file_name)
     # select var
-    ds = ds[var_name_ds].to_dataset()
+    ds = ds[[var_name_ds]]
     first_date = str(ds.time.min().values)[0:7]
     # exception to handle missing depth dim: setting depth to 0 because the dataset most likely represents surface data
     try:
@@ -122,6 +123,109 @@ def bic_calculation(ds, features_in_ds, z_dim, var_name_mdl, nk, corr_dist, coor
     return bic, bic_min
 
 
+def add_lowerband(mfname, outfname, band_height=70, color=(255, 255, 255, 255)):
+    """ Add lowerband to a figure
+
+        Parameters
+        ----------
+        mfname : string
+            source figure file
+        outfname : string
+            output figure file
+    """
+    image = Image.open(mfname, 'r')
+    image_size = image.size
+    width = image_size[0]
+    height = image_size[1]
+    background = Image.new('RGBA', (width, height + band_height), color)
+    background.paste(image, (0, 0))
+    background.save(outfname)
+
+
+def add_2logo(mfname, outfname, ds, coords_dict, logo_height=70, txt_color=(0, 0, 0, 255)):
+    """ Add 2 logos and text to a figure
+
+        Parameters
+        ----------
+        coords_dict : coordinates dictionary (see get_coords_dict)
+        ds : dataset Xarray
+        mfname : string
+            source figure file
+        outfname : string
+            output figure file
+    """
+    font_path = "../logos/Calibri_Regular.ttf"
+    lfname2 = "../logos/Blue-cloud_compact_color_W.jpg"
+    lfname1 = "../logos/Logo-LOPS_transparent_W.jpg"
+
+    mimage = Image.open(mfname)
+    # Open logo images:
+    limage1 = Image.open(lfname1)
+    limage2 = Image.open(lfname2)
+
+    # Resize logos to match the requested logo_height:
+    aspect_ratio = limage1.size[1] / limage1.size[0]  # height/width
+    simage1 = limage1.resize((int(logo_height / aspect_ratio), logo_height))
+
+    aspect_ratio = limage2.size[1] / limage2.size[0]  # height/width
+    simage2 = limage2.resize((int(logo_height / aspect_ratio), logo_height))
+
+    # Paste logos along the lower white band of the main figure:
+    box = (0, mimage.size[1] - logo_height)
+    mimage.paste(simage1, box)
+
+    box = (simage1.size[0], mimage.size[1] - logo_height)
+    mimage.paste(simage2, box)
+
+    # Add dataset and model information
+    # time extent
+    if 'time' not in ds.coords:
+        time_string = 'Period: Unknown'
+    elif len(ds['time'].sizes) == 0:
+        # TODO: when using isel hours information is lost
+        time_extent = ds['time'].dt.strftime("%Y/%m/%d %H:%M")
+        time_string = 'Period: %s' % time_extent.values
+    else:
+        time_extent = [min(ds['time'].dt.strftime(
+            "%Y/%m/%d")), max(ds['time'].dt.strftime("%Y/%m/%d"))]
+        time_string = 'Period: from %s to %s' % (
+            time_extent[0].values, time_extent[1].values)
+
+    # spatial extent
+    lat_extent = [min(ds[coords_dict.get('latitude')].values), max(
+        ds[coords_dict.get('latitude')].values)]
+    lon_extent = [min(ds[coords_dict.get('longitude')].values), max(
+        ds[coords_dict.get('longitude')].values)]
+    spatial_string = 'Domain: lat:%s, lon:%s' % (
+        str(lat_extent), str(lon_extent))
+
+    txtA = "User selection:\n   %s\n   %s\n   %s\nSource: %s" % (ds.attrs.get(
+        'title'), time_string, spatial_string, 'CMEMS')
+
+    fontA = ImageFont.truetype(font_path, 10)
+    txtsA = fontA.getsize_multiline(txtA)
+    xoffset = 5 + simage1.size[0] + simage2.size[0]
+    posA = (xoffset, mimage.size[1] - txtsA[1] - 5)
+
+    # Print
+    drawA = ImageDraw.Draw(mimage)
+    drawA.text(posA, txtA, txt_color, font=fontA)
+
+    # Final save
+    mimage.save(outfname)
+
+
+def save_bic_plot(bic, nk, ds, coords_dict):
+    out_name = "BIC.png"
+    plot_BIC(bic, nk)
+    plt.savefig(out_name, bbox_inches='tight', pad_inches=0.1)
+    # add lower band
+    add_lowerband(out_name, out_name)
+    # add logo
+    add_2logo(out_name, out_name, ds, coords_dict)
+    print('Figure saved in %s' % out_name)
+
+
 def main():
     args = get_args()
     file_name = args.file_name
@@ -132,7 +236,7 @@ def main():
     features_in_ds = {var_name_mdl: var_name_ds}
     print("loading the dataset")
     start_time = time.time()
-    ds, first_date, coord_dict = load_data(file_name)
+    ds, first_date, coord_dict = load_data(file_name=file_name, var_name_ds=var_name_ds)
     z_dim = coord_dict['depth']
     load_time = time.time() - start_time
     print("load finished in " + str(load_time) + "sec")
@@ -144,7 +248,7 @@ def main():
     print("computation finished in " + str(bic_time) + "sec")
     plot_BIC(BIC=bic, NK=nk, bic_min=bic_min)
     print("computation finished, saving png")
-    plt.savefig('bic.png', bbox_inches='tight', pad_inches=0.1)
+    save_bic_plot(bic=bic, nk=nk, ds=ds, coords_dict=coord_dict)
 
 
 if __name__ == '__main__':
