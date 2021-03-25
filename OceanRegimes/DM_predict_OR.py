@@ -45,7 +45,7 @@ def load_data(file_name, var_name_ds):
     """
     ds = xr.open_dataset(file_name)
     # select var
-    ds = ds[var_name_ds].to_dataset()
+    ds = ds[[var_name_ds]]
     # some format
     ds['time'] = ds.indexes['time'].to_datetimeindex()
     ds.time.attrs['axis'] = 'T'
