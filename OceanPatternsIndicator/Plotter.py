@@ -1,5 +1,8 @@
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
+from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
@@ -467,20 +470,34 @@ class Plotter:
 
         # check if gridded or profiles data
         if self.data_type == 'profiles':
-            ax.scatter(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], s=3,
+            sc = ax.scatter(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], s=3,
                        c=self.ds[var_name], cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
         if self.data_type == 'gridded':
-            ax.pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp[var_name],
-                          cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
+            sc = ax.pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp[var_name], cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
 
-        # TODO: function already in pyxpcm
-        self.m.plot.colorbar(ax=ax, cmap='Accent', shrink=0.3)
-        lon_grid = np.floor_divide((self.ds[self.coords_dict.get('longitude')].max(
-        ) - self.ds[self.coords_dict.get('longitude')].min()), 10)
-        lat_grid = np.floor_divide((self.ds[self.coords_dict.get('latitude')].max(
-        ) - self.ds[self.coords_dict.get('latitude')].min()), 8)
-        # TODO: function already in pyxpcm
-        self.m.plot.latlongrid(ax, dx=lon_grid, dy=lat_grid)
+        # function already in pyxpcm: deprecated
+        #self.m.plot.colorbar(ax=ax, shrink=0.3)
+        cbar = plt.colorbar(sc, shrink=0.3)
+        cbar.set_ticks(np.arange(0.5, self.m.K+0.5))
+        cbar.set_ticklabels(range(self.m.K))
+        
+        # function already in pyxpcm: deprecated
+        #self.m.plot.latlongrid(ax, dx=lon_grid, dy=lat_grid)
+        lon_grid = 4
+        lat_grid = 4
+        ax.set_xticks(np.arange(int(extent[0]), int(
+            extent[1]+1), lon_grid), crs=ccrs.PlateCarree())
+        ax.set_yticks(np.arange(int(extent[2]), int(
+            extent[3]+1), lat_grid), crs=ccrs.PlateCarree())
+        lon_formatter = LongitudeFormatter()
+        lat_formatter = LatitudeFormatter()
+        ax.xaxis.set_major_formatter(lon_formatter)
+        ax.yaxis.set_major_formatter(lat_formatter)
+        plt.grid(True,  linestyle='--')
+        cbar.set_label('Class', fontsize=12)
+        ax.tick_params(axis="x", labelsize=8)
+        ax.tick_params(axis="y", labelsize=8)
+        
         land_feature = cfeature.NaturalEarthFeature(
             category='physical', name='land', scale='50m', facecolor=[0.9375, 0.9375, 0.859375])
         ax.add_feature(land_feature, edgecolor='black')
