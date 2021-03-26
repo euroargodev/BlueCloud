@@ -307,7 +307,7 @@ class Plotter:
                ylabel: (optional) y axis label (default = 'depth (m)')
                xlabel: (optional) x axis label (default = 'feature')
                ylim: (optional) y axis limits (default = 'auto'
-               
+
            Returns
            ------
                fig : :class:`matplotlib.pyplot.figure.Figure`
@@ -472,16 +472,17 @@ class Plotter:
         # check if gridded or profiles data
         if self.data_type == 'profiles':
             sc = ax.scatter(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], s=3,
-                       c=self.ds[var_name], cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
+                            c=self.ds[var_name], cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
         if self.data_type == 'gridded':
-            sc = ax.pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp[var_name], cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
+            sc = ax.pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get(
+                'latitude')], dsp[var_name], cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
 
         # function already in pyxpcm: deprecated
         #self.m.plot.colorbar(ax=ax, shrink=0.3)
         cbar = plt.colorbar(sc, shrink=0.3)
         cbar.set_ticks(np.arange(0.5, self.m.K+0.5))
         cbar.set_ticklabels(range(self.m.K))
-        
+
         # function already in pyxpcm: deprecated
         #self.m.plot.latlongrid(ax, dx=lon_grid, dy=lat_grid)
         lon_grid = 4
@@ -498,7 +499,7 @@ class Plotter:
         cbar.set_label('Class', fontsize=12)
         ax.tick_params(axis="x", labelsize=8)
         ax.tick_params(axis="y", labelsize=8)
-        
+
         land_feature = cfeature.NaturalEarthFeature(
             category='physical', name='land', scale='50m', facecolor=[0.9375, 0.9375, 0.859375])
         ax.add_feature(land_feature, edgecolor='black')
@@ -617,10 +618,13 @@ class Plotter:
 
         if 'time' in self.coords_dict and self.data_type == 'gridded':
             dsp = self.ds.sel(time=time_slice, method='nearest').squeeze()
-            title_string = '$\\bf{PCM\\  Robustness}$' + ' \n probability of a profile to belong to a class k' + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')'
+            title_string = '$\\bf{PCM\\  Robustness}$' + ' \n probability of a profile to belong to a class k' + \
+                ' \n (time: ' + \
+                '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')'
         else:
             dsp = self.ds
-            title_string = '$\\bf{PCM\\  Robustness}$' + ' \n probability of a profile to belong to a class k'
+            title_string = '$\\bf{PCM\\  Robustness}$' + \
+                ' \n probability of a profile to belong to a class k'
 
         # spatial extent
         if isinstance(extent, str):
@@ -663,7 +667,7 @@ class Plotter:
                 sc = ax[k].pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp['PCM_ROBUSTNESS_CAT'].where(dsp['PCM_LABELS'] == k),
                                       cmap=cmap, transform=proj, vmin=0, vmax=5)
 
-            #self.m.plot.latlongrid(ax[k], fontsize=6, dx=lon_grid, dy=lat_grid) deprecated
+            # self.m.plot.latlongrid(ax[k], fontsize=6, dx=lon_grid, dy=lat_grid) deprecated
             defaults = {'linewidth': .5, 'color': 'gray',
                         'alpha': 0.5, 'linestyle': '--'}
             gl = ax[k].gridlines(crs=ax[k].projection,
@@ -704,8 +708,8 @@ class Plotter:
         rowl0 = dsp['PCM_ROBUSTNESS_CAT'].attrs['legend']
         #cl = fig.colorbar(sc, ax=ax.ravel().tolist(),fraction=0.02)
         cl = plt.colorbar(sc, ax=ax, fraction=0.02, pad=0.05)
-        cl.set_ticks([0,1,2,3,4,5])
-        cl.set_ticklabels([0,0.33,0.66,0.9,0.99,1])
+        cl.set_ticks([0, 1, 2, 3, 4, 5])
+        cl.set_ticklabels([0, 0.33, 0.66, 0.9, 0.99, 1])
         for (i, j) in zip(np.arange(0.5, 5, 1), rowl0):
             cl.ax.text(6, i, j, ha='left', va='center', fontsize=8)
 
@@ -830,7 +834,7 @@ class Plotter:
         background.paste(image, (0, 0))
         background.save(outfname)
 
-    def add_2logo(self, mfname, outfname, logo_height=70, txt_color=(0, 0, 0, 255), data_src='CMEMS', bic_fig ='no'):
+    def add_2logo(self, mfname, outfname, logo_height=70, txt_color=(0, 0, 0, 255), data_src='CMEMS', bic_fig='no'):
         """ Add 2 logos and text to a figure
 
             Parameters
@@ -883,7 +887,8 @@ class Plotter:
             time_string = 'Period: Unknown'
         elif len(self.ds[self.coords_dict.get('time')].sizes) == 0:
             # TODO: when using isel hours information is lost
-            time_extent = self.ds[self.coords_dict.get('time')].dt.strftime("%Y/%m/%d %H:%M")
+            time_extent = self.ds[self.coords_dict.get(
+                'time')].dt.strftime("%Y/%m/%d %H:%M")
             time_string = 'Period: %s' % time_extent.values
         else:
             time_extent = [min(self.ds[self.coords_dict.get('time')].dt.strftime(
@@ -923,7 +928,8 @@ class Plotter:
         # Final save
         mimage.save(outfname)
 
-    def save_BlueCloud(self, out_name, bic_fig='no'):  # function which saves figure and add logos
+    # function which saves figure and add logos
+    def save_BlueCloud(self, out_name, bic_fig='no'):
 
         # save image
         # plt.margins(0.1)
@@ -935,7 +941,7 @@ class Plotter:
 
         # add logo
         #self.add_2logo(out_name, out_name, logo_height=120, txt_color=(0, 0, 0, 255), data_src='CMEMS')
-        self.add_2logo(out_name, out_name, bic_fig = bic_fig)
+        self.add_2logo(out_name, out_name, bic_fig=bic_fig)
 
         print('Figure saved in %s' % out_name)
 
