@@ -801,6 +801,8 @@ class Plotter:
         plt.gca().invert_yaxis()
         if time_bins == 'season':
             ax.set_yticks(np.arange(1, len(xaxis_labels)+1))
+        else:
+            ax.set_yticks(np.arange(len(xaxis_labels)))
         ax.set_yticklabels(xaxis_labels, fontsize=12)
         plt.yticks(fontsize=12)
         ax.legend(fontsize=12, bbox_to_anchor=(1.01, 1), loc='upper left')
