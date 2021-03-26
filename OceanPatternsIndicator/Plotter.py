@@ -6,6 +6,7 @@ from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+import matplotlib.ticker as mticker
 import seaborn as sns
 
 import numpy as np
@@ -662,7 +663,21 @@ class Plotter:
                 sc = ax[k].pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp['PCM_ROBUSTNESS_CAT'].where(dsp['PCM_LABELS'] == k),
                                       cmap=cmap, transform=proj, vmin=0, vmax=5)
 
-            self.m.plot.latlongrid(ax[k], fontsize=6, dx=lon_grid, dy=lat_grid)
+            #self.m.plot.latlongrid(ax[k], fontsize=6, dx=lon_grid, dy=lat_grid) deprecated
+            defaults = {'linewidth': .5, 'color': 'gray',
+                        'alpha': 0.5, 'linestyle': '--'}
+            gl = ax[k].gridlines(crs=ax[k].projection,
+                                 draw_labels=True, **defaults)
+            gl.xlocator = mticker.FixedLocator(
+                np.arange(-180, 180+1, lon_grid))
+            gl.ylocator = mticker.FixedLocator(np.arange(-90, 90+1,  lat_grid))
+            gl.xformatter = LONGITUDE_FORMATTER
+            gl.yformatter = LATITUDE_FORMATTER
+            gl.top_labels = False
+            gl.xlabel_style = {'fontsize': 5}
+            gl.right_labels = False
+            gl.ylabel_style = {'fontsize': 5}
+            ax[k].add_feature(land_feature, edgecolor='black')
             ax[k].add_feature(land_feature, edgecolor='black')
             #ax[k].set_title('k=%i' % k, color=kmap(k), fontweight='bold', x=1.05, y=0.84)
             ax[k].set_title('k=%i' % k, color=kmap(k), fontweight='bold')
