@@ -1,8 +1,12 @@
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
+from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+import matplotlib.ticker as mticker
 import seaborn as sns
 
 import numpy as np
@@ -28,8 +32,6 @@ class Plotter:
         # TODO: automatic detection of PCM_LABELS and q_variable ?
         # TODO: Check if the PCM is trained:
         # validation.check_is_fitted(m, 'fitted')
-        # TODO: automatic detection of vertical dimension
-        # TODO: check if datatype works with different datasets
 
         self.ds = ds
         self.m = m
@@ -77,8 +79,6 @@ class Plotter:
     def pie_classes(self):
         """Pie chart of classes
 
-            name: name of the colormap, eg 'Paired' or 'jet'
-            K: number of colors in the final discrete colormap
         """
 
         # loop in k for counting
@@ -201,6 +201,7 @@ class Plotter:
                maxcols: (optional) max number of column (default = 3)
                cmap: (optional) colormap name for quantiles (default = 'brg')
                ylabel: (optional) y axis label (default = 'depth (m)')
+               xlabel: (optional) x axis label (default = 'feature')
                ylim: (optional) y axis limits (default = 'auto')
                **kwargs
 
@@ -215,14 +216,9 @@ class Plotter:
 
                '''
 
-        # copy of pyxpcm.plot.quantile function
-        # TODO: Is it neccesary to use all this options in function?
-        # TODO: detection of quantile variable?
-
         # select quantile variable
         da = self.ds[q_variable]
 
-        ###########################################################################
         # da must be 3D with a dimension for: CLASS, QUANTILES and a vertical axis
         # The QUANTILES dimension is called "quantile"
         # The CLASS dimension is identified as the one matching m.K length.
@@ -237,7 +233,6 @@ class Plotter:
         QUANT_DIM = quantdimname
         VERTICAL_DIM = list(
             set(da.dims) - set([CLASS_DIM]) - set([QUANT_DIM]))[0]
-        ############################################################################
 
         nQ = len(da[QUANT_DIM])  # Nb of quantiles
 
@@ -304,16 +299,14 @@ class Plotter:
            ----------
                q_variable: quantile variable calculated with pyxpcm.quantile function (inplace=True option)
                plot_q: quantiles to be plotted
-               classdimname
-
-               quantdimname
-
-               maxcols
-
-               ylim
-
-               Returns
-
+               xlim: (optional) x axis limits 
+               classdimname: (optional) pcm classes dimension name (default = 'pcm_class')
+               quantdimname: (optional) pcm quantiles dimension name (default = 'quantiles')
+               maxcols: (optional) max number of column (default = 3)
+               cmap: (optional) colormap name for quantiles (default = 'brg')
+               ylabel: (optional) y axis label (default = 'depth (m)')
+               xlabel: (optional) x axis label (default = 'feature')
+               ylim: (optional) y axis limits (default = 'auto'
 
            Returns
            ------
@@ -328,12 +321,10 @@ class Plotter:
                '''
 
         # TODO: merge with vertical_structure function
-        # TODO: automatic number of rows
 
         # select quantile variable
         da = self.ds[q_variable]
 
-        ###########################################################################
         # da must be 3D with a dimension for: CLASS, QUANTILES and a vertical axis
         # The QUANTILES dimension is called "quantile"
         # The CLASS dimension is identified as the one matching m.K length.
@@ -348,7 +339,6 @@ class Plotter:
         QUANT_DIM = quantdimname
         VERTICAL_DIM = list(
             set(da.dims) - set([CLASS_DIM]) - set([QUANT_DIM]))[0]
-        ############################################################################
 
         nQ = len(da[QUANT_DIM])  # Nb of quantiles
 
@@ -421,10 +411,15 @@ class Plotter:
 
            Returns
            -------
+               fig : :class:`matplotlib.pyplot.figure.Figure`
+
+               ax : :class:`matplotlib.axes.Axes` object or array of Axes objects.
+                    *ax* can be either a single :class:`matplotlib.axes.Axes` object or an
+                    array of Axes objects if more than one subplot was created.  The
+                    dimensions of the resulting array can be controlled with the squeeze
+                    keyword.
 
                '''
-        # TODO: check if time variable exits if not error (time variable should be 'time' at the moment)
-        # TODO: make default values for projection and extent (dataset extent)
 
         def get_most_freq_labels(this_ds):
             this_ds = this_ds.stack(
@@ -476,20 +471,35 @@ class Plotter:
 
         # check if gridded or profiles data
         if self.data_type == 'profiles':
-            ax.scatter(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], s=3,
-                       c=self.ds[var_name], cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
+            sc = ax.scatter(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], s=3,
+                            c=self.ds[var_name], cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
         if self.data_type == 'gridded':
-            ax.pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp[var_name],
-                          cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
+            sc = ax.pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get(
+                'latitude')], dsp[var_name], cmap=kmap, transform=proj, vmin=0, vmax=self.m.K)
 
-        # TODO: function already in pyxpcm
-        self.m.plot.colorbar(ax=ax, cmap='Accent', shrink=0.3)
-        lon_grid = np.floor_divide((self.ds[self.coords_dict.get('longitude')].max(
-        ) - self.ds[self.coords_dict.get('longitude')].min()), 10)
-        lat_grid = np.floor_divide((self.ds[self.coords_dict.get('latitude')].max(
-        ) - self.ds[self.coords_dict.get('latitude')].min()), 8)
-        # TODO: function already in pyxpcm
-        self.m.plot.latlongrid(ax, dx=lon_grid, dy=lat_grid)
+        # function already in pyxpcm: deprecated
+        #self.m.plot.colorbar(ax=ax, shrink=0.3)
+        cbar = plt.colorbar(sc, shrink=0.3)
+        cbar.set_ticks(np.arange(0.5, self.m.K+0.5))
+        cbar.set_ticklabels(range(self.m.K))
+
+        # function already in pyxpcm: deprecated
+        #self.m.plot.latlongrid(ax, dx=lon_grid, dy=lat_grid)
+        lon_grid = 4
+        lat_grid = 4
+        ax.set_xticks(np.arange(int(extent[0]), int(
+            extent[1]+1), lon_grid), crs=ccrs.PlateCarree())
+        ax.set_yticks(np.arange(int(extent[2]), int(
+            extent[3]+1), lat_grid), crs=ccrs.PlateCarree())
+        lon_formatter = LongitudeFormatter()
+        lat_formatter = LatitudeFormatter()
+        ax.xaxis.set_major_formatter(lon_formatter)
+        ax.yaxis.set_major_formatter(lat_formatter)
+        plt.grid(True,  linestyle='--')
+        cbar.set_label('Class', fontsize=12)
+        ax.tick_params(axis="x", labelsize=8)
+        ax.tick_params(axis="y", labelsize=8)
+
         land_feature = cfeature.NaturalEarthFeature(
             category='physical', name='land', scale='50m', facecolor=[0.9375, 0.9375, 0.859375])
         ax.add_feature(land_feature, edgecolor='black')
@@ -509,10 +519,15 @@ class Plotter:
 
            Returns
            -------
+               fig : :class:`matplotlib.pyplot.figure.Figure`
+
+               ax : :class:`matplotlib.axes.Axes` object or array of Axes objects.
+                    *ax* can be either a single :class:`matplotlib.axes.Axes` object or an
+                    array of Axes objects if more than one subplot was created.  The
+                    dimensions of the resulting array can be controlled with the squeeze
+                    keyword.
 
            '''
-        # TODO: class colors in title in subplots using colormap
-        # TODO: time should be called time in dataset. use coords_dict
 
         if 'time' in self.coords_dict and self.data_type == 'gridded':
             dsp = self.ds.isel(time=time_slice)
@@ -591,17 +606,25 @@ class Plotter:
 
            Returns
            -------
+               fig : :class:`matplotlib.pyplot.figure.Figure`
+
+               ax : :class:`matplotlib.axes.Axes` object or array of Axes objects.
+                    *ax* can be either a single :class:`matplotlib.axes.Axes` object or an
+                    array of Axes objects if more than one subplot was created.  The
+                    dimensions of the resulting array can be controlled with the squeeze
+                    keyword.
 
            '''
-        # TODO: class colors in title in subplots using colormap
-        # TODO: time should be called time in dataset. use coords_dict
 
         if 'time' in self.coords_dict and self.data_type == 'gridded':
             dsp = self.ds.sel(time=time_slice, method='nearest').squeeze()
-            title_string = '$\\bf{PCM\\  Robustness}$' + ' \n probability of a profile to belong to a class k' + ' \n (time: ' + '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')'
+            title_string = '$\\bf{PCM\\  Robustness}$' + ' \n probability of a profile to belong to a class k' + \
+                ' \n (time: ' + \
+                '%s' % dsp["time"].dt.strftime("%Y/%m/%d %H:%M").values + ')'
         else:
             dsp = self.ds
-            title_string = '$\\bf{PCM\\  Robustness}$' + ' \n probability of a profile to belong to a class k'
+            title_string = '$\\bf{PCM\\  Robustness}$' + \
+                ' \n probability of a profile to belong to a class k'
 
         # spatial extent
         if isinstance(extent, str):
@@ -644,7 +667,21 @@ class Plotter:
                 sc = ax[k].pcolormesh(dsp[self.coords_dict.get('longitude')], dsp[self.coords_dict.get('latitude')], dsp['PCM_ROBUSTNESS_CAT'].where(dsp['PCM_LABELS'] == k),
                                       cmap=cmap, transform=proj, vmin=0, vmax=5)
 
-            self.m.plot.latlongrid(ax[k], fontsize=6, dx=lon_grid, dy=lat_grid)
+            # self.m.plot.latlongrid(ax[k], fontsize=6, dx=lon_grid, dy=lat_grid) deprecated
+            defaults = {'linewidth': .5, 'color': 'gray',
+                        'alpha': 0.5, 'linestyle': '--'}
+            gl = ax[k].gridlines(crs=ax[k].projection,
+                                 draw_labels=True, **defaults)
+            gl.xlocator = mticker.FixedLocator(
+                np.arange(-180, 180+1, lon_grid))
+            gl.ylocator = mticker.FixedLocator(np.arange(-90, 90+1,  lat_grid))
+            gl.xformatter = LONGITUDE_FORMATTER
+            gl.yformatter = LATITUDE_FORMATTER
+            gl.top_labels = False
+            gl.xlabel_style = {'fontsize': 5}
+            gl.right_labels = False
+            gl.ylabel_style = {'fontsize': 5}
+            ax[k].add_feature(land_feature, edgecolor='black')
             ax[k].add_feature(land_feature, edgecolor='black')
             #ax[k].set_title('k=%i' % k, color=kmap(k), fontweight='bold', x=1.05, y=0.84)
             ax[k].set_title('k=%i' % k, color=kmap(k), fontweight='bold')
@@ -671,8 +708,8 @@ class Plotter:
         rowl0 = dsp['PCM_ROBUSTNESS_CAT'].attrs['legend']
         #cl = fig.colorbar(sc, ax=ax.ravel().tolist(),fraction=0.02)
         cl = plt.colorbar(sc, ax=ax, fraction=0.02, pad=0.05)
-        cl.set_ticks([0,1,2,3,4,5])
-        cl.set_ticklabels([0,0.33,0.66,0.9,0.99,1])
+        cl.set_ticks([0, 1, 2, 3, 4, 5])
+        cl.set_ticklabels([0, 0.33, 0.66, 0.9, 0.99, 1])
         for (i, j) in zip(np.arange(0.5, 5, 1), rowl0):
             cl.ax.text(6, i, j, ha='left', va='center', fontsize=8)
 
@@ -691,6 +728,13 @@ class Plotter:
 
             Returns
             -------
+               fig : :class:`matplotlib.pyplot.figure.Figure`
+
+               ax : :class:`matplotlib.axes.Axes` object or array of Axes objects.
+                    *ax* can be either a single :class:`matplotlib.axes.Axes` object or an
+                    array of Axes objects if more than one subplot was created.  The
+                    dimensions of the resulting array can be controlled with the squeeze
+                    keyword.
 
         '''
 
@@ -699,7 +743,6 @@ class Plotter:
                 1), "Length of time variable should be > 1"
 
         # data to be plot
-        # TODO: is it the best way??
         pcm_labels = self.ds['PCM_LABELS']
         kmap = self.m.plot.cmap(name=self.cmap_name)
 
@@ -762,6 +805,8 @@ class Plotter:
         plt.gca().invert_yaxis()
         if time_bins == 'season':
             ax.set_yticks(np.arange(1, len(xaxis_labels)+1))
+        else:
+            ax.set_yticks(np.arange(len(xaxis_labels)))
         ax.set_yticklabels(xaxis_labels, fontsize=12)
         plt.yticks(fontsize=12)
         ax.legend(fontsize=12, bbox_to_anchor=(1.01, 1), loc='upper left')
@@ -789,7 +834,7 @@ class Plotter:
         background.paste(image, (0, 0))
         background.save(outfname)
 
-    def add_2logo(self, mfname, outfname, logo_height=70, txt_color=(0, 0, 0, 255), data_src='CMEMS', bic_fig ='no'):
+    def add_2logo(self, mfname, outfname, logo_height=70, txt_color=(0, 0, 0, 255), data_src='CMEMS', bic_fig='no'):
         """ Add 2 logos and text to a figure
 
             Parameters
@@ -842,7 +887,8 @@ class Plotter:
             time_string = 'Period: Unknown'
         elif len(self.ds[self.coords_dict.get('time')].sizes) == 0:
             # TODO: when using isel hours information is lost
-            time_extent = self.ds[self.coords_dict.get('time')].dt.strftime("%Y/%m/%d %H:%M")
+            time_extent = self.ds[self.coords_dict.get(
+                'time')].dt.strftime("%Y/%m/%d %H:%M")
             time_string = 'Period: %s' % time_extent.values
         else:
             time_extent = [min(self.ds[self.coords_dict.get('time')].dt.strftime(
@@ -882,7 +928,8 @@ class Plotter:
         # Final save
         mimage.save(outfname)
 
-    def save_BlueCloud(self, out_name, bic_fig='no'):  # function which saves figure and add logos
+    # function which saves figure and add logos
+    def save_BlueCloud(self, out_name, bic_fig='no'):
 
         # save image
         # plt.margins(0.1)
@@ -894,7 +941,7 @@ class Plotter:
 
         # add logo
         #self.add_2logo(out_name, out_name, logo_height=120, txt_color=(0, 0, 0, 255), data_src='CMEMS')
-        self.add_2logo(out_name, out_name, bic_fig = bic_fig)
+        self.add_2logo(out_name, out_name, bic_fig=bic_fig)
 
         print('Figure saved in %s' % out_name)
 
