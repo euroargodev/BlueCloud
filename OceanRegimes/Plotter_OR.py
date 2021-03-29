@@ -247,7 +247,7 @@ class Plotter_OR:
                classdimname: (optional) pcm classes dimension name (default = 'k')
                quantdimname: (optional) pcm quantiles dimension name (default = 'quantile')
                cmap: (optional) colormap name for quantiles (default = 'brg')
-               start_month: month to start the plot (default: 1)
+               start_month: month to start the plot (default: 1 corresponding to January)
                ylabel: (optional) y axis label (default = 'variable')
                **kwargs
 
@@ -298,6 +298,7 @@ class Plotter_OR:
         if not xlim:
             xlim = np.array([da[FEATURE_DIM].min(), da[FEATURE_DIM].max()])
 
+        # TODO finalize fix form time period: not working for anything else than exactly a year
         #ticks in months
         dates = 2019*1000 + da[FEATURE_DIM]*10 + 0
         dates = dates.astype(str)
@@ -315,6 +316,8 @@ class Plotter_OR:
             new_order = np.concatenate(
                 (np.arange(start_month, 13), np.arange(1, start_month)))
             xaxis_labels = [xaxis_labels[i-1] for i in new_order]
+        else:
+            x_values = dates
 
         index_ticks = np.unique(x_values.month, return_index=True)
         index_ticks = np.sort(index_ticks[1]) + 1
@@ -323,7 +326,7 @@ class Plotter_OR:
             Qk = da.loc[{CLASS_DIM: k}]
             for (iq, q) in zip(np.arange(nQ), Qk[QUANT_DIM]):
                 Qkq = Qk.loc[{QUANT_DIM: q}]
-                if start_month != 0:
+                if start_month != 1:
                     Qkq = Qkq.reindex({FEATURE_DIM: new_order_index+1})
                 ax[k].plot(da[FEATURE_DIM], Qkq.values, label=(
                     "q=%0.2f") % da[QUANT_DIM][iq], color=cmap(iq))
@@ -337,7 +340,7 @@ class Plotter_OR:
                 ax[k].set_ylim(np.array([Qk.min(), Qk.max()]))
 
             ax[k].set_xticks(index_ticks)
-            ax[k].set_xticklabels(xaxis_labels)
+            ax[k].set_xticklabels(xaxis_labels[:len(index_ticks)])
             ax[k].set_xlim(xlim)
             ax[k].set_ylabel(ylabel)
 
@@ -440,6 +443,8 @@ class Plotter_OR:
             new_order = np.concatenate(
                 (np.arange(start_month, 13), np.arange(1, start_month)))
             xaxis_labels = [xaxis_labels[i-1] for i in new_order]
+        else:
+            x_values = dates
 
         index_ticks = np.unique(x_values.month, return_index=True)
         index_ticks = np.sort(index_ticks[1]) + 1
@@ -454,7 +459,7 @@ class Plotter_OR:
             Qq = da.loc[{QUANT_DIM: da[QUANT_DIM].values[q]}]
             for k in range(self.m.K):
                 Qqk = Qq.loc[{CLASS_DIM: k}]
-                if start_month != 0:
+                if start_month != 1:
                     Qqk = Qqk.reindex({FEATURE_DIM: new_order_index+1})
                 ax[cnt][0].plot(da[FEATURE_DIM], Qqk.values, label=(
                     "K=%i") % (da[CLASS_DIM][k]), color=kmap(k))
@@ -464,7 +469,7 @@ class Plotter_OR:
             ax[cnt][0].legend(bbox_to_anchor=(1.02, 1),
                               loc='upper left', fontsize=10)
             ax[cnt][0].set_xticks(index_ticks)
-            ax[cnt][0].set_xticklabels(xaxis_labels)
+            ax[cnt][0].set_xticklabels(xaxis_labels[:len(index_ticks)])
             ax[cnt][0].set_xlim(xlim)
             if isinstance(ylim, str):
                 ax[cnt][0].set_ylim(np.array([Qq.min(), Qq.max()]))
