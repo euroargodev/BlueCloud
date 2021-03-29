@@ -47,7 +47,7 @@ def load_data(file_name, var_name_ds):
     """
     ds = xr.open_dataset(file_name)
     # select var
-    ds = ds[var_name_ds].to_dataset()
+    ds = ds[[var_name_ds]]
     first_date = str(ds.time.min().values)[0:7]
     # exception to handle missing depth dim: setting depth to 0 because the dataset most likely represents surface data
     try:
@@ -149,7 +149,7 @@ def main():
     file_name = args.file_name
     print("loading the dataset")
     start_time = time.time()
-    ds, first_date, coord_dict = load_data(file_name)
+    ds, first_date, coord_dict = load_data(file_name=file_name, var_name_ds=var_name_ds)
     z_dim = coord_dict['depth']
     load_time = time.time() - start_time
     print("load finished in " + str(load_time) + "sec")

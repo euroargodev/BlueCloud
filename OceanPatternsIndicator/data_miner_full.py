@@ -48,7 +48,7 @@ def load_data(file_name, var_name_ds):
     """
     ds = xr.open_dataset(file_name)
     # select var
-    ds = ds[var_name_ds].to_dataset()
+    ds = ds[[var_name_ds]]
     first_date = str(ds.time.min().values)[0:7]
     # exception to handle missing depth dim: setting depth to 0 because the dataset most likely represents surface data
     try:

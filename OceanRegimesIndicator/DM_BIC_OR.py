@@ -1,14 +1,15 @@
-import sys
 import xarray as xr
 import numpy as np
-import pyxpcm
-from pyxpcm.models import pcm
-import Plotter
-from Plotter import Plotter
-from BIC_calculation import *
-import dask
-import dask.array as da
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn import mixture
+from preprocessing_OR import *
+import Plotter_OR
+from Plotter_OR import Plotter_OR
+import joblib
 import time
+from BIC_calculation_OR import *
 from PIL import Image, ImageFont, ImageDraw
 
 
@@ -25,9 +26,9 @@ def get_args():
 
     parse = argparse.ArgumentParser(description="Ocean patterns method")
     parse.add_argument('file_name', type=str, help='input dataset')
+    parse.add_argument('mask', type=str, help='path to mask')
     parse.add_argument('nk', type=int, help='number max of clusters')
     parse.add_argument('var_name_ds', type=str, help='name of variable in dataset')
-    parse.add_argument('var_name_mdl', type=str, help='name of variable in model')
     parse.add_argument('corr_dist', type=int, help='correlation distance used for BIC')
     return parse.parse_args()
 
@@ -44,54 +45,49 @@ def load_data(file_name, var_name_ds):
     Returns
     -------
     ds: Xarray dataset
-    first_date: string, first time slice of the dataset
-    coord_dict: coordinate dictionary for pyXpcm
     """
     ds = xr.open_dataset(file_name)
     # select var
     ds = ds[[var_name_ds]]
-    first_date = str(ds.time.min().values)[0:7]
-    # exception to handle missing depth dim: setting depth to 0 because the dataset most likely represents surface data
-    try:
-        coord_dict = get_coords_dict(ds)
-        ds['depth'] = -np.abs(ds[coord_dict['depth']].values)
-        ds.depth.attrs['axis'] = 'Z'
-    except KeyError as e:
-        ds = ds.expand_dims('depth').assign_coords(depth=("depth", [0]))
-        ds.depth.attrs['axis'] = 'Z'
-        coord_dict = get_coords_dict(ds)
-        print(f"{e} dimension was missing,it has been initialized to 0 for surface data")
-    return ds, first_date, coord_dict
+    # some format
+    if not np.issubdtype(ds.indexes['time'].dtype, np.datetime64):
+        print("casting time to datetimeindex")
+        ds['time'] = ds.indexes['time'].to_datetimeindex()
+        ds.time.attrs['axis'] = 'T'
+    return ds
 
 
-def get_coords_dict(ds):
+def preprocessing_ds(ds, var_name_ds, mask_path):
     """
-    create a dict of coordinates to mapping each dimension of the dataset
+    5 steps of the preprocessing, detailed code in the preprocessing_OR.py script:
+    - Weekly mean
+    - Reduce latitude and longitude to sampling dim
+    - Delete all NaN values (using a mask that can be given as an input)
+    - Scaler: default is scikit-learn StandardScaler
+    - Principal Component Analysis (PCA): n_components default value is 0.99
     Parameters
     ----------
-    ds : Xarray dataset
+    ds : input dataset (Xarray)
+    var_name_ds : name of variable in dataset
+    mask_path : path to mask, default is auto and the mask will be generated automatically
 
     Returns
     -------
-    coords_dict: dict mapping each dimension of the dataset
+
     """
-    # creates dictionary with coordinates
-    coords_list = list(ds.coords.keys())
-    coords_dict = {}
-    for c in coords_list:
-        axis_at = ds[c].attrs.get('axis')
-        if axis_at == 'Y':
-            coords_dict.update({'latitude': c})
-        if axis_at == 'X':
-            coords_dict.update({'longitude': c})
-        if axis_at == 'T':
-            coords_dict.update({'time': c})
-        if axis_at == 'Z':
-            coords_dict.update({'depth': c})
-    return coords_dict
+    x = OR_weekly_mean(ds=ds, var_name=var_name_ds)
+    x = OR_reduce_dims(X=x)
+    try:
+        x, mask = OR_delate_NaNs(X=x, var_name=var_name_ds, mask_path=mask_path)
+    except FileNotFoundError as e:
+        print("no mask was found, generating one: " + str(e.filename))
+        x, mask = OR_delate_NaNs(X=x, var_name=var_name_ds, mask_path='auto')
+    x = OR_scaler(X=x, var_name=var_name_ds)
+    x = OR_apply_PCA(X=x, var_name=var_name_ds)
+    return x, mask
 
 
-def bic_calculation(ds, features_in_ds, z_dim, var_name_mdl, nk, corr_dist, coord_dict, first_date):
+def compute_BIC(ds, var_name_ds, nk, corr_dist):
     """
     The BIC (Bayesian Information Criteria) can be used to optimize the number of classes in the model, trying not to
     over-fit or under-fit the data. To compute this index, the model is fitted to the training dataset for a range of K
@@ -99,10 +95,7 @@ def bic_calculation(ds, features_in_ds, z_dim, var_name_mdl, nk, corr_dist, coor
     Parameters
     ----------
     ds : Xarray dataset
-    features_in_ds : dict {var_name_mdl: var_name_ds} with var_name_mdl the name of the variable in the model and
-    var_name_ds the name of the variable in the dataset
-    z_dim : z axis dimension (depth)
-    var_name_mdl : name of the variable in the model
+    var_name_ds: the name of the variable in the dataset
     nk : number of K to explore (always starts at 1 up to nk)
 
     Returns
@@ -110,16 +103,10 @@ def bic_calculation(ds, features_in_ds, z_dim, var_name_mdl, nk, corr_dist, coor
     bic: all values for the bic graph
     bic_min: min value of the bic
     """
-    z = ds[z_dim]
-    pcm_features = {var_name_mdl: z}
-    # TODO choose one time frame if short or choose one winter/summer pair
-    time_steps = [first_date]
-    # time_steps = ['2018-01', '2018-07']  # time steps to be used into account
-    nrun = 10  # number of runs for each k
-    bic, bic_min = BIC_calculation(ds=ds, coords_dict=coord_dict,
-                                   corr_dist=corr_dist, time_steps=time_steps,
-                                   pcm_features=pcm_features, features_in_ds=features_in_ds, z_dim=z_dim,
-                                   Nrun=nrun, NK=nk)
+    bic, bic_min = BIC_calculation(X=ds, coords_dict={'latitude': 'lat', 'longitude': 'lon'},
+                                   corr_dist=corr_dist,
+                                   feature_name='feature_reduced', var_name=var_name_ds + '_reduced',
+                                   Nrun=10, NK=nk)
     return bic, bic_min
 
 
@@ -142,12 +129,11 @@ def add_lowerband(mfname, outfname, band_height=70, color=(255, 255, 255, 255)):
     background.save(outfname)
 
 
-def add_2logo(mfname, outfname, ds, coords_dict, logo_height=70, txt_color=(0, 0, 0, 255)):
+def add_2logo(mfname, outfname, ds, logo_height=70, txt_color=(0, 0, 0, 255)):
     """ Add 2 logos and text to a figure
 
         Parameters
         ----------
-        coords_dict : coordinates dictionary (see get_coords_dict)
         ds : dataset Xarray
         mfname : string
             source figure file
@@ -159,6 +145,7 @@ def add_2logo(mfname, outfname, ds, coords_dict, logo_height=70, txt_color=(0, 0
     lfname1 = "../logos/Logo-LOPS_transparent_W.jpg"
 
     mimage = Image.open(mfname)
+    coords_dict = {'latitude': 'lat', 'longitude': 'lon'}
     # Open logo images:
     limage1 = Image.open(lfname1)
     limage2 = Image.open(lfname2)
@@ -196,8 +183,8 @@ def add_2logo(mfname, outfname, ds, coords_dict, logo_height=70, txt_color=(0, 0
         ds[coords_dict.get('latitude')].values)]
     lon_extent = [min(ds[coords_dict.get('longitude')].values), max(
         ds[coords_dict.get('longitude')].values)]
-    spatial_string = 'Domain: lat:%s, lon:%s' % (
-        str(lat_extent), str(lon_extent))
+    spatial_string = 'Domain: lat:[%.2f,%.2f], lon:[%.2f,%.2f]' % (
+        lat_extent[0], lat_extent[1], lon_extent[0], lon_extent[1])
 
     txtA = "User selection:\n   %s\n   %s\n   %s\nSource: %s" % (ds.attrs.get(
         'title'), time_string, spatial_string, 'CMEMS')
@@ -215,40 +202,44 @@ def add_2logo(mfname, outfname, ds, coords_dict, logo_height=70, txt_color=(0, 0
     mimage.save(outfname)
 
 
-def save_bic_plot(bic, nk, ds, coords_dict):
+def save_bic_plot(bic, nk, ds):
     out_name = "BIC.png"
     plot_BIC(bic, nk)
     plt.savefig(out_name, bbox_inches='tight', pad_inches=0.1)
     # add lower band
     add_lowerband(out_name, out_name)
     # add logo
-    add_2logo(out_name, out_name, ds, coords_dict)
+    add_2logo(out_name, out_name, ds)
     print('Figure saved in %s' % out_name)
 
 
 def main():
     args = get_args()
-    file_name = args.file_name
-    nk = args.nk
     var_name_ds = args.var_name_ds
-    var_name_mdl = args.var_name_mdl
+    nk = args.nk
     corr_dist = args.corr_dist
-    features_in_ds = {var_name_mdl: var_name_ds}
+    file_name = args.file_name
+    mask_path = args.mask
+
     print("loading the dataset")
     start_time = time.time()
-    ds, first_date, coord_dict = load_data(file_name=file_name, var_name_ds=var_name_ds)
-    z_dim = coord_dict['depth']
+    ds_init = load_data(file_name=file_name, var_name_ds=var_name_ds)
     load_time = time.time() - start_time
     print("load finished in " + str(load_time) + "sec")
+
+    print("preprocess the dataset")
+    start_time = time.time()
+    ds, mask = preprocessing_ds(ds=ds_init, var_name_ds=var_name_ds, mask_path=mask_path)
+    load_time = time.time() - start_time
+    print("preprocessing finished in " + str(load_time) + "sec")
+
     print("starting computation")
     start_time = time.time()
-    bic, bic_min = bic_calculation(ds=ds, features_in_ds=features_in_ds, z_dim=z_dim, var_name_mdl=var_name_mdl, nk=nk,
-                                   corr_dist=corr_dist, coord_dict=coord_dict, first_date=first_date)
+    bic, bic_min = compute_BIC(ds=ds, var_name_ds=var_name_ds, nk=nk, corr_dist=corr_dist)
     bic_time = time.time() - start_time
-    print("computation finished in " + str(bic_time) + "sec")
-    plot_BIC(BIC=bic, NK=nk, bic_min=bic_min)
-    print("computation finished, saving png")
-    save_bic_plot(bic=bic, nk=nk, ds=ds, coords_dict=coord_dict)
+    print("bic computation finished in " + str(bic_time) + "sec")
+    # plot and save fig
+    save_bic_plot(bic=bic, nk=nk, ds=ds_init)
 
 
 if __name__ == '__main__':
