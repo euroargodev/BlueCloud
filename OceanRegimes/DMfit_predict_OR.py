@@ -9,6 +9,7 @@ import Plotter_OR
 from Plotter_OR import Plotter_OR
 import joblib
 import time
+from datetime import timedelta
 
 
 def get_args():
@@ -47,8 +48,12 @@ def load_data(file_name, var_name_ds):
     # select var
     ds = ds[[var_name_ds]]
     # some format
-    ds['time'] = ds.indexes['time'].to_datetimeindex()
-    ds.time.attrs['axis'] = 'T'
+    if not np.issubdtype(ds.indexes['time'].dtype, np.datetime64):
+        print("casting time to datetimeindex")
+        ds['time'] = ds.indexes['time'].to_datetimeindex()
+        ds.time.attrs['axis'] = 'T'
+    # select first year only
+    ds = ds.where(ds['time'] < ds.time.min().values + np.timedelta64(365, 'D'), drop=True)
     return ds
 
 
@@ -203,10 +208,10 @@ def generate_plots(model, ds, var_name_ds):
     P = Plotter_OR(ds, model)
 
     # plot time series by class
-    P.tseries_structure(q_variable=var_name_ds + '_Q', start_month=0, ylabel=y_label)
+    P.tseries_structure(q_variable=var_name_ds + '_Q', start_month=2, ylabel=y_label)
     P.save_BlueCloud('tseries_struc.png')
     # plot time series by quantile
-    P.tseries_structure_comp(q_variable=var_name_ds + '_Q', plot_q='all', ylabel=y_label, start_month=0)
+    P.tseries_structure_comp(q_variable=var_name_ds + '_Q', plot_q='all', ylabel=y_label, start_month=1)
     P.save_BlueCloud('tseries_struc_comp.png')
     # spacial distribution
     P.spatial_distribution()
@@ -246,19 +251,19 @@ def main():
     train_time = time.time() - start_time
     print("training finished in " + str(train_time) + "sec")
 
-    # start_time = time.time()
-    # ds = predict(model=model, ds=ds, var_name_ds=var_name_ds, k=k, mask=mask, ds_init=ds_init)
-    # predict_time = time.time() - start_time
-    # print("prediction finished in " + str(predict_time) + "sec")
-    #
-    # start_time = time.time()
-    # generate_plots(model=model, ds=ds, var_name_ds=var_name_ds)
-    # plot_time = time.time() - start_time
-    # print("plots finished in " + str(plot_time) + "sec")
-    #
-    # # save model
-    # joblib.dump(model, 'modelOR.sav')
-    # print("model saved")
+    start_time = time.time()
+    ds = predict(model=model, ds=ds, var_name_ds=var_name_ds, k=k, mask=mask, ds_init=ds_init)
+    predict_time = time.time() - start_time
+    print("prediction finished in " + str(predict_time) + "sec")
+
+    start_time = time.time()
+    generate_plots(model=model, ds=ds, var_name_ds=var_name_ds)
+    plot_time = time.time() - start_time
+    print("plots finished in " + str(plot_time) + "sec")
+
+    # save model
+    joblib.dump(model, 'modelOR.sav')
+    print("model saved")
 
 
 if __name__ == '__main__':

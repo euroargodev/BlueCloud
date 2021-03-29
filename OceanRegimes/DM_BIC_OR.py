@@ -50,8 +50,10 @@ def load_data(file_name, var_name_ds):
     # select var
     ds = ds[[var_name_ds]]
     # some format
-    ds['time'] = ds.indexes['time'].to_datetimeindex()
-    ds.time.attrs['axis'] = 'T'
+    if not np.issubdtype(ds.indexes['time'].dtype, np.datetime64):
+        print("casting time to datetimeindex")
+        ds['time'] = ds.indexes['time'].to_datetimeindex()
+        ds.time.attrs['axis'] = 'T'
     return ds
 
 

@@ -47,8 +47,12 @@ def load_data(file_name, var_name_ds):
     # select var
     ds = ds[[var_name_ds]]
     # some format
-    ds['time'] = ds.indexes['time'].to_datetimeindex()
-    ds.time.attrs['axis'] = 'T'
+    if not np.issubdtype(ds.indexes['time'].dtype, np.datetime64):
+        print("casting time to datetimeindex")
+        ds['time'] = ds.indexes['time'].to_datetimeindex()
+        ds.time.attrs['axis'] = 'T'
+    # select first year only
+    ds = ds.where(ds['time'] < ds.time.min().values + np.timedelta64(365, 'D'), drop=True)
     return ds
 
 
@@ -200,10 +204,10 @@ def generate_plots(model, ds, var_name_ds):
     P = Plotter_OR(ds, model)
 
     # plot time series by class
-    P.tseries_structure(q_variable=var_name_ds + '_Q', start_month=6, ylabel=y_label)
+    P.tseries_structure(q_variable=var_name_ds + '_Q', start_month=1, ylabel=y_label)
     P.save_BlueCloud('tseries_struc.png')
     # plot time series by quantile
-    P.tseries_structure_comp(q_variable=var_name_ds + '_Q', plot_q='all', ylabel=y_label, start_month=6)
+    P.tseries_structure_comp(q_variable=var_name_ds + '_Q', plot_q='all', ylabel=y_label, start_month=1)
     P.save_BlueCloud('tseries_struc_comp.png')
     # spacial distribution
     P.spatial_distribution()
