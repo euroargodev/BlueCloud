@@ -321,8 +321,9 @@ class Plotter_OR:
             ax[k].grid(True)
 
             if isinstance(ylim, str) and not np.isnan(Qk.min()):
-                ax[k].set_ylim(np.array([Qk.min(), Qk.max()]))
-
+                ax[k].set_ylim(np.array([Qk.min() - Qk.max()*0.05, Qk.max() + Qk.max()*0.05]))
+            else:
+                ax[k].set_ylim(ylim)
             ax[k].set_xticks(index_ticks + da[FEATURE_DIM][0].values-1)
             ax[k].set_xticklabels(xaxis_labels)
             #ax[k].set_xlim(xlim)
@@ -442,7 +443,10 @@ class Plotter_OR:
             ax[cnt][0].set_xticklabels(xaxis_labels)
             ax[cnt][0].set_xlim(xlim)
             if isinstance(ylim, str):
-                ax[cnt][0].set_ylim(np.array([Qq.min(), Qq.max()]))
+                ax[cnt][0].set_ylim(np.array([Qq.min() - Qq.max()*0.05, Qq.max() + Qq.max()*0.05]))
+            else:
+                ax[cnt][0].set_ylim(ylim)
+                                    
             ax[cnt][0].set_ylabel(ylabel)
             ax[cnt][0].grid(True)
             cnt = cnt+1
