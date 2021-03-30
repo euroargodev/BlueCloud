@@ -297,34 +297,40 @@ class Plotter_OR:
             xlim = np.array([da[FEATURE_DIM].min(), da[FEATURE_DIM].max()])
 
         #ticks in months
-        dates = 2017*1000 + da[FEATURE_DIM]*10 + 0
-        dates = dates.astype(str)
-        dates = pd.to_datetime(dates.values, format='%Y%W%w')
+        weeks_vector = pd.to_datetime(self.ds['time'].values).isocalendar().week
+        index_weeks = np.unique(weeks_vector, return_index=True)[1]
+        weeks_vector = [weeks_vector[index] for index in sorted(index_weeks)]
+
+        months_vector = pd.to_datetime(self.ds['time'].values).month
+        months_vector = [months_vector[index] for index in sorted(index_weeks)]
+        index_months = np.unique(months_vector, return_index=True)[1]
+        months_vector = [months_vector[index] for index in sorted(index_months)]
+        index_ticks = np.sort(index_months)
 
         xaxis_labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May',
-                        'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] 
-
-        index_ticks = np.unique(dates.month, return_index=True)
-        index_ticks = np.sort(index_ticks[1]) + 1
-        xaxis_labels = [xaxis_labels[i-1] for i in np.unique(dates.month)]
+                        'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+        xaxis_labels = [xaxis_labels[i-1] for i in months_vector]           
 
         for k in range(self.m.K):
             Qk = da.loc[{CLASS_DIM: k}]
             for (iq, q) in zip(np.arange(nQ), Qk[QUANT_DIM]):
                 Qkq = Qk.loc[{QUANT_DIM: q}]
-                ax[k].plot(da[FEATURE_DIM], Qkq.values, label=(
+                #reorder
+                Qkq = Qkq.reindex({'feature': weeks_vector})
+                    
+                ax[k].plot(Qkq.values, label=(
                     "q=%0.2f") % da[QUANT_DIM][iq], color=cmap(iq))
 
             ax[k].set_title(("k = %i") %
                             (k), color=kmap(k), fontweight="bold")
             ax[k].legend(loc='lower right')
             ax[k].grid(True)
-
+            
             if isinstance(ylim, str) and not np.isnan(Qk.min()):
                 ax[k].set_ylim(np.array([Qk.min() - Qk.max()*0.05, Qk.max() + Qk.max()*0.05]))
-            else:
+            elif not isinstance(ylim, str):
                 ax[k].set_ylim(ylim)
-            ax[k].set_xticks(index_ticks + da[FEATURE_DIM][0].values-1)
+            ax[k].set_xticks(index_ticks)
             ax[k].set_xticklabels(xaxis_labels)
             #ax[k].set_xlim(xlim)
             ax[k].set_ylabel(ylabel)
@@ -411,16 +417,19 @@ class Plotter_OR:
             xlim = np.array([da[FEATURE_DIM].min(), da[FEATURE_DIM].max()])
 
         #ticks in months
-        dates = 2017*1000 + da[FEATURE_DIM]*10 + 0
-        dates = dates.astype(str)
-        dates = pd.to_datetime(dates.values, format='%Y%W%w')
+        weeks_vector = pd.to_datetime(self.ds['time'].values).isocalendar().week
+        index_weeks = np.unique(weeks_vector, return_index=True)[1]
+        weeks_vector = [weeks_vector[index] for index in sorted(index_weeks)]
+
+        months_vector = pd.to_datetime(self.ds['time'].values).month
+        months_vector = [months_vector[index] for index in sorted(index_weeks)]
+        index_months = np.unique(months_vector, return_index=True)[1]
+        months_vector = [months_vector[index] for index in sorted(index_months)]
+        index_ticks = np.sort(index_months)
 
         xaxis_labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May',
                         'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-
-        index_ticks = np.unique(dates.month, return_index=True)
-        index_ticks = np.sort(index_ticks[1]) + 1
-        xaxis_labels = [xaxis_labels[i-1] for i in np.unique(dates.month)]
+        xaxis_labels = [xaxis_labels[i-1] for i in months_vector]
 
         defaults = {'figsize': (10, 8), 'dpi': 80,
                     'facecolor': 'w', 'edgecolor': 'k'}
@@ -432,19 +441,22 @@ class Plotter_OR:
             Qq = da.loc[{QUANT_DIM: da[QUANT_DIM].values[q]}]
             for k in range(self.m.K):
                 Qqk = Qq.loc[{CLASS_DIM: k}]
-                ax[cnt][0].plot(da[FEATURE_DIM], Qqk.values, label=(
+                #reorder
+                Qqk = Qqk.reindex({'feature': weeks_vector})
+                
+                ax[cnt][0].plot(Qqk.values, label=(
                     "K=%i") % (da[CLASS_DIM][k]), color=kmap(k))
 
             ax[cnt][0].set_title(("quantile: %.2f") % (
                 da[QUANT_DIM].values[q]), color=cmap(q), fontsize=12)
             ax[cnt][0].legend(bbox_to_anchor=(1.02, 1),
                               loc='upper left', fontsize=10)
-            ax[cnt][0].set_xticks(index_ticks + da[FEATURE_DIM][0].values-1)
+            ax[cnt][0].set_xticks(index_ticks)
             ax[cnt][0].set_xticklabels(xaxis_labels)
-            ax[cnt][0].set_xlim(xlim)
+            #ax[cnt][0].set_xlim(xlim)
             if isinstance(ylim, str):
                 ax[cnt][0].set_ylim(np.array([Qq.min() - Qq.max()*0.05, Qq.max() + Qq.max()*0.05]))
-            else:
+            elif not isinstance(ylim, str):
                 ax[cnt][0].set_ylim(ylim)
                                     
             ax[cnt][0].set_ylabel(ylabel)
