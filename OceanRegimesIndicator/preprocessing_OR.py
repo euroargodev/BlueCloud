@@ -341,7 +341,7 @@ def OR_unstack_dataset(ds, X, mask, time_var='auto'):
 
             Parameters
             ----------
-                ds: not preprocessed input dataset
+                ds: not preprocessed input dataset (or attributtes)
                 X: dataset after preprocessing and including model variables
                 mask: mask used during preprocesing for delating NaNs
                 time_var: name of time variable in ds dataset. Default: 'auto', variable is automatically detected 
