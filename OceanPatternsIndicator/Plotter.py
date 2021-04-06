@@ -420,25 +420,16 @@ class Plotter:
                     keyword.
 
                '''
-
+        def core_funct(x):
+            res = np.nan
+            if np.count_nonzero(~np.isnan(x)) != 0:
+                res = np.argmax(np.bincount(x.astype('int')))
+            return res
+        
         def get_most_freq_labels(this_ds):
-            this_ds = this_ds.stack(
-                {'N_OBS': [d for d in this_ds['PCM_LABELS'].dims if d != 'time']})
-
-            def fct(this):
-                def most_prob_label(vals):
-                    return np.argmax(np.bincount(vals))
-                mpblab = []
-                for i in this['N_OBS']:
-                    val = this.sel(N_OBS=i)['PCM_LABELS'].values
-                    res = np.nan
-                    if np.count_nonzero(~np.isnan(val)) != 0:
-                        res = most_prob_label(val.astype('int'))
-                    mpblab.append(res)
-                mpblab = np.array(mpblab)
-                return xr.DataArray(mpblab, dims='N_OBS', coords={'N_OBS': this['N_OBS']}, name='PCM_MOST_FREQ_LABELS').to_dataset()
-            this_ds['PCM_MOST_FREQ_LABELS'] = this_ds.map_blocks(
-                fct)['PCM_MOST_FREQ_LABELS'].load()
+            this_ds = this_ds.stack({'N_OBS': [d for d in this_ds['PCM_LABELS'].dims if d != 'time']})
+            this_ds = this_ds.chunk({"N_OBS":100})
+            this_ds['PCM_MOST_FREQ_LABELS'] = xr.apply_ufunc(core_funct, this_ds['PCM_LABELS'], dask="parallelized", input_core_dims=[['time']], vectorize=True, output_dtypes=np.float).load()
             return this_ds.unstack('N_OBS')
 
         # spatial extent
@@ -507,6 +498,7 @@ class Plotter:
         fig.canvas.draw()
         fig.tight_layout()
         plt.margins(0.1)
+        
 
     def plot_posteriors(self, proj=ccrs.PlateCarree(), extent='auto', time_slice=0):
         '''Plot posteriors in a map
