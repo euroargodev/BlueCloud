@@ -9,6 +9,9 @@ import dask
 import dask.array as da
 import time
 import matplotlib.pyplot as plt
+from tools import json_builder
+from dateutil.tz import tzutc
+from datetime import datetime
 
 
 def get_args():
@@ -109,15 +112,15 @@ def train_model(k, ds, var_name_mdl, var_name_ds, z_dim):
     # create model
     z = ds[z_dim]
     pcm_features = {var_name_mdl: z}
-    m = pcm(K=k, features=pcm_features)
+    m = pcm(K=k, features=pcm_features, maxvar=15)
     # fit model
     features_in_ds = {var_name_mdl: var_name_ds}
     try:
         m.fit(ds, features_in_ds, dim=z_dim)
     except ValueError as e:
         print("No profiles are deep enough to reach the max depth defined in the dataset, therefore no profiles are left after filtering. Please reduce the max depth of your dataset")
-        print(e)
-        sys.exit(1)
+        print(e, file=sys.stderr)
+        raise ValueError('')
     return m
 
 
@@ -210,48 +213,101 @@ def generate_plots(m, ds, var_name_ds, first_date):
     try:
         P.temporal_distribution(time_bins='month')
         P.save_BlueCloud('temporal_distr_months.png')
-    except ValueError as e:
+    except (ValueError, AssertionError) as e:
         save_empty_plot('temporal_distr_months')
         print('plot monthly temporal distribution is not available, the following error occurred:')
-        print(e)
+        print(e, file=sys.stderr)
     # temporal distribution (seasonally)
     try:
         P.temporal_distribution(time_bins='season')
         P.save_BlueCloud('temporal_distr_season.png')
-    except ValueError as e:
+    except (ValueError, AssertionError) as e:
         save_empty_plot('temporal_distr_season')
         print('plot seasonal temporal distribution is not available, the following error occurred:')
-        print(e)
+        print(e, file=sys.stderr)
     # save data
     ds.to_netcdf('predicted_dataset.nc', format='NETCDF4')
 
 
+def get_iso_timestamp():
+    isots = datetime.now(tz=tzutc()).replace(microsecond=0).isoformat()
+    return isots
+
+
+def error_exit(err_log, exec_log):
+    """
+    This function is called if there's an error occurs, it write in log_err the code error with
+    a relative message, then copy some mock files in order to avoid bluecloud to terminate with error
+    """
+    # shutil.copy("./mock/output.nc", "output.nc")
+    # shutil.copy("./mock/output.png", "output.png")
+    end_time = get_iso_timestamp()
+    json_builder.write_json(error=err_log.__dict__,
+                            exec_info=exec_log.__dict__['messages'],
+                            end_time=end_time)
+    exit(1)
+
+
 def main():
+    main_start_time = time.time()
     args = get_args()
     var_name_ds = args.var_name_ds
     var_name_mdl = args.var_name_mdl
     features_in_ds = {var_name_mdl: var_name_ds}
     k = args.k
     file_name = args.file_name
+    arguments_str = f"file_name: {file_name} " \
+                    f"var_name_ds: {var_name_ds} " \
+                    f"var_name_mdl: {var_name_mdl} "
+    print(arguments_str)
+    exec_log = json_builder.get_exec_log()
+    exec_log.add_message(f"BIC methode was launched with the following arguments: {arguments_str}")
+
+    # ---------------- Load data --------------- #
+    exec_log.add_message("Start loading dataset")
     print("loading the dataset")
     start_time = time.time()
     ds, first_date, coord_dict = load_data(file_name=file_name, var_name_ds=var_name_ds)
     z_dim = coord_dict['depth']
     load_time = time.time() - start_time
+    exec_log.add_message("Loading dataset complete", load_time)
     print("load finished in " + str(load_time) + "sec")
+
+    # --------- train model -------------- #
     print("starting computation")
+    exec_log.add_message("Starting model train")
     start_time = time.time()
-    m = train_model(k=k, ds=ds, var_name_mdl=var_name_mdl, var_name_ds=var_name_ds, z_dim=z_dim)
+    try:
+        m = train_model(k=k, ds=ds, var_name_mdl=var_name_mdl, var_name_ds=var_name_ds, z_dim=z_dim)
+    except ValueError as e:
+        err_log = json_builder.LogError(-1, "No profiles are deep enough to reach the max depth defined in the dataset, "
+                                            "therefore no profiles are left after filtering. Please reduce the max depth"
+                                            " of your dataset" + str(e))
+        error_exit(err_log, exec_log)
     train_time = time.time() - start_time
+    exec_log.add_message("training complete", train_time)
     print("training finished in " + str(train_time) + "sec")
+
+    # ----------- predict ----------- #
+    exec_log.add_message("Starting prediction and plotting")
     start_time = time.time()
     ds = predict(m=m, ds=ds, var_name_mdl=var_name_mdl, var_name_ds=var_name_ds, z_dim=z_dim)
     generate_plots(m=m, ds=ds, var_name_ds=var_name_ds, first_date=first_date)
-    train_time = time.time() - start_time
-    print("prediction finished in " + str(train_time) + "sec")
+    predict_time = time.time() - start_time
+    exec_log.add_message("predict and plot complete", predict_time)
+    print("prediction and plots finished in " + str(predict_time) + "sec")
     # save model
     m.to_netcdf('model.nc')
     print("model saved")
+    exec_log.add_message("model saved")
+    # Save info in json file
+    exec_log.add_message("Total time: " + " %s seconds " % (time.time() - main_start_time))
+    err_log = json_builder.LogError(0, "Execution Done")
+    end_time = get_iso_timestamp()
+    json_builder.write_json(error=err_log.__dict__,
+                            exec_info=exec_log.__dict__['messages'],
+                            end_time=end_time)
+
 
 
 if __name__ == '__main__':
