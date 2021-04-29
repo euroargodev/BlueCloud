@@ -236,9 +236,9 @@ def add_2logo(mfname, outfname, ds, coords_dict, logo_height=70, txt_color=(0, 0
     mimage.save(outfname)
 
 
-def save_bic_plot(bic, nk, ds, coords_dict):
+def save_bic_plot(bic, nk, ds, coords_dict, bic_min):
     out_name = "BIC.png"
-    plot_BIC(bic, nk)
+    plot_BIC(bic, nk, bic_min=bic_min)
     plt.savefig(out_name, bbox_inches='tight', pad_inches=0.1)
     # add lower band
     add_lowerband(out_name, out_name)
@@ -285,9 +285,9 @@ def main():
     print("computation finished in " + str(bic_time) + "sec")
     # ---------- Plot BIC -----------------#
     exec_log.add_message("Starting BIC plot")
-    plot_BIC(BIC=bic, NK=nk, bic_min=bic_min)
+    # plot_BIC(BIC=bic, NK=nk, bic_min=bic_min)
     print("plot finished, saving png")
-    save_bic_plot(bic=bic, nk=nk, ds=ds, coords_dict=coord_dict)
+    save_bic_plot(bic=bic, nk=nk, ds=ds, coords_dict=coord_dict, bic_min=bic_min)
     exec_log.add_message("Plotting complete, file saved")
     # Save info in json file
     exec_log.add_message("Total time: " + " %s seconds " % (time.time() - main_start_time))
