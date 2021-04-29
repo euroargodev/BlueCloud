@@ -428,7 +428,7 @@ class Plotter:
         
         def get_most_freq_labels(this_ds):
             this_ds = this_ds.stack({'N_OBS': [d for d in this_ds['PCM_LABELS'].dims if d != 'time']})
-            this_ds = this_ds.chunk({"N_OBS":100})
+            this_ds = this_ds.chunk({"N_OBS":10000})
             this_ds['PCM_MOST_FREQ_LABELS'] = xr.apply_ufunc(core_funct, this_ds['PCM_LABELS'], dask="parallelized", input_core_dims=[['time']], vectorize=True, output_dtypes=np.float).load()
             return this_ds.unstack('N_OBS')
 
