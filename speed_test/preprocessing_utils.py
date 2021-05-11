@@ -125,12 +125,3 @@ def compute_quantile2(x, var_name_ds, K, q):
     x = x.assign(variables={var_name_ds + "_Q":(('k','quantile','depth'), m_quantiles)})
     x = x.assign_coords(coords={'quantile': q, 'k': range(K)})
     return x
-
-def predict(x, m, var_name_ds, k, var_predict):
-    classif = m.predict(x[var_predict])
-    x = x.assign(variables={"labels": ('sample_dim', classif)})
-    q = [0.05, 0.5, 0.95]
-    x = compute_quantile2(x, var_name_ds, k, q)
-    x = x.assign_coords(coords={'k': range(k)})
-    x = x.unstack('sample_dim')
-    return x

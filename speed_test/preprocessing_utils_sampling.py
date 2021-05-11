@@ -5,7 +5,7 @@ from dask_ml.decomposition import PCA as dask_pca
 from dask_ml.preprocessing import StandardScaler as dask_scaler
 from sklearn.decomposition import PCA as sk_pca
 from sklearn.preprocessing import StandardScaler as sk_scaler
-
+import pandas as pd
 
 
 def read_dataset(path, multiple, backend):
@@ -72,12 +72,12 @@ def fit_pca(x, n_comp, var_name, backend):
         pca = dask_pca(n_components=n_comp, svd_solver='full')
     pca.fit(x[var_name].data)
     x_reduced = pca.transform(x[var_name].data)
-    x = x.assign(variables={var_name + "_reduced": (('sample_dim', 'feature_reduced'), x_reduced)})
+    x = x.assign(variables={var_name + "_reduced": (('sample_dim', 'depth_reduced'), x_reduced)})
     return x, pca
 
 def apply_pca(x, var_name, pca):
     x_reduced = pca.transform(x[var_name].data)
-    x = x.assign(variables={var_name + "_reduced": (('sample_dim', 'feature_reduced'), x_reduced)})
+    x = x.assign(variables={var_name + "_reduced": (('sample_dim', 'depth_reduced'), x_reduced)})
     return x
 
 
@@ -88,13 +88,13 @@ def standard_scaling(x, backend, var_name):
         scaler = dask_scaler()
     scaler.fit(x[var_name].data)
     X_scale = scaler.transform(x[var_name].data)
-    x = x.assign(variables={var_name + "_scaled": (('sample_dim', 'feature'), X_scale)})
+    x = x.assign(variables={var_name + "_scaled": (('sample_dim', 'depth'), X_scale)})
     return x, scaler
 
 
 def apply_scaling(x, var_name, scaler):
     X_scale = scaler.transform(x[var_name].data)
-    x = x.assign(variables={var_name + "_scaled": (('sample_dim', 'feature'), X_scale)})
+    x = x.assign(variables={var_name + "_scaled": (('sample_dim', 'depth'), X_scale)})
     return x
 
 
@@ -113,11 +113,16 @@ def preprocessing_allin(path, scaling, backend, multiple, var_name, n_comp_pca, 
 
 def compute_quantile(x, var_name_ds, K, q):
     def compute_one_q(array, k):
-        return array[var_name_ds].where(array['labels']==k, drop=True).chunk({'sample_dim': -1}).quantile(q, dim='sample_dim')
+        return array.quantile(q, dim='sample_dim')
     tmp = []
+    array = []
     for yi in range(K):
-        a = dask.delayed(compute_one_q)(x, yi)
-        tmp.append(a)
+        array = x[var_name_ds].where(x['labels']==yi, drop=True)
+        if len(array>0):
+            a = dask.delayed(compute_one_q)(array, yi)
+            tmp.append(a)
+        else:
+            tmp.append(xr.DataArray())
     m_quantiles = xr.concat(dask.compute(*tmp), dim='k')
     x = x.assign(variables={var_name_ds + "_Q":(('k','quantile','depth'), m_quantiles)})
     x = x.assign_coords(coords={'quantile': q, 'k': range(K)})

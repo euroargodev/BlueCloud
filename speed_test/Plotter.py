@@ -71,8 +71,7 @@ class Plotter:
 
         # assign a data type
         dims_dict = list(ds.dims.keys())
-        dims_dict = [e for e in dims_dict if e not in (
-            'quantile', 'pcm_class')]
+        dims_dict = [e for e in dims_dict if e not in ('quantile', 'pcm_class', 'k', 'depth')]
         if len(dims_dict) > 2:
             self.data_type = 'gridded'
         else:
@@ -256,8 +255,9 @@ class Plotter:
 
         if not xlim:
             xlim = np.array([0.9 * da.min(), 1.1 * da.max()])
+        
         for k in self.m:
-            Qk = da.loc[{CLASS_DIM: k}]
+            Qk = da[k]
             for (iq, q) in zip(np.arange(nQ), Qk[QUANT_DIM]):
                 Qkq = Qk.loc[{QUANT_DIM: q}]
                 ax[k].plot(Qkq.values.T, da[VERTICAL_DIM], label=(
