@@ -1,11 +1,15 @@
 import json
+import time
+
 from download import daccess
 import sys
 import os
+import logging
 from DM_BIC_method import main_bic_computation
 from DM_FIT_PRED_method import main_fit_predict
 from DM_FIT_method import main_model_fit
 from DM_predict_method import main_predict
+
 
 def get_args():
     """
@@ -61,18 +65,6 @@ def download_data(param):
     print("START MakeInDir")
     try:
         dcs = daccess.Daccess(dataset, fields)
-        # for time_range in get_dates_wd(param['start_time'], param['end_time']):
-        #     daccess_working_domain = dict()
-        #     daccess_working_domain['depth'] = param['working_domain']['d'].copy()
-        #     daccess_working_domain['lonLat'] = [param['working_domain']['lon'][0], param['working_domain']['lon'][1],
-        #                                         param['working_domain']['lat'][0], param['working_domain']['lat'][1]]
-        #     # daccess_working_domain['time'] = time_range
-        #     daccess_working_domain['time'] = ['1987-02-01T00:00:00', '1987-02-31T00:00:00']
-        #     print('depth : ', daccess_working_domain['depth'])
-        #     print('lonLat : ', daccess_working_domain['lonLat'])
-        #     print('time : ', time_range)
-        #     dcs.download(daccess_working_domain)
-
         time_range = get_time_range(param['start_time'], param['end_time'])
         daccess_working_domain = dict()
         daccess_working_domain['depth'] = param['working_domain']['d'].copy()
@@ -98,24 +90,35 @@ def get_var_name(source, cf_std_name):
 
 
 def main():
+    logging.basicConfig(
+        format='[%(levelname)s] %(asctime)s %(message)s',
+        datefmt='%m/%d/%Y %I:%M:%S %p',
+        level=logging.INFO,
+        handlers=[
+            logging.FileHandler("OceanPatterns.log"),
+            logging.StreamHandler()
+    ])
+    # logging.getLogger().addHandler(logging.FileHandler(filename="OceanPatterns.log", mode='w'))
+    main_start_time = time.time()
     args = get_args()
     param = args.parameters_string.replace("\'", "\"")
     param_dict = json.loads(param)
-    print(param_dict)
+    logging.info(f"Ocean patterns launched with the following arguments:\n {param_dict}")
     download_data(param_dict)
     param_dict['var_name'] = get_var_name(param_dict['data_source'], param_dict['id_field'])
     if param_dict['id_method'] == "BIC":
-        print("launching BIC")
+        logging.info("launching BIC")
         main_bic_computation(param_dict)
     elif param_dict['id_method'] == "FIT":
+        logging.info("launching fit")
         main_model_fit(param_dict)
-        print("launching fit")
     elif param_dict['id_method'] == "PRED":
+        logging.info("launching pred")
         main_predict(param_dict)
-        print("launching pred")
     elif param_dict['id_method'] == "FIT_PRED":
+        logging.info("launching fit-predict")
         main_fit_predict(param_dict)
-        print("launching fit-predict")
+    logging.info(f"execution finished in {time.time()-main_start_time}")
 
 
 if __name__ == '__main__':

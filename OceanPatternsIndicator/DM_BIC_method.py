@@ -1,11 +1,10 @@
+import logging
 import time
 
 from PIL import Image, ImageFont, ImageDraw
-from dateutil.tz import tzutc
 
 from OceanPatternsIndicator.utils.BIC_calculation import *
 from OceanPatternsIndicator.utils.data_loader_utils import *
-from tools import json_builder
 
 
 def get_args():
@@ -26,23 +25,6 @@ def get_args():
     parse.add_argument('var_name_mdl', type=str, help='name of variable in model')
     parse.add_argument('corr_dist', type=int, help='correlation distance used for BIC')
     return parse.parse_args()
-
-
-def error_exit(err_log, exec_log):
-    """
-    This function is called if there's an error occurs, it write in log_err the code error with
-    a relative message, then copy some mock files in order to avoid bluecloud to terminate with error
-    """
-    end_time = get_iso_timestamp()
-    json_builder.write_json(error=err_log.__dict__,
-                            exec_info=exec_log.__dict__['messages'],
-                            end_time=end_time)
-    exit(0)
-
-
-def get_iso_timestamp():
-    isots = datetime.now(tz=tzutc()).replace(microsecond=0).isoformat()
-    return isots
 
 
 def bic_calculation(ds, features_in_ds, z_dim, var_name_mdl, nk, corr_dist, coord_dict, first_date):
@@ -181,7 +163,6 @@ def save_bic_plot(bic, nk, ds, coords_dict, bic_min):
 
 
 def main_bic_computation(args):
-    main_start_time = time.time()
     file_name = './datasets/*.nc'
     nk = args['nk']
     var_name_ds = args['var_name']
@@ -193,41 +174,28 @@ def main_bic_computation(args):
                     f"var_name_ds: {var_name_ds} " \
                     f"var_name_mdl: {var_name_mdl} " \
                     f"corr_dist: {corr_dist} "
-    print(arguments_str)
-    exec_log = json_builder.get_exec_log()
-    exec_log.add_message(f"BIC methode was launched with the following arguments: {arguments_str}")
+    logging.info(f"Ocean patterns BIC method launched with the following arguments:\n {arguments_str}")
+
     # ---------------- Load data --------------- #
-    exec_log.add_message("Start loading dataset")
-    print("loading the dataset")
+    logging.info("loading the dataset")
     start_time = time.time()
     ds, first_date, coord_dict = load_data(file_name=file_name, var_name_ds=var_name_ds)
     z_dim = coord_dict['depth']
     load_time = time.time() - start_time
-    exec_log.add_message("Loading dataset complete", load_time)
-    print("load finished in " + str(load_time) + "sec")
+    logging.info("load finished in " + str(load_time) + "sec")
+
     # -------------- BIC computation ----------#
-    exec_log.add_message("Starting BIC computation")
-    print("starting computation")
+    logging.info("starting computation")
     start_time = time.time()
     bic, bic_min = bic_calculation(ds=ds, features_in_ds=features_in_ds, z_dim=z_dim, var_name_mdl=var_name_mdl, nk=nk,
                                    corr_dist=corr_dist, coord_dict=coord_dict, first_date=first_date)
     bic_time = time.time() - start_time
-    exec_log.add_message("BIC computation complete", bic_time)
-    exec_log.add_message(f"bic min = {bic_min}")
-    print("computation finished in " + str(bic_time) + "sec")
+    logging.info("computation finished in " + str(bic_time) + "sec")
+
     # ---------- Plot BIC -----------------#
-    exec_log.add_message("Starting BIC plot")
-    # plot_BIC(BIC=bic, NK=nk, bic_min=bic_min)
-    print("plot finished, saving png")
+    logging.info("Starting BIC plot")
     save_bic_plot(bic=bic, nk=nk, ds=ds, coords_dict=coord_dict, bic_min=bic_min)
-    exec_log.add_message("Plotting complete, file saved")
-    # Save info in json file
-    exec_log.add_message("Total time: " + " %s seconds " % (time.time() - main_start_time))
-    err_log = json_builder.LogError(0, "Execution Done")
-    end_time = get_iso_timestamp()
-    json_builder.write_json(error=err_log.__dict__,
-                            exec_info=exec_log.__dict__['messages'],
-                            end_time=end_time)
+    logging.info("Plotting complete, file saved")
 
 
 if __name__ == '__main__':

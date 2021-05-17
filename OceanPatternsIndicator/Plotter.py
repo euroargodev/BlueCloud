@@ -1,3 +1,5 @@
+import logging
+
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
@@ -935,6 +937,6 @@ class Plotter:
         #self.add_2logo(out_name, out_name, logo_height=120, txt_color=(0, 0, 0, 255), data_src='CMEMS')
         self.add_2logo(out_name, out_name, bic_fig=bic_fig)
 
-        print('Figure saved in %s' % out_name)
+        logging.info('Figure saved in %s' % out_name)
 
     pass

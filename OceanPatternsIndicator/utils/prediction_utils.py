@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 import matplotlib.pyplot as plt
 from OceanPatternsIndicator.Plotter import Plotter
@@ -117,15 +119,15 @@ def generate_plots(m, ds, var_name_ds, first_date):
         P.save_BlueCloud('temporal_distr_months.png')
     except ValueError as e:
         save_empty_plot('temporal_distr_months')
-        print('plot monthly temporal distribution is not available, the following error occurred:')
-        print(e)
+        logging.warning('plot monthly temporal distribution is not available, the following error occurred:')
+        logging.exception(e)
     # temporal distribution (seasonally)
     try:
         P.temporal_distribution(time_bins='season')
         P.save_BlueCloud('temporal_distr_season.png')
     except ValueError as e:
         save_empty_plot('temporal_distr_season')
-        print('plot seasonal temporal distribution is not available, the following error occurred:')
-        print(e)
+        logging.warning('plot seasonal temporal distribution is not available, the following error occurred:')
+        logging.exception(e)
     # save data
     ds.to_netcdf('predicted_dataset.nc', format='NETCDF4')

@@ -1,3 +1,4 @@
+import logging
 import time
 
 import pyxpcm
@@ -40,26 +41,26 @@ def main_predict(args):
                     f"\tvar_name_ds: {var_name_ds} \n" \
                     f"\tvar_name_mdl: {var_name_mdl} \n" \
                     f"\tmodel: {model_path} \n"
-    print(arguments_str)
+    logging.info(f"Ocean patterns predict method launched with the following arguments:\n {arguments_str}")
 
     # ------------ loading data and model ----------- #
-    print("loading the dataset and model")
+    logging.info("loading the dataset and model")
     start_time = time.time()
     ds, first_date, coord_dict = load_data(file_name=file_name, var_name_ds=var_name_ds)
     z_dim = coord_dict['depth']
     m = load_model(model_path=model_path)
     load_time = time.time() - start_time
-    print("load finished in " + str(load_time) + "sec")
+    logging.info("load finished in " + str(load_time) + "sec")
 
     # ------------ predict and plot ----------- #
-    print("starting predictions and plots")
+    logging.info("starting predictions and plots")
     start_time = time.time()
     ds = predict(m=m, ds=ds, var_name_mdl=var_name_mdl, var_name_ds=var_name_ds, z_dim=z_dim)
     ds = robustness(m=m, ds=ds, features_in_ds=features_in_ds, z_dim=z_dim, first_date=first_date)
     ds = quantiles(ds=ds, m=m, var_name_ds=var_name_ds)
     generate_plots(m=m, ds=ds, var_name_ds=var_name_ds, first_date=first_date)
-    train_time = time.time() - start_time
-    print("computation finished in " + str(train_time) + "sec")
+    predict_time = time.time() - start_time
+    logging.info("prediction and plots finished in " + str(predict_time) + "sec")
 
 
 if __name__ == '__main__':

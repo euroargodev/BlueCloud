@@ -1,3 +1,4 @@
+import logging
 import sys
 import xarray as xr
 import numpy as np
@@ -30,7 +31,7 @@ def train_model(k, ds, var_name_mdl, var_name_ds, z_dim):
     try:
         m.fit(ds, features_in_ds, dim=z_dim)
     except ValueError as e:
-        print("No profiles are deep enough to reach the max depth defined in the dataset, therefore no profiles are left after filtering. Please reduce the max depth of your dataset")
-        print(e, file=sys.stderr)
+        logging.error("No profiles are deep enough to reach the max depth defined in the dataset, therefore no profiles are left after filtering. Please reduce the max depth of your dataset")
+        logging.error(e)
         raise ValueError('')
     return m

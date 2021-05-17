@@ -1,3 +1,4 @@
+import logging
 import time
 from OceanPatternsIndicator.utils.data_loader_utils import load_data
 from OceanPatternsIndicator.utils.model_train_utils import train_model
@@ -25,8 +26,6 @@ def get_args():
 
 
 def main_fit_predict(args):
-    main_start_time = time.time()
-
     var_name_ds = args['var_name']
     var_name_mdl = args['var_name']
     features_in_ds = {var_name_mdl: var_name_ds}
@@ -35,35 +34,35 @@ def main_fit_predict(args):
     arguments_str = f"file_name: {file_name} " \
                     f"var_name_ds: {var_name_ds} " \
                     f"var_name_mdl: {var_name_mdl} "
-    print(arguments_str)
+    logging.info(f"Ocean patterns fit predict method launched with the following arguments:\n {arguments_str}")
 
     # ---------------- Load data --------------- #
-    print("loading the dataset")
+    logging.info("loading the dataset")
     start_time = time.time()
     ds, first_date, coord_dict = load_data(file_name=file_name, var_name_ds=var_name_ds)
     z_dim = coord_dict['depth']
     load_time = time.time() - start_time
-    print("load finished in " + str(load_time) + "sec")
+    logging.info("load finished in " + str(load_time) + "sec")
 
     # --------- train model -------------- #
-    print("starting computation")
+    logging.info("starting computation")
     start_time = time.time()
     m = train_model(k=k, ds=ds, var_name_mdl=var_name_mdl, var_name_ds=var_name_ds, z_dim=z_dim)
     train_time = time.time() - start_time
-    print("training finished in " + str(train_time) + "sec")
+    logging.info("training finished in " + str(train_time) + "sec")
 
     # ----------- predict ----------- #
+    logging.info("Starting predictions and plots")
     start_time = time.time()
     ds = predict(m=m, ds=ds, var_name_mdl=var_name_mdl, var_name_ds=var_name_ds, z_dim=z_dim)
     ds = robustness(m=m, ds=ds, features_in_ds=features_in_ds, z_dim=z_dim, first_date=first_date)
     ds = quantiles(ds=ds, m=m, var_name_ds=var_name_ds)
     generate_plots(m=m, ds=ds, var_name_ds=var_name_ds, first_date=first_date)
     predict_time = time.time() - start_time
-    print("prediction and plots finished in " + str(predict_time) + "sec")
+    logging.info("prediction and plots finished in " + str(predict_time) + "sec")
     # save model
     m.to_netcdf('model.nc')
-    print("model saved")
-    print(f"execution finished in {time.time()-main_start_time}")
+    logging.info("model saved")
 
 
 if __name__ == '__main__':
