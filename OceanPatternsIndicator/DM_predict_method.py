@@ -2,8 +2,8 @@ import time
 
 import pyxpcm
 
-from data_loader_utils import load_data
-from prediction_utils import predict, robustness, quantiles, generate_plots
+from OceanPatternsIndicator.utils.data_loader_utils import load_data
+from OceanPatternsIndicator.utils.prediction_utils import predict, robustness, quantiles, generate_plots
 
 
 def get_args():
@@ -31,11 +31,18 @@ def load_model(model_path):
 
 
 def main_predict(args):
-    var_name_ds = args.var_name_ds
-    var_name_mdl = args.var_name_mdl
+    var_name_ds = args['var_name']
+    var_name_mdl = args['var_name']
     features_in_ds = {var_name_mdl: var_name_ds}
-    model_path = args.model
-    file_name = args.file_name
+    model_path = args['model']
+    file_name = './datasets/*.nc'
+    arguments_str = f"\tfile_name: {file_name} \n" \
+                    f"\tvar_name_ds: {var_name_ds} \n" \
+                    f"\tvar_name_mdl: {var_name_mdl} \n" \
+                    f"\tmodel: {model_path} \n"
+    print(arguments_str)
+
+    # ------------ loading data and model ----------- #
     print("loading the dataset and model")
     start_time = time.time()
     ds, first_date, coord_dict = load_data(file_name=file_name, var_name_ds=var_name_ds)
@@ -43,6 +50,8 @@ def main_predict(args):
     m = load_model(model_path=model_path)
     load_time = time.time() - start_time
     print("load finished in " + str(load_time) + "sec")
+
+    # ------------ predict and plot ----------- #
     print("starting predictions and plots")
     start_time = time.time()
     ds = predict(m=m, ds=ds, var_name_mdl=var_name_mdl, var_name_ds=var_name_ds, z_dim=z_dim)

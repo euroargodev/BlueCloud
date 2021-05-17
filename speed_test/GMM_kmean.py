@@ -1,13 +1,8 @@
-import sys
-import xarray as xr
-import numpy as np
-import OceanPatternsIndicator.Plotter
 from OceanPatternsIndicator.Plotter import Plotter
 import time
 from preprocessing_utils import *
 import pandas as pd
 import sklearn
-import pyxpcm
 from pyxpcm.models import pcm
 
 

@@ -1,0 +1,19 @@
+print("storagehubpythonfacility/command init")
+
+from . import storagehubcommandrootinfo
+StorageHubCommandRootInfo= storagehubcommandrootinfo.StorageHubCommandRootInfo
+
+from . import storagehubcommanditeminfo
+StorageHubCommandItemInfo= storagehubcommanditeminfo.StorageHubCommandItemInfo
+
+from . import storagehubcommandrootchildren
+StorageHubCommandRootChildren= storagehubcommandrootchildren.StorageHubCommandRootChildren
+
+from . import storagehubcommanditemchildren
+StorageHubCommandItemChildren= storagehubcommanditemchildren.StorageHubCommandItemChildren
+
+from . import storagehubcommanditemdownload
+StorageHubCommandItemDownload= storagehubcommanditemdownload.StorageHubCommandItemDownload
+
+from . import storagehubcommanditemupload
+StorageHubCommandItemUpload= storagehubcommanditemupload.StorageHubCommandItemUpload

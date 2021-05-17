@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from Plotter import Plotter
+from OceanPatternsIndicator.Plotter import Plotter
 
 
 def predict(m, ds, var_name_mdl, var_name_ds, z_dim):

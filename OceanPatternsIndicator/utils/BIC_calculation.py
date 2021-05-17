@@ -240,9 +240,9 @@ def BIC_calculation(ds, corr_dist, coords_dict, time_steps, pcm_features, featur
             new_lats, new_lons = mapping_corr_dist(
                 corr_dist=corr_dist, start_point=np.concatenate((lonp, latp)), grid_extent=grid_extent)
 
-            ds.sel({'latitude': 30, 'longitude': 30}, method='nearest')
-            ds_run_i = ds.sel({'latitude': list(new_lats), 'longitude': list(new_lons)}, method='nearest')
-            ds_run_i = ds_run_i.sel({'time': time_steps[itime]})
+            ds.sel({coords_dict.get('latitude'): 30, coords_dict.get('longitude'): 30}, method='nearest')
+            ds_run_i = ds.sel({coords_dict.get('latitude'): list(new_lats), coords_dict.get('longitude'): list(new_lons)}, method='nearest')
+            ds_run_i = ds_run_i.sel({coords_dict.get('time'): time_steps[itime]})
 
             # change lat and lot dimensions by index to be able to merge the datasets (it is not necessary to have lat lon information)
             n_lati = ds_run_i[coords_dict.get('latitude')].size

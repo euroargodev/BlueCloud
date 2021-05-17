@@ -175,7 +175,7 @@ def add_2logo(mfname, outfname, ds, coords_dict, logo_height=70, txt_color=(0, 0
         outfname : string
             output figure file
     """
-    font_path = "./logos/Calibri_Regular.ttf"
+    font_path = "../logos/Calibri_Regular.ttf"
     lfname2 = "./logos/Blue-cloud_compact_color_W.jpg"
     lfname1 = "./logos/Logo-LOPS_transparent_W.jpg"
 

@@ -1,10 +1,9 @@
 import time
 
-import Plotter
-from Plotter import Plotter
-from data_loader_utils import load_data
-from model_train_utils import train_model
-from prediction_utils import predict, robustness
+from OceanPatternsIndicator.Plotter import Plotter
+from OceanPatternsIndicator.utils.data_loader_utils import load_data
+from OceanPatternsIndicator.utils.model_train_utils import train_model
+from OceanPatternsIndicator.utils.prediction_utils import predict, robustness
 
 
 def get_args():
@@ -27,15 +26,16 @@ def get_args():
 
 
 def main_model_fit(args):
-    var_name_ds = args.var_name_ds
-    var_name_mdl = args.var_name_mdl
+    var_name_ds = args['var_name']
+    var_name_mdl = args['var_name']
     features_in_ds = {var_name_mdl: var_name_ds}
-    k = args.k
-    file_name = args.file_name
+    k = args['k']
+    file_name = './datasets/*.nc'
     arguments_str = f"\tfile_name: {file_name} \n" \
                     f"\tvar_name_ds: {var_name_ds} \n" \
                     f"\tvar_name_mdl: {var_name_mdl} \n" \
                     f"\tk: {k}"
+    print(arguments_str)
     # logging.info(f"Ocean patterns fit methode launched with the following arguments:\n {arguments_str}")
     # ----------- loading data ---------- #
     # logging.info("loading the dataset")

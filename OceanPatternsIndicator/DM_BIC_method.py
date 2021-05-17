@@ -1,11 +1,10 @@
 import time
-from datetime import datetime
 
 from PIL import Image, ImageFont, ImageDraw
 from dateutil.tz import tzutc
 
-from BIC_calculation import *
-from data_loader_utils import *
+from OceanPatternsIndicator.utils.BIC_calculation import *
+from OceanPatternsIndicator.utils.data_loader_utils import *
 from tools import json_builder
 
 
@@ -183,11 +182,11 @@ def save_bic_plot(bic, nk, ds, coords_dict, bic_min):
 
 def main_bic_computation(args):
     main_start_time = time.time()
-    file_name = args.file_name
-    nk = args.nk
-    var_name_ds = args.var_name_ds
-    var_name_mdl = args.var_name_mdl
-    corr_dist = args.corr_dist
+    file_name = './datasets/*.nc'
+    nk = args['nk']
+    var_name_ds = args['var_name']
+    var_name_mdl = args['var_name']
+    corr_dist = args['corr_dist']
     features_in_ds = {var_name_mdl: var_name_ds}
     arguments_str = f"file_name: {file_name} " \
                     f"nk: {nk}" \

@@ -1,7 +1,7 @@
 import time
-from data_loader_utils import load_data
-from model_train_utils import train_model
-from prediction_utils import predict, robustness, quantiles, generate_plots
+from OceanPatternsIndicator.utils.data_loader_utils import load_data
+from OceanPatternsIndicator.utils.model_train_utils import train_model
+from OceanPatternsIndicator.utils.prediction_utils import predict, robustness, quantiles, generate_plots
 
 
 def get_args():
@@ -26,11 +26,12 @@ def get_args():
 
 def main_fit_predict(args):
     main_start_time = time.time()
-    var_name_ds = args.var_name_ds
-    var_name_mdl = args.var_name_mdl
+
+    var_name_ds = args['var_name']
+    var_name_mdl = args['var_name']
     features_in_ds = {var_name_mdl: var_name_ds}
-    k = args.k
-    file_name = args.file_name
+    k = args['k']
+    file_name = './datasets/*.nc'
     arguments_str = f"file_name: {file_name} " \
                     f"var_name_ds: {var_name_ds} " \
                     f"var_name_mdl: {var_name_mdl} "
