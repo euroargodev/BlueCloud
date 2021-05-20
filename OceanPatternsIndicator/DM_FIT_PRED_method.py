@@ -27,10 +27,10 @@ def get_args():
 
 def main_fit_predict(args):
     var_name_ds = args['var_name']
-    var_name_mdl = args['var_name']
+    var_name_mdl = args['id_field']
     features_in_ds = {var_name_mdl: var_name_ds}
     k = args['k']
-    file_name = './datasets/*.nc'
+    file_name = args['file']
     arguments_str = f"file_name: {file_name} " \
                     f"var_name_ds: {var_name_ds} " \
                     f"var_name_mdl: {var_name_mdl} "

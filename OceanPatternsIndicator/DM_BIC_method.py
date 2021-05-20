@@ -152,7 +152,7 @@ def add_2logo(mfname, outfname, ds, coords_dict, logo_height=70, txt_color=(0, 0
 
 
 def save_bic_plot(bic, nk, ds, coords_dict, bic_min):
-    out_name = "BIC.png"
+    out_name = "bic.png"
     plot_BIC(bic, nk, bic_min=bic_min)
     plt.savefig(out_name, bbox_inches='tight', pad_inches=0.1)
     # add lower band
@@ -163,10 +163,10 @@ def save_bic_plot(bic, nk, ds, coords_dict, bic_min):
 
 
 def main_bic_computation(args):
-    file_name = './datasets/*.nc'
+    file_name = args['file']
     nk = args['nk']
     var_name_ds = args['var_name']
-    var_name_mdl = args['var_name']
+    var_name_mdl = args['id_field']
     corr_dist = args['corr_dist']
     features_in_ds = {var_name_mdl: var_name_ds}
     arguments_str = f"file_name: {file_name} " \
