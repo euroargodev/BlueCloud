@@ -202,7 +202,7 @@ def get_request_status(hda_dict):
     """
     status = "not started"
     count = 0
-    while (status != "completed"):
+    while (status == "running") or (status == "not started"):
         count = count + 1
         if count > 20:
             print('Waiting 5 seconds...')
@@ -210,11 +210,16 @@ def get_request_status(hda_dict):
         response = requests.get(hda_dict['broker_endpoint'] + \
                                 '/datarequest/status/' + hda_dict['job_id'], \
                                 headers=hda_dict['headers'])
-        if (response.status_code == hda_dict['CONST_HTTP_SUCCESS_CODE']):
+        if response.status_code == hda_dict['CONST_HTTP_SUCCESS_CODE']:
             status = json.loads(response.text)['status']
             print("Query successfully submitted. Status is " + status)
+            print(f"message is: {json.loads(response.text)['message']}")
         else:
             print("Error: Unexpected response {}".format(response))
+        if count > 45:
+            status = "time out"
+            print("Time out")
+            raise Exception('request timeout')
 
 
 def get_results_list(hda_dict):
