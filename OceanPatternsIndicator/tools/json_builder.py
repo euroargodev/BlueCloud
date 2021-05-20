@@ -15,10 +15,12 @@ class ExecLog:
     def __init__(self):
         self.messages = list()
 
-    def add_message(self, message, run_time=None):
+    def add_message(self, message, run_time=None, formating=False):
         if run_time is not None:
             message += ",  time needed: " + " %s seconds " % run_time
-        self.messages.append(get_log_message(message))
+        if formating:
+            message = get_log_message(message)
+        self.messages.append(message)
 
     def print_messages(self):
         """

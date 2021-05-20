@@ -100,13 +100,13 @@ def generate_plots(m, ds, var_name_ds, first_date):
 
     # plot profiles by class
     P.vertical_structure(q_variable=var_name_ds + '_Q', sharey=True, xlabel=x_label)
-    P.save_BlueCloud('vertical_struc.png')
+    P.save_BlueCloud('vertical_struct.png')
     # plot profiles by quantile
     P.vertical_structure_comp(q_variable=var_name_ds + '_Q', plot_q='all', xlabel=x_label, ylim=[-1000, 0])
-    P.save_BlueCloud('vertical_struc_comp.png')
+    P.save_BlueCloud('vertical_struct_comp.png')
     # spacial distribution
     P.spatial_distribution(time_slice='most_freq_label')
-    P.save_BlueCloud('spatial_distr_freq.png')
+    P.save_BlueCloud('spatial_dist_freq.png')
     # robustness
     P.plot_robustness(time_slice=first_date)
     P.save_BlueCloud('robustness.png')
@@ -116,17 +116,17 @@ def generate_plots(m, ds, var_name_ds, first_date):
     # temporal distribution (monthly)
     try:
         P.temporal_distribution(time_bins='month')
-        P.save_BlueCloud('temporal_distr_months.png')
-    except ValueError as e:
-        save_empty_plot('temporal_distr_months')
+        P.save_BlueCloud('temporal_dist_months.png')
+    except (ValueError, AssertionError) as e:
+        save_empty_plot('temporal_dist_months')
         logging.warning('plot monthly temporal distribution is not available, the following error occurred:')
         logging.exception(e)
     # temporal distribution (seasonally)
     try:
         P.temporal_distribution(time_bins='season')
-        P.save_BlueCloud('temporal_distr_season.png')
-    except ValueError as e:
-        save_empty_plot('temporal_distr_season')
+        P.save_BlueCloud('temporal_dist_season.png')
+    except (ValueError, AssertionError) as e:
+        save_empty_plot('temporal_dist_season')
         logging.warning('plot seasonal temporal distribution is not available, the following error occurred:')
         logging.exception(e)
     # save data
