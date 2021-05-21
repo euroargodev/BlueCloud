@@ -136,16 +136,14 @@ def main():
     param_dict = json.loads(param)
     logging.info(f"Ocean patterns launched with the following arguments:\n {param_dict}")
     try:
-        logging.info("simulation of the HDA API to query data")
-        # download_data(param_dict)
+        download_data(param_dict)
     except Exception as e:
         logging.error(e)
         err_log = json_builder.LogError(-1, str(e))
         error_exit(err_log, exec_log)
     try:
-        # param_dict['var_name'] = get_var_name(param_dict['data_source'], param_dict['id_field'])
-        param_dict['var_name'] = 'thetao'
-        param_dict['file'] = './global-reanalysis-phy-001-030-monthly_med_2018.nc'
+        param_dict['var_name'] = get_var_name(param_dict['data_source'], param_dict['id_field'])
+        param_dict['file'] = './indir/*.nc'
         if param_dict['id_method'] == "BIC":
             logging.info("launching BIC")
             main_bic_computation(param_dict)
