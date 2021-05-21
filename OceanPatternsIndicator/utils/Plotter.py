@@ -851,9 +851,9 @@ class Plotter:
                                                                     this_pcm),
                                                                 this_pcm._props['with_classifier'].upper())
 
-        font_path = "logos/Calibri_Regular.ttf"
-        lfname2 = "logos/Blue-cloud_compact_color_W.jpg"
-        lfname1 = "logos/Logo-LOPS_transparent_W.jpg"
+        font_path = "./utils/logos/Calibri_Regular.ttf"
+        lfname2 = "./utils/logos/Blue-cloud_compact_color_W.jpg"
+        lfname1 = "./utils/logos/Logo-LOPS_transparent_W.jpg"
 
         mimage = Image.open(mfname)
 

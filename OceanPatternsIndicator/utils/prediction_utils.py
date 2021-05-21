@@ -2,7 +2,7 @@ import logging
 
 import numpy as np
 import matplotlib.pyplot as plt
-from OceanPatternsIndicator.Plotter import Plotter
+from utils.Plotter import Plotter
 
 
 def predict(m, ds, var_name_mdl, var_name_ds, z_dim):

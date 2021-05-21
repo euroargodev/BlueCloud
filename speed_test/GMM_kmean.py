@@ -1,4 +1,4 @@
-from OceanPatternsIndicator.Plotter import Plotter
+from OceanPatternsIndicator.utils.Plotter import Plotter
 import time
 from preprocessing_utils import *
 import pandas as pd

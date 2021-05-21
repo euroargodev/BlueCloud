@@ -1,10 +1,10 @@
 import logging
 import time
 
-from OceanPatternsIndicator.Plotter import Plotter
-from OceanPatternsIndicator.utils.data_loader_utils import load_data
-from OceanPatternsIndicator.utils.model_train_utils import train_model
-from OceanPatternsIndicator.utils.prediction_utils import predict, robustness
+from utils.Plotter import Plotter
+from utils.data_loader_utils import load_data
+from utils.model_train_utils import train_model
+from utils.prediction_utils import predict, robustness
 
 
 def get_args():

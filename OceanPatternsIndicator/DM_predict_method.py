@@ -3,8 +3,8 @@ import time
 
 import pyxpcm
 
-from OceanPatternsIndicator.utils.data_loader_utils import load_data
-from OceanPatternsIndicator.utils.prediction_utils import predict, robustness, quantiles, generate_plots
+from utils.data_loader_utils import load_data
+from utils.prediction_utils import predict, robustness, quantiles, generate_plots
 
 
 def get_args():

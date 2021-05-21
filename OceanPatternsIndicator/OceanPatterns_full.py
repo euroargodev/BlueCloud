@@ -143,7 +143,8 @@ def main():
         err_log = json_builder.LogError(-1, str(e))
         error_exit(err_log, exec_log)
     try:
-        param_dict['var_name'] = get_var_name(param_dict['data_source'], param_dict['id_field'])
+        # param_dict['var_name'] = get_var_name(param_dict['data_source'], param_dict['id_field'])
+        param_dict['var_name'] = 'thetao'
         param_dict['file'] = './global-reanalysis-phy-001-030-monthly_med_2018.nc'
         if param_dict['id_method'] == "BIC":
             logging.info("launching BIC")

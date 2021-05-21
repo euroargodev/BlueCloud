@@ -3,8 +3,8 @@ import time
 
 from PIL import Image, ImageFont, ImageDraw
 
-from OceanPatternsIndicator.utils.BIC_calculation import *
-from OceanPatternsIndicator.utils.data_loader_utils import *
+import utils.BIC_calculation
+from utils.data_loader_utils import *
 
 
 def get_args():
@@ -52,10 +52,10 @@ def bic_calculation(ds, features_in_ds, z_dim, var_name_mdl, nk, corr_dist, coor
     time_steps = [first_date]
     # time_steps = ['2018-01', '2018-07']  # time steps to be used into account
     nrun = 10  # number of runs for each k
-    bic, bic_min = BIC_calculation(ds=ds, coords_dict=coord_dict,
-                                   corr_dist=corr_dist, time_steps=time_steps,
-                                   pcm_features=pcm_features, features_in_ds=features_in_ds, z_dim=z_dim,
-                                   Nrun=nrun, NK=nk)
+    bic, bic_min = utils.BIC_calculation.BIC_calculation(ds=ds, coords_dict=coord_dict,
+                                                         corr_dist=corr_dist, time_steps=time_steps,
+                                                         pcm_features=pcm_features, features_in_ds=features_in_ds, z_dim=z_dim,
+                                                         Nrun=nrun, NK=nk)
     return bic, bic_min
 
 
@@ -90,9 +90,9 @@ def add_2logo(mfname, outfname, ds, coords_dict, logo_height=70, txt_color=(0, 0
         outfname : string
             output figure file
     """
-    font_path = "./logos/Calibri_Regular.ttf"
-    lfname2 = "./logos/Blue-cloud_compact_color_W.jpg"
-    lfname1 = "./logos/Logo-LOPS_transparent_W.jpg"
+    font_path = "./utils/logos/Calibri_Regular.ttf"
+    lfname2 = "./utils/logos/Blue-cloud_compact_color_W.jpg"
+    lfname1 = "./utils/logos/Logo-LOPS_transparent_W.jpg"
 
     mimage = Image.open(mfname)
     # Open logo images:
@@ -153,13 +153,13 @@ def add_2logo(mfname, outfname, ds, coords_dict, logo_height=70, txt_color=(0, 0
 
 def save_bic_plot(bic, nk, ds, coords_dict, bic_min):
     out_name = "bic.png"
-    plot_BIC(bic, nk, bic_min=bic_min)
-    plt.savefig(out_name, bbox_inches='tight', pad_inches=0.1)
+    utils.BIC_calculation.plot_BIC(bic, nk, bic_min=bic_min)
+    utils.BIC_calculation.plt.savefig(out_name, bbox_inches='tight', pad_inches=0.1)
     # add lower band
     add_lowerband(out_name, out_name)
     # add logo
     add_2logo(out_name, out_name, ds, coords_dict)
-    print('Figure saved in %s' % out_name)
+    logging.info('Figure saved in %s' % out_name)
 
 
 def main_bic_computation(args):
