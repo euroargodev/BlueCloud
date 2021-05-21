@@ -41,15 +41,14 @@ class HDA(DownloadStrategy):
         self.dataset = db.Dataset()
         # api_key = generate_api_key(user_name, password)
         if len(api_key) == 0:
-            raise Exception("API key not valid")
+            self.bluecoud_proxy = True
+            # raise Exception("API key not valid")
         else:
+            self.bluecoud_proxy = False
             self.api_key = api_key
         print('Your API key is: ' + self.api_key)
         if outdir is None:
             self.outdir = utils.init_dl_dir()
-        else:
-            self.outdir = outdir
-        print("outdir = ", self.outdir)
 
         ##### hda_init initialization #####
         self.hdaInit = dict()
@@ -75,7 +74,7 @@ class HDA(DownloadStrategy):
 
         # if self.hda has just been initialized
         if 'access_token' not in self.hda:
-            self.hda = hdaf.get_access_token(self.hda)
+            self.hda = hdaf.get_access_token(self.hda, self.bluecoud_proxy)
             self.accessToken['time'] = time.time()
         # if self.hda has just initialized check is validity
         elif self.accessToken['time'] is not None:

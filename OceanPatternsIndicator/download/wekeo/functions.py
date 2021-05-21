@@ -1,8 +1,9 @@
-import requests, re, json
 import base64
-import shutil
-import time, os
-import urllib.parse
+import os
+import time
+import json
+import re
+import requests
 
 
 def generate_api_key(username, password):
@@ -61,7 +62,7 @@ def init(dataset_id, api_key, download_dir_path):
     return hda_dict
 
 
-def get_access_token(hda_dict):
+def get_access_token(hda_dict, bluecloud_proxy=True):
     """ 
     Requests an access token to use the HDA API and stores it as separate
     key in the dictionary
@@ -72,32 +73,53 @@ def get_access_token(hda_dict):
     
     Returns:
         Returns the dictionary including the access token
+        @param bluecloud_proxy: request token using bluecloud proxy
     """
+
+    if bluecloud_proxy:
+        hda_dict['access_token'] = get_token_from_bluecloud_proxy()
+    else:
+        hda_dict['access_token'] = get_token_from_wekeo(hda_dict)
+    hda_dict['headers'] = {'Authorization': 'Bearer ' + hda_dict["access_token"], 'Accept': 'application/json'}
+    return hda_dict
+
+
+def get_token_from_wekeo(hda_dict):
     headers = {
         'Authorization': 'Basic ' + hda_dict['api_key']
     }
-    data = [
-        ('grant_type', 'client_credentials'),
-    ]
     print("Getting an access token. This token is valid for one hour only.")
-    response = requests.get(hda_dict['accessToken_address'], \
-                            headers=headers, verify=False)
+    response = requests.get(hda_dict['accessToken_address'], headers=headers, verify=False)
 
-    # If the HTTP response code is 200 (i.e. success), then retrive the 
+    # If the HTTP response code is 200 (i.e. success), then retrive the
     # token from the response
-    if (response.status_code == hda_dict["CONST_HTTP_SUCCESS_CODE"]):
+    if response.status_code == hda_dict["CONST_HTTP_SUCCESS_CODE"]:
         access_token = json.loads(response.text)['access_token']
-
         print("Success: Access token is " + access_token)
+        return access_token
     else:
-        print("Error: Unexpected response {}".format(response))
         print(response.headers)
+        raise Exception("Error: Unexpected response {}".format(response))
 
-    hda_dict['access_token'] = access_token
-    hda_dict['headers'] = {'Authorization': 'Bearer ' + \
-                                            hda_dict["access_token"], 'Accept': 'application/json'}
-    return hda_dict
 
+def get_token_from_bluecloud_proxy():
+    from download import utils
+    from requests.auth import HTTPBasicAuth
+
+    globalVariablesFile = os.path.dirname(__file__).split('download')[0] + '/globalvariables.csv'
+    gcubeToken = utils.get_gcube_token(globalVariablesFile)
+
+    hprops = {"Accept": "application/json"}
+    urlString = "https://data.d4science.org/wekeo/gettoken"
+    r = requests.get(urlString, headers=hprops, auth=HTTPBasicAuth("gcube-token", gcubeToken))
+    if r.status_code != 200:
+        error = "Error in Get Token {} {}".format(r.status_code, r.text)
+        print(error)
+        raise Exception(error)
+    t = json.loads(r.text)
+    token = t["access_token"]
+    print("Token:", token)
+    return token
 
 def query_metadata(hda_dict):
     """ 
@@ -201,25 +223,28 @@ def get_request_status(hda_dict):
                   interact with the HDA API
     """
     status = "not started"
+    start_time = time.time()
+    timeout = 120
     count = 0
-    while (status == "running") or (status == "not started"):
+    while status != "completed":
         count = count + 1
         if count > 20:
             print('Waiting 5 seconds...')
             time.sleep(5)
-        response = requests.get(hda_dict['broker_endpoint'] + \
-                                '/datarequest/status/' + hda_dict['job_id'], \
+        response = requests.get(hda_dict['broker_endpoint'] + '/datarequest/status/' + hda_dict['job_id'],
                                 headers=hda_dict['headers'])
         if response.status_code == hda_dict['CONST_HTTP_SUCCESS_CODE']:
             status = json.loads(response.text)['status']
-            print("Query successfully submitted. Status is " + status)
-            print(f"message is: {json.loads(response.text)['message']}")
+            if 'fail' not in status:
+                print("Query successfully submitted. Status is " + status)
+            else:
+                message = json.loads(response.text)['message']
+                raise Exception("Query has failed with message: ", message)
         else:
-            print("Error: Unexpected response {}".format(response))
-        if count > 45:
-            status = "time out"
-            print("Time out")
-            raise Exception('request timeout')
+            raise Exception("Error: Unexpected response {}".format(response))
+
+        if time.time() - start_time > timeout:
+            raise Exception("ERROR: Timeout reached")
 
 
 def get_results_list(hda_dict):
@@ -328,9 +353,7 @@ def get_order_status(hda_dict, order_id):
 
 
 def downloadFileMemory(url, headers, file_name):
-    from download import daccess
     import netCDF4
-    print('Here1')
     r = requests.get(url, headers=headers, stream=True)
 
     if r.status_code == 200:

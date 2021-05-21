@@ -46,7 +46,28 @@ def init_dl_dir():
     """
     import os
     # create new dir called 'indir' in the parent directory of daccess module
-    outdir = os.path.dirname(__file__).split('download')[0] + '/datasets'
+    outdir = os.path.dirname(__file__).split('download')[0] + '/indir'
     if not os.path.exists(outdir):
         os.makedirs(outdir)
     return outdir
+
+
+def get_gcube_token(globalVariablesFile):
+    import os
+
+    gcubeToken = None
+    envs = os.environ
+    if 'GCUBE_TOKEN' in envs:  # when a method is executed in the dataminer
+        gcubeToken = os.environ.get('GCUBE_TOKEN')
+    else:
+        with open(globalVariablesFile) as fp:
+            for line in fp:
+                if line.find("gcube_token") != -1:
+                    tk = line[14:]
+                    gcubeToken = tk.replace('"', '').strip()
+                    print("Found gcube_token")
+                    break
+    if gcubeToken is None:
+        raise Exception('Error gcube_token not found!')
+    else:
+        return gcubeToken

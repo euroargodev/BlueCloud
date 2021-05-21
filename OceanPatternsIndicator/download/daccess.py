@@ -1,4 +1,3 @@
-from __future__ import annotations
 from download.context import DownloadContext, InputContext
 import os
 import json
@@ -29,14 +28,14 @@ def wd_validation(workingDomain):
     # depth check
     depth = workingDomain['depth']
     if len(depth) != 2:
-        raise Exception("Wrong size for depth, please check it: " + str(depth))
+        raise Exception("Wrong size for lonLat, please check it: " + str(depth))
     elif not float_int_check(depth):
         raise Exception("Type error in depth")
 
     # time check
     time = workingDomain['time']
     if len(time) != 2:
-        raise Exception("Wrong size for time, please check it: " + str(time))
+        raise Exception("Wrong size for lonLat, please check it: " + str(time))
 
 
 def float_int_check(elements):
@@ -55,7 +54,7 @@ class Daccess:
         @param dataset: source dataset
         @param fields: cf standard name used to represent a variable
         @param outDir: output directory
-        @param hdaKey: key to access to hda service
+        @param hdaKey: key to access to hda service, leave "" if you want to use bluecloud proxy
         """
         self.fields = fields
         self.outDir = outDir
@@ -77,7 +76,7 @@ class Daccess:
         # select the right input/download strategies
         if self._infrastructure == 'WEKEO':
             from download.wekeo import in_hda, hda
-            print(f"Downloading from {self.dataset}")
+            print("Downloading from MEDSEA_MULTIYEAR_PHY_006_004")
             self.icontext = InputContext(in_hda.InHDA())
             self.dcontext = DownloadContext(hda.HDA(self.hdaKey, self.outDir))
         elif self._infrastructure == 'STHUB':

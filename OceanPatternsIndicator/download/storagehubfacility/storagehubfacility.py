@@ -41,20 +41,12 @@ class StorageHubFacility:
         return self.executeOperation(in_memory)
 
     def retrieveToken(self):
+        from download import utils
         print("Retrieve gcubeToken")
         if not os.path.isfile(self.globalVariablesFile):
             print("File does not exist: " + self.globalVariablesFile)
             raise Exception("File does not exist: " + self.globalVariablesFile)
-        with open(self.globalVariablesFile) as fp:
-            for line in fp:
-                if line.find("gcube_token") != -1:
-                    tk = line[14:]
-                    self.gcubeToken = tk.replace('"', '').strip()
-                    print("Found gcube_token")
-                    break
-        if self.gcubeToken is None:
-            print('Error gcube_token not found!')
-            raise Exception('Error gcube_token not found!')
+        self.gcubeToken = utils.get_gcube_token(self.globalVariablesFile)
 
     def executeOperation(self, in_memory=False):
         print("Execute Operation")
