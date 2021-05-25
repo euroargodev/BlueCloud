@@ -45,7 +45,7 @@ class HDA(DownloadStrategy):
             # raise Exception("API key not valid")
         else:
             self.bluecoud_proxy = False
-            self.api_key = api_key
+        self.api_key = api_key
         print('Your API key is: ' + self.api_key)
         if outdir is None:
             self.outdir = utils.init_dl_dir()

@@ -95,25 +95,20 @@ def download_data(param):
     fields = [param['id_field']]
 
     # ------------ file download ------------ #
-    try:
-        dcs = daccess.Daccess(dataset, fields)
-        time_range = get_time_range(param['start_time'], param['end_time'])
-        daccess_working_domain = dict()
-        daccess_working_domain['depth'] = param['working_domain']['d'].copy()
-        daccess_working_domain['lonLat'] = [param['working_domain']['lon'][0], param['working_domain']['lon'][1],
-                                            param['working_domain']['lat'][0], param['working_domain']['lat'][1]]
-        daccess_working_domain['time'] = time_range
-        logging.info(daccess_working_domain)
-        dcs.download(daccess_working_domain)
-
-    except Exception as e:
-        logging.error(e)
-    logging.info("Complete Download files")
+    dcs = daccess.Daccess(dataset, fields)
+    time_range = get_time_range(param['start_time'], param['end_time'])
+    daccess_working_domain = dict()
+    daccess_working_domain['depth'] = param['working_domain']['d'].copy()
+    daccess_working_domain['lonLat'] = [param['working_domain']['lon'][0], param['working_domain']['lon'][1],
+                                        param['working_domain']['lat'][0], param['working_domain']['lat'][1]]
+    daccess_working_domain['time'] = time_range
+    logging.info(daccess_working_domain)
+    dcs.download(daccess_working_domain)
 
 
 def get_var_name(source, cf_std_name):
     actual_dir = os.path.dirname(__file__)
-    with open(actual_dir + '/download/config/wekeo_dataset.json') as json_file:
+    with open('./download/config/wekeo_dataset.json') as json_file:
         data = json.load(json_file)
     return data[source]['cf-standard-name_variable'][cf_std_name][0]
 
@@ -136,7 +131,11 @@ def main():
     param_dict = json.loads(param)
     logging.info(f"Ocean patterns launched with the following arguments:\n {param_dict}")
     try:
+        start_time = time.time()
         download_data(param_dict)
+        download_time = time.time() - start_time
+        logging.info("download finished in " + str(download_time) + "sec")
+
     except Exception as e:
         logging.error(e)
         err_log = json_builder.LogError(-1, str(e))

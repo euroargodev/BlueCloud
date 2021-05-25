@@ -1,4 +1,5 @@
 import base64
+import logging
 import os
 import time
 import json
@@ -77,6 +78,7 @@ def get_access_token(hda_dict, bluecloud_proxy=True):
     """
 
     if bluecloud_proxy:
+        logging.info('using blue-cloud proxy')
         hda_dict['access_token'] = get_token_from_bluecloud_proxy()
     else:
         hda_dict['access_token'] = get_token_from_wekeo(hda_dict)
