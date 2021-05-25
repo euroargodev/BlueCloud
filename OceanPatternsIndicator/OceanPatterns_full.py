@@ -5,6 +5,7 @@ from download import daccess
 import sys
 import os
 import logging
+import traceback
 from DM_BIC_method import main_bic_computation
 from DM_FIT_PRED_method import main_fit_predict
 from DM_FIT_method import main_model_fit
@@ -156,7 +157,7 @@ def main():
             logging.info("launching fit-predict")
             main_fit_predict(param_dict)
     except Exception as e:
-        logging.error(e)
+        logging.error("".join(traceback.TracebackException.from_exception(e).format()))
         err_log = json_builder.LogError(-2, str(e))
         error_exit(err_log, exec_log)
 

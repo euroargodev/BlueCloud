@@ -1,3 +1,5 @@
+import logging
+
 from download.context import DownloadContext, InputContext
 import os
 import json
@@ -76,12 +78,12 @@ class Daccess:
         # select the right input/download strategies
         if self._infrastructure == 'WEKEO':
             from download.wekeo import in_hda, hda
-            print("Downloading from MEDSEA_MULTIYEAR_PHY_006_004")
+            logging.info("Downloading from wekeo")
             self.icontext = InputContext(in_hda.InHDA())
             self.dcontext = DownloadContext(hda.HDA(self.hdaKey, self.outDir))
         elif self._infrastructure == 'STHUB':
             from download.storagehubfacility import in_sthub, sthub
-            print("Downloading from Storage Hub Facility")
+            logging.info("Downloading from Storage Hub Facility")
             self.icontext = InputContext(in_sthub.InStHub())
             self.dcontext = DownloadContext(sthub.StHub(self.dirID, self.outDir))
         else:

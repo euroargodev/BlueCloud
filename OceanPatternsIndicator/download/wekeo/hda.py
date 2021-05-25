@@ -1,3 +1,4 @@
+import logging
 import warnings
 import os
 from download.wekeo import functions as hdaf, dataset_access as db
@@ -46,7 +47,7 @@ class HDA(DownloadStrategy):
         else:
             self.bluecoud_proxy = False
         self.api_key = api_key
-        print('Your API key is: ' + self.api_key)
+        logging.info('Your API key is: ' + self.api_key)
         if outdir is None:
             self.outdir = utils.init_dl_dir()
 
@@ -66,7 +67,7 @@ class HDA(DownloadStrategy):
         if 'isTandCAccepted' not in self.hda:
             self.hda = hdaf.acceptTandC(self.hda)
         else:
-            print("Terms and Conditions already accepted")
+            logging.info("Terms and Conditions already accepted")
 
     def get_token(self):
         if self.hda is None:
@@ -84,7 +85,7 @@ class HDA(DownloadStrategy):
                 self.hda = hdaf.get_access_token(self.hda)  # request a new valid token
                 self.accessToken['time'] = time.time()
             else:
-                print('Token still valid')
+                logging.info('Token still valid')
 
     def hda_init(self, dataset_id, download_dir_path):
         if dataset_id == self.hdaInit['dataset_id'] and download_dir_path == self.hdaInit['download_dir_path']:
