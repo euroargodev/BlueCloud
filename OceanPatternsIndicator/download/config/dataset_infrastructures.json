@@ -3,6 +3,10 @@
         "infrastructure": "WEKEO"
 
     },
+    "GLOBAL_ANALYSIS_FORECAST_PHY_001_024": {
+        "infrastructure": "WEKEO"
+
+    },
     "MEDSEA_STHUB": {
         "infrastructure": "STHUB"
     }
