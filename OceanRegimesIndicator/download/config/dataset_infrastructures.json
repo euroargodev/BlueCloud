@@ -1,0 +1,13 @@
+{
+    "MEDSEA_MULTIYEAR_PHY_006_004": {
+        "infrastructure": "WEKEO"
+
+    },
+    "GLOBAL_ANALYSIS_FORECAST_PHY_001_024": {
+        "infrastructure": "WEKEO"
+
+    },
+    "MEDSEA_STHUB": {
+        "infrastructure": "STHUB"
+    }
+}

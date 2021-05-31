@@ -1,0 +1,27 @@
+{
+    "MEDSEA_STHUB": {
+        "dataset_variable": {
+            "TEMP": ["votemper"],
+            "PSAL": ["vosaline"],
+            "RFVL": ["vozocrtx", "vomecrty"]
+        },
+        "cf-standard-name_variable": {
+            "sea_water_potential_temperature": [
+                "votemper"
+            ],
+            "sea_water_salinity": [
+                "vosaline"
+            ],
+            "eastward_sea_water_velocity": [
+                "vozocrtx"
+            ],
+            "northward_sea_water_velocity": [
+                "vomecrty"
+            ]
+        },
+        "lon": [-6, 36.3],
+        "lat": [30.18, 45.98],
+        "depth": [1.01, 5334.648],
+        "time": ["1987-01-01", "1989-12-31"]
+    }
+}

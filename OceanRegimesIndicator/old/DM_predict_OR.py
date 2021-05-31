@@ -1,15 +1,8 @@
-import xarray as xr
-import numpy as np
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-from sklearn import mixture
-from preprocessing_OR import *
-import Plotter_OR
-from Plotter_OR import Plotter_OR
+from OceanRegimesIndicator.utils.preprocessing_OR import *
+from OceanRegimesIndicator.utils import Plotter_OR
+from OceanRegimesIndicator.utils.Plotter_OR import Plotter_OR
 import joblib
 import time
-from datetime import timedelta
 
 
 def get_args():
@@ -24,9 +17,9 @@ def get_args():
     import argparse
 
     parse = argparse.ArgumentParser(description="Ocean patterns method")
+    parse.add_argument('model', type=str, help="input model")
     parse.add_argument('file_name', type=str, help='input dataset')
     parse.add_argument('mask', type=str, help='path to mask')
-    parse.add_argument('k', type=int, help="number of clusters K")
     parse.add_argument('var_name_ds', type=str, help='name of variable in dataset')
     return parse.parse_args()
 
@@ -85,23 +78,21 @@ def preprocessing_ds(ds, var_name_ds, mask_path):
     return x, mask
 
 
-def train_model(k, ds, var_name_ds):
+def load_model(model_path):
     """
-    Train a pyXpcm model
-
+    Load trained model
     Parameters
     ----------
-    k : number of clusters
-    ds : Xarray dataset
-    var_name_ds : name of variable in dataset
+    model_path : path of model to load
 
     Returns
     -------
-    model: Trained model
+    model: trained sklearn GMM model
+    k: number of class
     """
-    model = mixture.GaussianMixture(n_components=k, covariance_type='full', max_iter=500, tol=1e-6, n_init=1)
-    model.fit(ds[var_name_ds + "_reduced"])
-    return model
+    model = joblib.load(model_path)
+    k = model.n_components
+    return model, k
 
 
 def predict(model, ds, var_name_ds, k, ds_init, mask):
@@ -226,9 +217,9 @@ def generate_plots(model, ds, var_name_ds):
 def main():
     args = get_args()
     var_name_ds = args.var_name_ds
-    k = args.k
     file_name = args.file_name
     mask_path = args.mask
+    model_path = args.model
 
     print("loading the dataset")
     start_time = time.time()
@@ -244,7 +235,7 @@ def main():
 
     print("starting computation")
     start_time = time.time()
-    model = train_model(k=k, ds=ds, var_name_ds=var_name_ds)
+    model, k = load_model(model_path=model_path)
     train_time = time.time() - start_time
     print("training finished in " + str(train_time) + "sec")
 
@@ -257,10 +248,6 @@ def main():
     generate_plots(model=model, ds=ds, var_name_ds=var_name_ds)
     plot_time = time.time() - start_time
     print("plots finished in " + str(plot_time) + "sec")
-
-    # save model
-    joblib.dump(model, 'modelOR.sav')
-    print("model saved")
 
 
 if __name__ == '__main__':

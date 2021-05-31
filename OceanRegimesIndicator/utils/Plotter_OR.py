@@ -1,3 +1,5 @@
+import logging
+
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
@@ -684,9 +686,9 @@ class Plotter_OR:
             # TODO maybe include other information about the model
             return "Model information: K:%i, %s" % (model.K, 'GMM')
 
-        font_path = "logos/Calibri_Regular.ttf"
-        lfname2 = "logos/Blue-cloud_compact_color_W.jpg"
-        lfname1 = "logos/Logo-LOPS_transparent_W.jpg"
+        font_path = "./utils/logos/Calibri_Regular.ttf"
+        lfname2 = "./utils/logos/Blue-cloud_compact_color_W.jpg"
+        lfname1 = "./utils/logos/Logo-LOPS_transparent_W.jpg"
 
         mimage = Image.open(mfname)
 
@@ -769,6 +771,6 @@ class Plotter_OR:
         #self.add_2logo(out_name, out_name, logo_height=120, txt_color=(0, 0, 0, 255), data_src='CMEMS')
         self.add_2logo(out_name, out_name, bic_fig=bic_fig)
 
-        print('Figure saved in %s' % out_name)
+        logging.info('Figure saved in %s' % out_name)
 
     pass

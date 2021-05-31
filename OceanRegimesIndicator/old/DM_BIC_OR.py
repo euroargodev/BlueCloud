@@ -1,15 +1,6 @@
-import xarray as xr
-import numpy as np
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-from sklearn import mixture
-from preprocessing_OR import *
-import Plotter_OR
-from Plotter_OR import Plotter_OR
-import joblib
+from OceanRegimesIndicator.utils.preprocessing_OR import *
 import time
-from BIC_calculation_OR import *
+from OceanRegimesIndicator.utils.BIC_calculation_OR import *
 from PIL import Image, ImageFont, ImageDraw
 
 

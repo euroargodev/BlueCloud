@@ -1,4 +1,6 @@
 # Preproseccing functions file
+import logging
+
 import xarray as xr
 import numpy as np
 import pandas as pd
@@ -232,7 +234,7 @@ def OR_delate_NaNs(X, var_name, mask_path='auto', interp=False):
     if interp:
         # interpolation
         if np.any(np.isnan(X[var_name].values)):
-            print('Interpolation is applied')
+            logging.info('Interpolation is applied')
             X = X[var_name].interpolate_na(
                 dim='feature', method="linear", fill_value="extrapolate").to_dataset(name=var_name)
     else:
