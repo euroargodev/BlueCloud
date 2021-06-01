@@ -152,6 +152,16 @@ def add_2logo(mfname, outfname, ds, coords_dict, logo_height=70, txt_color=(0, 0
 
 
 def save_bic_plot(bic, nk, ds, coords_dict, bic_min):
+    """
+    create and saves the bic plot
+    Parameters
+    ----------
+    bic_min : min value of bic
+    coords_dict :
+    bic : bic results
+    nk : int, number of k tested (from 1 to nk)
+    ds : dataset, Xarray dataset
+    """
     out_name = "bic.png"
     utils.BIC_calculation.plot_BIC(bic, nk, bic_min=bic_min)
     utils.BIC_calculation.plt.savefig(out_name, bbox_inches='tight', pad_inches=0.1)
@@ -163,6 +173,17 @@ def save_bic_plot(bic, nk, ds, coords_dict, bic_min):
 
 
 def main_bic_computation(args):
+    """
+    Main function of the BIC ocean patterns method
+    Parameters
+    ----------
+    args : Dictionary with:
+        file_name: string, dataset path
+        nk: int, max range k to use for bic
+        var_name_ds: string, name var in dataset
+        var_name_mdl: string, name var in model
+        corr_dist: int, correlation distance
+    """
     file_name = args['file']
     nk = args['nk']
     var_name_ds = args['var_name']

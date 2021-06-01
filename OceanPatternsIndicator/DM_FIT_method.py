@@ -27,6 +27,16 @@ def get_args():
 
 
 def main_model_fit(args):
+    """
+    Main function of the fit ocean patterns method
+    Parameters
+    ----------
+    args : Dictionary with:
+        file: string, dataset path
+        k: int, number of class
+        var_name: string, name var in dataset
+        id_field: string, standard name of var
+    """
     var_name_ds = args['var_name']
     var_name_mdl = args['id_field']
     features_in_ds = {var_name_mdl: var_name_ds}

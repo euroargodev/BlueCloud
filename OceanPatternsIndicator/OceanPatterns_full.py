@@ -32,29 +32,6 @@ def get_args():
     return parse.parse_args()
 
 
-def get_dates_wd(start_date, end_date):
-    dates = []
-    year_start = int(start_date[:4])
-    year_end = int(end_date[:4])
-    for year in range(year_start, year_end + 1):
-        if year == year_start:
-            start_month = int(start_date[5:])
-        else:
-            start_month = 1
-        if year == year_end:
-            end_month = int(end_date[5:]) + 1
-        else:
-            end_month = 13
-
-        for month in range(start_month, end_month):
-            print(f"year: {year}, month:{month}")
-            if month < 10:
-                dates.append([f"{year}-0{month}-01T00:00:00", f"{year}-0{month}-31T00:00:00"])
-            else:
-                dates.append([f"{year}-{month}-01T00:00:00", f"{year}-{month}-31T00:00:00"])
-    return dates
-
-
 def get_time_range(start_date, end_date):
     """
     format date for wekeo API request
@@ -108,6 +85,17 @@ def download_data(param):
 
 
 def get_var_name(source, cf_std_name):
+    """
+    get var name in dataset using the standard name and the dataset
+    Parameters
+    ----------
+    source : string, source dataset
+    cf_std_name : cf standard name of the variable
+
+    Returns
+    -------
+    string: name of the variable in dataset
+    """
     actual_dir = os.path.dirname(__file__)
     with open('./download/config/wekeo_dataset.json') as json_file:
         data = json.load(json_file)

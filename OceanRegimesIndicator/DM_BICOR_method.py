@@ -140,6 +140,14 @@ def add_2logo(mfname, outfname, ds, logo_height=70, txt_color=(0, 0, 0, 255)):
 
 
 def save_bic_plot(bic, nk, ds):
+    """
+    create and saves the bic plot
+    Parameters
+    ----------
+    bic : bic results
+    nk : int, number of k tested (from 1 to nk)
+    ds : dataset, Xarray dataset
+    """
     out_name = "bic.png"
     plot_BIC(bic, nk)
     plt.savefig(out_name, bbox_inches='tight', pad_inches=0.1)
@@ -151,6 +159,17 @@ def save_bic_plot(bic, nk, ds):
 
 
 def main_BICOR(args):
+    """
+    Main function of the BIC ocean regimes method
+    Parameters
+    ----------
+    args : Dictionary with:
+        file_name: string, dataset path
+        nk: int, max range k to use for bic
+        var_name_ds: string, name var in dataset
+        var_name_mdl: string, name var in model
+        corr_dist: int, correlation distance
+    """
     var_name_ds = args['var_name']
     corr_dist = args['corr_dist']
     file_name = args['file']

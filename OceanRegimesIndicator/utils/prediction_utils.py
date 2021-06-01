@@ -46,6 +46,12 @@ def generate_dev_plots(ds, model, var_name_ds, ds_init, mask):
 
 
 def save_empty_plot(name):
+    """
+    Create and save empty plot in case the plot isn't available
+    Parameters
+    ----------
+    name : name of the plot, use to save
+    """
     text = "This figure is not available,\n please refer to the logs to understand why."
     x = np.arange(0, 8, 0.1)
     y = np.sin(x)
@@ -59,7 +65,6 @@ def save_empty_plot(name):
                 bbox={'facecolor': 'grey',
                       'alpha': 0.8, 'pad': 5})
     plt.savefig(f"{name}.png")
-    return 0
 
 
 def generate_plots(model, ds, var_name_ds):
@@ -115,12 +120,36 @@ def generate_plots(model, ds, var_name_ds):
 
 
 def predict(ds, var_name_ds, model):
+    """
+    predict dataset using trained model and add labels to datasets
+    Parameters
+    ----------
+    ds : input dataset, xarray dataset
+    var_name_ds : name var in ds
+    model : trained model (sklearn)
+
+    Returns
+    -------
+    ds: xarray dataset with predictions
+    """
     x_labels = model.predict(ds[var_name_ds + "_reduced"])
     ds = ds.assign(variables={"GMM_labels": ('sampling', x_labels)})
     return ds
 
 
 def robustness(model, ds, var_name_ds):
+    """
+    compute robustness
+    Parameters
+    ----------
+    model : trained model (sklearn GMM)
+    ds : input dataset, xarray dataset
+    var_name_ds : name var in ds
+
+    Returns
+    -------
+
+    """
     x_proba = model.predict_proba(ds[var_name_ds + "_reduced"])
     ds = ds.assign(variables={"GMM_post": (('sampling', 'k'), x_proba)})
     maxpost = ds["GMM_post"].max(dim="k")
@@ -135,6 +164,20 @@ def robustness(model, ds, var_name_ds):
 
 
 def quantiles(ds, var_name_ds, k, ds_init, mask):
+    """
+    compute quantiles and unstack dataset
+    Parameters
+    ----------
+    ds : predicted dataset, stacked. Xarray dataset
+    var_name_ds : name var in ds
+    k : number of class
+    ds_init : initial dataset
+    mask : mask used for preprocessing
+
+    Returns
+    -------
+    unstacked dataset with quantiles, Xarray dataset
+    """
     q = [0.05, 0.5, 0.95]
     k_values = np.unique(ds['GMM_labels'].values)
     nan_matrix = np.empty((k, np.size(q), np.size(ds.feature)))

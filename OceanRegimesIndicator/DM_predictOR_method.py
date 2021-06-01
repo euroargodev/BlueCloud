@@ -41,6 +41,17 @@ def load_model(model_path):
 
 
 def main_predictOR(args):
+    """
+    Main function of the predict ocean regimes method
+    Parameters
+    ----------
+    args : Dictionary with:
+        file: string, dataset path
+        model: string, path to trained model
+        var_name: string, name var in dataset
+        id_field: string, standard name of var
+        mask: string, path to mask or 'auto'
+    """
     var_name_ds = args['var_name']
     model_path = args['model']
     file_name = args['file']

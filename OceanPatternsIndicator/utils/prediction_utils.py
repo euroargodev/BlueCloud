@@ -25,7 +25,7 @@ def predict(m, ds, var_name_mdl, var_name_ds, z_dim):
     return ds
 
 
-def robustness(m, ds, features_in_ds, z_dim, first_date):
+def robustness(m, ds, features_in_ds, z_dim):
     """
     Compute the robustness of the trained model: The PCM robustness represents a useful scaled probability of a profile
     to belong to a class. If a lot of profiles show very low values you should maybe change the number of classes.
@@ -36,7 +36,6 @@ def robustness(m, ds, features_in_ds, z_dim, first_date):
     features_in_ds : dict {var_name_mdl: var_name_ds} with var_name_mdl the name of the variable in the model and
     var_name_ds the name of the variable in the dataset
     z_dim : z axis dimension (depth)
-    first_date : first time slice from dataset
     Returns
     -------
     dataset with robustness
@@ -48,12 +47,29 @@ def robustness(m, ds, features_in_ds, z_dim, first_date):
 
 
 def quantiles(ds, m, var_name_ds):
+    """
+    compute quantiles and unstack dataset
+    Parameters
+    ----------
+    ds : predicted dataset, stacked. Xarray dataset
+    var_name_ds : name var in ds
+    m: trained pyXpcm model
+    Returns
+    -------
+    ds: Xarray dataset with quantiles
+    """
     ds = ds.pyxpcm.quantile(m, q=[0.05, 0.5, 0.95], of=var_name_ds, outname=var_name_ds + '_Q', keep_attrs=True,
                             inplace=True)
     return ds
 
 
 def save_empty_plot(name):
+    """
+    Create and save empty plot in case the plot isn't available
+    Parameters
+    ----------
+    name : name of the plot, use to save
+    """
     text = "This figure is not available,\n please refer to the logs to understand why."
     x = np.arange(0, 8, 0.1)
     y = np.sin(x)

@@ -27,11 +27,31 @@ def get_args():
 
 
 def load_model(model_path):
+    """
+    load pyXpcm model
+    Parameters
+    ----------
+    model_path : string, path to trained model (*.nc)
+
+    Returns
+    -------
+    pyXpcm trained model
+    """
     m = pyxpcm.load_netcdf(model_path)
     return m
 
 
 def main_predict(args):
+    """
+    Main function of the predict ocean patterns method
+    Parameters
+    ----------
+    args : Dictionary with:
+        file: string, dataset path
+        model: string, model path
+        var_name: string, name var in dataset
+        id_field: string, standard name of var
+    """
     var_name_ds = args['var_name']
     var_name_mdl = args['id_field']
     features_in_ds = {var_name_mdl: var_name_ds}
@@ -56,7 +76,7 @@ def main_predict(args):
     logging.info("starting predictions and plots")
     start_time = time.time()
     ds = predict(m=m, ds=ds, var_name_mdl=var_name_mdl, var_name_ds=var_name_ds, z_dim=z_dim)
-    ds = robustness(m=m, ds=ds, features_in_ds=features_in_ds, z_dim=z_dim, first_date=first_date)
+    ds = robustness(m=m, ds=ds, features_in_ds=features_in_ds, z_dim=z_dim)
     ds = quantiles(ds=ds, m=m, var_name_ds=var_name_ds)
     generate_plots(m=m, ds=ds, var_name_ds=var_name_ds, first_date=first_date)
     predict_time = time.time() - start_time

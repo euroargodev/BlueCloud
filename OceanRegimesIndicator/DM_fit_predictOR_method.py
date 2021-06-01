@@ -25,6 +25,17 @@ def get_args():
 
 
 def main_fitpred_OR(args):
+    """
+    Main function of the fit predict ocean regimes method
+    Parameters
+    ----------
+    args : Dictionary with:
+        file: string, dataset path
+        k: int, number of class
+        var_name: string, name var in dataset
+        id_field: string, standard name of var
+        mask: string, path to mask or 'auto'
+    """
     var_name_ds = args['var_name']
     k = args['k']
     file_name = args['file']
