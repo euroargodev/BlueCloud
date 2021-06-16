@@ -17,7 +17,8 @@ def load_data(file_name, var_name_ds):
     -------
     ds: Xarray dataset
     """
-    ds = xr.open_dataset(file_name)
+    logging.info(f"dataset to load: {file_name}")
+    ds = xr.open_mfdataset(file_name).load()
     # select var
     ds = ds[[var_name_ds]]
     # some format

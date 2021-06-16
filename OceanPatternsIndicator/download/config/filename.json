@@ -1,5 +1,6 @@
 {
     "TEMP": ["sea_water_potential_temperature"],
     "PSAL": ["sea_water_salinity"],
-    "RFVL": ["northward_sea_water_velocity", "eastward_sea_water_velocity"]
+    "RFVL": ["northward_sea_water_velocity", "eastward_sea_water_velocity"],
+    "CHLA": ["mass_concentration_of_chlorophyll_a_in_sea_water"]
 }

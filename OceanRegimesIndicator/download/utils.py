@@ -35,7 +35,7 @@ def get_type_file(field):
             type_file = type_file_tmp
             break
     if type_file is None:
-        raise Exception("Can't assign a type file for field: " + str(field))
+        raise Exception("Can't assign an output type file for field: " + str(field))
     return type_file
 
 

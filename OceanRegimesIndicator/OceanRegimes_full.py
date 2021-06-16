@@ -77,7 +77,6 @@ def download_data(param):
     dcs = daccess.Daccess(dataset, fields)
     time_range = get_time_range(param['start_time'], param['end_time'])
     daccess_working_domain = dict()
-    daccess_working_domain['depth'] = param['working_domain']['d'].copy()
     daccess_working_domain['lonLat'] = [param['working_domain']['lon'][0], param['working_domain']['lon'][1],
                                         param['working_domain']['lat'][0], param['working_domain']['lat'][1]]
     daccess_working_domain['time'] = time_range
@@ -122,20 +121,19 @@ def main():
     logging.info(f"Ocean regimes launched with the following arguments:\n {param_dict}")
     try:
         start_time = time.time()
-        # download_data(param_dict)
-        logging.info("Simulation of download")
+        download_data(param_dict)
+        # logging.info("Simulation of download")
         download_time = time.time() - start_time
         logging.info("download finished in " + str(download_time) + "sec")
-
     except Exception as e:
         logging.error(e)
         err_log = json_builder.LogError(-1, str(e))
         error_exit(err_log, exec_log)
     try:
-        # param_dict['var_name'] = get_var_name(param_dict['data_source'], param_dict['id_field'])
-        param_dict['var_name'] = param_dict['id_field']
-        # param_dict['file'] = './indir/*.nc'
-        param_dict['file'] = f'../datasets/{param_dict["data_source"]}'
+        param_dict['var_name'] = get_var_name(param_dict['data_source'], param_dict['id_field'])
+        # param_dict['var_name'] = param_dict['id_field']
+        param_dict['file'] = './indir/*.nc'
+        # param_dict['file'] = f'../datasets/{param_dict["data_source"]}'
         if param_dict['id_method'] == "BIC":
             logging.info("launching BIC")
             main_BICOR(param_dict)
@@ -154,7 +152,7 @@ def main():
         error_exit(err_log, exec_log)
 
     # ----------- create all outputs if doesn't exist --------------- #
-    list_outputs = ['output.json', 'bic.png', 'spatial_dist_freq.png',
+    list_outputs = ['output.json', 'bic.png', 'spatial_dist.png',
                     'robustness.png', 'pie_chart.png', 'temporal_dist_months.png', 'temporal_dist_season.png',
                     'predicted_dataset.nc', 'model.nc']
     for file in list_outputs:

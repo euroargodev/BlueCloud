@@ -9,8 +9,11 @@ class Dataset:
         with open(actual_dir + '/../config/wekeo_dataset.json') as json_file:
             self.data = json.load(json_file)
 
-    def get_depth(self, dataset) -> list:
-        return self.data[dataset]['depth']
+    def get_depth(self, dataset):
+        if 'depth' in self.data[dataset]:
+            return self.data[dataset]['depth']
+        else:
+            return None
 
     def get_lon(self, dataset) -> list:
         return self.data[dataset]['lon']
@@ -100,17 +103,18 @@ class Dataset:
         product['value'] = dataset_field
         dataTemplate['stringChoiceValues'].append(product)
 
-        startDepth = dict()
-        startDepth['name'] = 'startDepth'
-        startDepth['value'] = depth[0]
-        dataTemplate['stringChoiceValues'].append(startDepth)
+        if depth is not None:
+            startDepth = dict()
+            startDepth['name'] = 'startDepth'
+            startDepth['value'] = depth[0]
+            dataTemplate['stringChoiceValues'].append(startDepth)
 
-        endDepth = dict()
-        endDepth['name'] = 'endDepth'
-        endDepth['value'] = depth[1]
-        dataTemplate['stringChoiceValues'].append(endDepth)
+            endDepth = dict()
+            endDepth['name'] = 'endDepth'
+            endDepth['value'] = depth[1]
+            dataTemplate['stringChoiceValues'].append(endDepth)
 
-        logging.info('Your JSON file:')
+        logging.info('Your JSON request:')
         logging.info(json.dumps(dataTemplate, indent=4))
 
         return dataTemplate

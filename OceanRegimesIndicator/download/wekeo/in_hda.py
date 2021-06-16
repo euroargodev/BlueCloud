@@ -1,3 +1,5 @@
+import logging
+
 from download.strategy import InputStrategy
 from download.wekeo import dataset_access as db
 
@@ -57,11 +59,11 @@ class InHDA(InputStrategy):
                     depth: depth range in string format: [minDepth, maxDepth]
         @return: depth range in string format: [minDepth, maxDepth]
         """
-        if 'depth' not in workingDomain:
-            raise Exception("Can't read depth from workingDomain")
-        depth = workingDomain['depth']
-
         depth_dataset = self.dataset.get_depth(dataset)
+        if depth_dataset is None:
+            logging.info(f"Dataset: {dataset} doesn't have depth attribute")
+            return None
+        depth = workingDomain['depth']
         depth_dataset.sort()
 
         if depth[0] > min(depth_dataset):
@@ -94,6 +96,7 @@ class InHDA(InputStrategy):
 
         lonLat_tmp = workingDomain['lonLat']
         lonLat = [lonLat_tmp[0], lonLat_tmp[2], lonLat_tmp[1], lonLat_tmp[3]]
+        # -5 31 36 45
 
         lon_dataset = self.dataset.get_lon(dataset)
         if lonLat[0] > min(lon_dataset):

@@ -4,7 +4,8 @@ from download.context import DownloadContext, InputContext
 import os
 import json
 
-workingDomain_attrs = ['lonLat', 'depth', 'time']
+workingDomain_attrs = ['lonLat', 'time']
+workingDomain_attrs_optional = ['depth']
 
 
 def wd_validation(workingDomain):
@@ -19,7 +20,9 @@ def wd_validation(workingDomain):
     for wd_attr in workingDomain_attrs:
         if wd_attr not in workingDomain:
             raise Exception("Can't find " + wd_attr + ' in workingDomain: ' + str(workingDomain))
-
+    for wd_attr_opt in workingDomain_attrs_optional:
+        if wd_attr_opt not in workingDomain:
+            logging.info(f"attribute {wd_attr_opt},  not found")
     # lonLat check
     lonLat = workingDomain['lonLat']
     if len(lonLat) != 4:
@@ -28,11 +31,12 @@ def wd_validation(workingDomain):
         raise Exception("Type error in lonLat")
 
     # depth check
-    depth = workingDomain['depth']
-    if len(depth) != 2:
-        raise Exception("Wrong size for lonLat, please check it: " + str(depth))
-    elif not float_int_check(depth):
-        raise Exception("Type error in depth")
+    if 'depth' in workingDomain:
+        depth = workingDomain['depth']
+        if len(depth) != 2:
+            raise Exception("Wrong size for depth, please check it: " + str(depth))
+        elif not float_int_check(depth):
+            raise Exception("Type error in depth")
 
     # time check
     time = workingDomain['time']

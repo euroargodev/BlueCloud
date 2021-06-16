@@ -9,7 +9,7 @@ def get_depth(workingDomain):
     @return: depth range in string format: [minDepth, maxDepth]
     """
     if 'depth' not in workingDomain:
-        raise Exception("Can't read depth from workingDomain")
+        return None
 
     depth = workingDomain['depth']
 

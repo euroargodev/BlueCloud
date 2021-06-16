@@ -5,7 +5,9 @@
     },
     "GLOBAL_ANALYSIS_FORECAST_PHY_001_024": {
         "infrastructure": "WEKEO"
-
+    },
+    "OCEANCOLOUR_MED_CHL_L4_NRT_OBSERVATIONS_009_041": {
+        "infrastructure": "WEKEO"
     },
     "MEDSEA_STHUB": {
         "infrastructure": "STHUB"

@@ -18,6 +18,7 @@ def load_data(file_name, var_name_ds):
     first_date: string, first time slice of the dataset
     coord_dict: coordinate dictionary for pyXpcm
     """
+    logging.info(f"dataset to load: {file_name}")
     ds = xr.open_mfdataset(file_name).load()
     # select var
     ds = ds[[var_name_ds]]
