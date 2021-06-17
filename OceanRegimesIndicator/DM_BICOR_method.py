@@ -1,5 +1,5 @@
 import time
-from OceanRegimesIndicator.utils.BIC_calculation_OR import *
+from utils.BIC_calculation_OR import *
 from PIL import Image, ImageFont, ImageDraw
 from utils.data_loader_utils import *
 

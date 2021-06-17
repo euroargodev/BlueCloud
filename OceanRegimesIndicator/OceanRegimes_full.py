@@ -1,7 +1,6 @@
 ﻿import json
 import time
 
-from OceanPatternsIndicator.DM_FIT_PRED_method import main_fit_predict
 from download import daccess
 import sys
 import os
@@ -152,9 +151,8 @@ def main():
         error_exit(err_log, exec_log)
 
     # ----------- create all outputs if doesn't exist --------------- #
-    list_outputs = ['output.json', 'bic.png', 'spatial_dist.png',
-                    'robustness.png', 'pie_chart.png', 'temporal_dist_months.png', 'temporal_dist_season.png',
-                    'predicted_dataset.nc', 'model.nc']
+    list_outputs = ['bic.png', 'tseries_struc.png', 'tseries_struc_comp.png', 'spatial_dist.png', 'robustness.png',
+                    'pie_chart.png', 'scatter_PDF.png', 'predicted_dataset.nc', 'modelOR.sav']
     for file in list_outputs:
         if not os.path.exists(file):
             open(file, 'w').close()

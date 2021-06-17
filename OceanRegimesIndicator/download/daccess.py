@@ -54,7 +54,7 @@ def float_int_check(elements):
 
 
 class Daccess:
-    def __init__(self, dataset: str, fields: list, outDir=None, hdaKey="bG9pY2JhY2hlbG90OmxiYUJMVTMh",
+    def __init__(self, dataset: str, fields: list, outDir=None, hdaKey="",
                  dirID="eba166b2-c182-4dde-a2ce-b9bdf7f9edf3"):
         """
         @param dataset: source dataset
