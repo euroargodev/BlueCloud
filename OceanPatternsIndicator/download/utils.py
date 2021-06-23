@@ -1,3 +1,5 @@
+import time
+
 def get_field(type_file):
     """
     @param type_file: String that represent the file type
@@ -71,3 +73,21 @@ def get_gcube_token(globalVariablesFile):
         raise Exception('Error gcube_token not found!')
     else:
         return gcubeToken
+
+
+def show_dl_percentage(dl, start, total_length):
+    if total_length is not None:  # no content length header
+        done = int(50 * dl / total_length)
+        try:
+            print("\r[%s%s]  %8.2f Mbps" % ('=' * done, ' ' * (50 - done),
+                                            (dl / (time.process_time() - start)) / (1024 * 1024)), end='',
+                  flush=True)
+        except:
+            pass
+    else:
+        if dl % 1024 == 0:
+            try:
+                print("[%8.2f] MB downloaded, %8.2f kbps" \
+                      % (dl / (1024 * 1024), (dl / (time.process_time() - start)) / 1024))
+            except:
+                pass

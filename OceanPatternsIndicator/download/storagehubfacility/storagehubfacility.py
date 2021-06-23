@@ -33,12 +33,12 @@ class StorageHubFacility:
         self.storageHubUrl = None
         print("SHF DOING : ", self.operation, self.ItemId, self.destinationFile)
 
-    def main(self, in_memory=False):
+    def main(self, in_memory=False, dl_status=False):
         print(self)
         self.retrieveToken()
         issup = issupport.ISSupport()
         self.storageHubUrl = issup.discoverStorageHub(self.gcubeToken)
-        return self.executeOperation(in_memory)
+        return self.executeOperation(in_memory, dl_status)
 
     def retrieveToken(self):
         from download import utils
@@ -48,7 +48,7 @@ class StorageHubFacility:
             raise Exception("File does not exist: " + self.globalVariablesFile)
         self.gcubeToken = utils.get_gcube_token(self.globalVariablesFile)
 
-    def executeOperation(self, in_memory=False):
+    def executeOperation(self, in_memory=False, dl_status=False):
         print("Execute Operation")
         if self.operation == 'RootInfo':
             opRootInfo = command.StorageHubCommandRootInfo(self.gcubeToken, self.storageHubUrl, self.destinationFile)
@@ -68,7 +68,7 @@ class StorageHubFacility:
         elif self.operation == 'Download':
             opDownload = command.StorageHubCommandItemDownload(self.ItemId, self.gcubeToken, self.storageHubUrl,
                                                                self.destinationFile, self.itemSize)
-            return opDownload.execute(in_memory=in_memory)
+            return opDownload.execute(in_memory=in_memory, dl_status=dl_status)
         elif self.operation == 'Upload':
             opUpload = command.StorageHubCommandItemUpload(self.ItemId, self.gcubeToken, self.storageHubUrl,
                                                            self.destinationFile, sys.argv[4], sys.argv[4],

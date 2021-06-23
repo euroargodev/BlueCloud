@@ -143,6 +143,11 @@ class HDA(DownloadStrategy):
             dataset_id = self.dataset.get_dataset_id(dataset, dataset_field)
             data = self.dataset.get_data(dataset, dataset_field, variables, lonLat, depth, time)
 
+            nc_filename = self.outdir + '/' + outfile
+            if os.path.exists(nc_filename + '.nc'):
+                nc_files.append(netCDF4.Dataset(nc_filename + '.nc', mode='r'))
+                continue
+
             # With `dataset_id`, `api_key` and `download_dir_path`,
             # you can initialise the dictionary with the function [init](./hda_api_functions.ipynb#init).
             self.hda_init(dataset_id, download_dir_path)
@@ -167,8 +172,8 @@ class HDA(DownloadStrategy):
             # The next step is to create an `order ID` for each file name to be downloaded
             hda_dict = hdaf.get_order_ids(hda_dict)
 
-            nc_filename = self.outdir + '/' + outfile
-            hda_dict = hdaf.download_data(hda_dict, file_extension='.nc', user_filename=nc_filename, in_memory=in_memory)
+            hda_dict = hdaf.download_data(hda_dict, file_extension='.nc', user_filename=nc_filename,
+                                          in_memory=in_memory, dl_status=False)
 
             nc_files.append(netCDF4.Dataset(nc_filename + '.nc', mode='r'))
         # nc_file is useful when call download using string_template, in this case you need

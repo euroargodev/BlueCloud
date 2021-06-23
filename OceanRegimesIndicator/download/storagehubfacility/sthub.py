@@ -3,6 +3,7 @@ from download.strategy import DownloadStrategy
 from download.storagehubfacility import dataset_access as db
 import json
 from download import utils
+import os
 
 
 def get_outfile(field, date):
@@ -64,6 +65,8 @@ class StHub(DownloadStrategy):
         @param fields: cf standard name used to represent a variable
         @return: download in outdir the correct netCDF file/s
         """
+        import netCDF4
+
         file_types = list()
         for field in fields:
             field_var = self.dataset.get_var_from_cf_std_name(dataset, field)
@@ -76,15 +79,16 @@ class StHub(DownloadStrategy):
         nc_files = list()
         for item in filtered_list:
             nc_filename = self.outdir + "/" + item[1]
-            myshfo = sthubf.StorageHubFacility(operation="Download", ItemId=item[0],
-                                               localFile=nc_filename, itemSize=item[2])
-            nc_file = myshfo.main(in_memory=in_memory)
-            if in_memory:
-                nc_files.append(nc_file)
-            else:
-                import netCDF4
+            if os.path.exists(nc_filename):
                 nc_files.append(netCDF4.Dataset(nc_filename, mode='r'))
-
+            else:
+                myshfo = sthubf.StorageHubFacility(operation="Download", ItemId=item[0],
+                                                   localFile=nc_filename, itemSize=item[2])
+                nc_file = myshfo.main(in_memory=in_memory, dl_status=False)
+                if in_memory:
+                    nc_files.append(nc_file)
+                else:
+                    nc_files.append(netCDF4.Dataset(nc_filename, mode='r'))
         return nc_files
 
 

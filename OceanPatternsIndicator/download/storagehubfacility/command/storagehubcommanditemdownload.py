@@ -7,6 +7,7 @@
 # 
 import requests
 from .storagehubcommand import StorageHubCommand
+from download import utils
 
 
 class StorageHubCommandItemDownload(StorageHubCommand):
@@ -18,7 +19,7 @@ class StorageHubCommandItemDownload(StorageHubCommand):
         self.destinationFile = destinationFile
         self.itemSize = itemSize
 
-    def execute(self, in_memory=False):
+    def execute(self, in_memory=False, dl_status=False):
         print("Execute StorageHubCommandItemDownload")
         print(self.storageHubUrl + "/items/" + self.itemId + "/download?");
 
@@ -42,25 +43,11 @@ class StorageHubCommandItemDownload(StorageHubCommand):
                     for chunk in r.iter_content(64738):
                         dl += len(chunk)
                         file.write(chunk)
-                        if self.itemSize is not None:  # no content length header
-                            done = int(50 * dl / self.itemSize)
-                            try:
-                                print("\r[%s%s]  %8.2f Mbps" % ('=' * done, ' ' * (50 - done),
-                                                                (dl / (time.process_time() - start)) / (
-                                                                        1024 * 1024)), end='',
-                                      flush=True)
-                            except:
-                                pass
-                        else:
-                            if (dl % (1024) == 0):
-                                try:
-                                    print("[%8.2f] MB downloaded, %8.2f kbps" \
-                                          % (dl / (1024 * 1024), (dl / (time.process_time() - start)) / 1024))
-                                except:
-                                    pass
+                        if dl_status:
+                            utils.show_dl_percentage(dl, start, self.itemSize)
                     try:
-                        print("[%8.2f] MB downloaded, %8.2f kbps" \
-                              % (dl / (1024 * 1024), (dl / (time.process_time() - start)) / 1024))
+                        print("[%8.2f] MB downloaded, %8.2f kbps" % (
+                            dl / (1024 * 1024), (dl / (time.process_time() - start)) / 1024))
                     except:
                         pass
 

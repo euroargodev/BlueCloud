@@ -5,6 +5,7 @@ import time
 import json
 import re
 import requests
+from download import utils
 
 
 def generate_api_key(username, password):
@@ -365,7 +366,7 @@ def downloadFileMemory(url, headers, file_name):
         raise Exception('Download error, status code: ' + str(r.status_code))
 
 
-def downloadFile(url, headers, directory, file_name, total_length=0):
+def downloadFile(url, headers, directory, file_name, total_length=0, dl_status=False):
     """ 
     Function to download a a single data file.
     
@@ -389,21 +390,8 @@ def downloadFile(url, headers, directory, file_name, total_length=0):
             for chunk in r.iter_content(64738):
                 dl += len(chunk)
                 f.write(chunk)
-                if total_length is not None:  # no content length header
-                    done = int(50 * dl / total_length)
-                    try:
-                        logging.info("\r[%s%s]  %8.2f Mbps" % ('=' * done, ' ' * (50 - done),
-                                                        (dl / (time.process_time() - start)) / (1024 * 1024)), end='',
-                              flush=True)
-                    except:
-                        pass
-                else:
-                    if (dl % (1024) == 0):
-                        try:
-                            logging.info("[%8.2f] MB downloaded, %8.2f kbps" \
-                                  % (dl / (1024 * 1024), (dl / (time.process_time() - start)) / 1024))
-                        except:
-                            pass
+                if dl_status:
+                    utils.show_dl_percentage(dl, start, total_length)
             try:
                 logging.info("[%8.2f] MB downloaded, %8.2f kbps" \
                       % (dl / (1024 * 1024), (dl / (time.process_time() - start)) / 1024))
@@ -478,7 +466,7 @@ def get_filenames(hda_dict):
     return fileName
 
 
-def download_data(hda_dict, file_extension=None, user_filename=None, in_memory=None):
+def download_data(hda_dict, file_extension=None, user_filename=None, in_memory=None, dl_status=False):
     """ 
     Downloads for each of the order IDs the associated data file.
     
@@ -506,8 +494,7 @@ def download_data(hda_dict, file_extension=None, user_filename=None, in_memory=N
         if file_extension:
             file_name = file_name + file_extension
 
-        download_url = hda_dict['broker_endpoint'] + \
-                       '/dataorder/download/' + order_id
+        download_url = hda_dict['broker_endpoint'] + '/dataorder/download/' + order_id
 
         product_size = hda_dict['order_sizes'][i]
 
@@ -516,7 +503,8 @@ def download_data(hda_dict, file_extension=None, user_filename=None, in_memory=N
         else:
             time_elapsed = downloadFile(download_url, hda_dict['headers'],
                                         hda_dict['download_dir_path'], file_name,
-                                        product_size)
+                                        product_size,
+                                        dl_status=dl_status)
 
         fileNames.append(os.path.join(hda_dict['download_dir_path'], file_name))
 
