@@ -54,13 +54,12 @@ def download_data(param):
     ----------
     param : dictionary as follow:
     {
-        'id_method': 'FIT_PRED',
+        'id_output_type': 'FIT_PRED',
         'id_field': 'sea_water_potential_temperature',
         'k': 6,
         'working_domain': {
-            'lon': [-5, 36],
-            'lat': [31, 45],
-            'd': [10, 300]
+            'box': [ [lon_min, lat_min, lon_max, lat_max ] ], #list of boxes of same format as wekeo API
+            'd': [[10, 300]]
             },
         'start_time': '2018-01',
         'end_time': '2018-12',
@@ -76,9 +75,8 @@ def download_data(param):
     dcs = daccess.Daccess(dataset, fields)
     time_range = get_time_range(param['start_time'], param['end_time'])
     daccess_working_domain = dict()
-    daccess_working_domain['depth'] = param['working_domain']['d'].copy()
-    daccess_working_domain['lonLat'] = [param['working_domain']['lon'][0], param['working_domain']['lon'][1],
-                                        param['working_domain']['lat'][0], param['working_domain']['lat'][1]]
+    daccess_working_domain['depth'] = param['working_domain']['depth_layers'][0].copy()
+    daccess_working_domain['lonLat'] = param['working_domain']['box'][0].copy()
     daccess_working_domain['time'] = time_range
     logging.info(daccess_working_domain)
     dcs.download(daccess_working_domain)
@@ -132,16 +130,16 @@ def main():
     try:
         param_dict['var_name'] = get_var_name(param_dict['data_source'], param_dict['id_field'])
         param_dict['file'] = './indir/*.nc'
-        if param_dict['id_method'] == "BIC":
+        if param_dict['id_output_type'] == "BIC":
             logging.info("launching BIC")
             main_bic_computation(param_dict)
-        elif param_dict['id_method'] == "FIT":
+        elif param_dict['id_output_type'] == "FIT":
             logging.info("launching fit")
             main_model_fit(param_dict)
-        elif param_dict['id_method'] == "PRED":
+        elif param_dict['id_output_type'] == "PRED":
             logging.info("launching pred")
             main_predict(param_dict)
-        elif param_dict['id_method'] == "FIT_PRED":
+        elif param_dict['id_output_type'] == "FIT_PRED":
             logging.info("launching fit-predict")
             main_fit_predict(param_dict)
     except Exception as e:
