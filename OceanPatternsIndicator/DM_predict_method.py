@@ -5,6 +5,7 @@ import pyxpcm
 
 from utils.data_loader_utils import load_data
 from utils.prediction_utils import predict, robustness, quantiles, generate_plots
+from download.storagehubfacility import storagehubfacility as sthubf, check_json
 
 
 def get_args():
@@ -26,18 +27,23 @@ def get_args():
     return parse.parse_args()
 
 
-def load_model(model_path):
+def load_model(model_id):
     """
     load pyXpcm model
     Parameters
     ----------
-    model_path : string, path to trained model (*.nc)
+    model_id : string, id of trained model on storagehub (*.nc)
 
     Returns
     -------
     pyXpcm trained model
     """
-    m = pyxpcm.load_netcdf(model_path)
+    myshfo = sthubf.StorageHubFacility(operation="Download", ItemId=model_id,
+                                       localFile=f'./model{model_id}.nc')
+    myshfo.main()
+
+    m = pyxpcm.load_netcdf(f'./model{model_id}.nc')
+    logging.info(f"model loaded:\n {m}")
     return m
 
 
@@ -67,8 +73,9 @@ def main_predict(args):
     logging.info("loading the dataset and model")
     start_time = time.time()
     ds, first_date, coord_dict = load_data(file_name=file_name, var_name_ds=var_name_ds)
+    logging.info(f"loadin dataset finished: {ds}")
     z_dim = coord_dict['depth']
-    m = load_model(model_path=model_path)
+    m = load_model(model_id=model_path)
     load_time = time.time() - start_time
     logging.info("load finished in " + str(load_time) + "sec")
 

@@ -2,6 +2,8 @@ from utils.data_loader_utils import *
 from utils.prediction_utils import generate_plots, predict, quantiles, robustness
 import joblib
 import time
+from download.storagehubfacility import storagehubfacility as sthubf, check_json
+
 
 
 def get_args():
@@ -23,7 +25,7 @@ def get_args():
     return parse.parse_args()
 
 
-def load_model(model_path):
+def load_model(model_id):
     """
     Load trained model
     Parameters
@@ -35,7 +37,10 @@ def load_model(model_path):
     model: trained sklearn GMM model
     k: number of class
     """
-    model = joblib.load(model_path)
+    myshfo = sthubf.StorageHubFacility(operation="Download", ItemId=model_id,
+                                       localFile=f'./model{model_id}.sav')
+    myshfo.main()
+    model = joblib.load(f'./model{model_id}.sav')
     k = model.n_components
     return model, k
 
@@ -76,7 +81,7 @@ def main_predictOR(args):
 
     logging.info("starting computation")
     start_time = time.time()
-    model, k = load_model(model_path=model_path)
+    model, k = load_model(model_id=model_path)
     train_time = time.time() - start_time
     logging.info("training finished in " + str(train_time) + "sec")
 
