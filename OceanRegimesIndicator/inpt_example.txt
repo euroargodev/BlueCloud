@@ -1,0 +1,18 @@
+Example of input string for Ocean Regimes method:
+
+Fit Predict
+
+{ 'id_output_type':'FIT_PRED', 'id_field':'mass_concentration_of_chlorophyll_a_in_sea_water', 'k':8, 'working_domain': {'box': [[-5, 31, 36, 45]]}, 'start_time': '2020-01', 'end_time': '2020-08', 'data_source': 'OCEANCOLOUR_MED_CHL_L4_NRT_OBSERVATIONS_009_041', 'mask': 'auto'}
+
+Fit
+
+{ 'id_output_type':'FIT', 'id_field':'mass_concentration_of_chlorophyll_a_in_sea_water', 'k':8, 'working_domain': {'box': [[-5, 31, 36, 45]]}, 'start_time': '2020-01', 'end_time': '2020-08', 'data_source': 'OCEANCOLOUR_MED_CHL_L4_NRT_OBSERVATIONS_009_041', 'mask': 'auto'}
+
+
+Predict
+
+{ 'id_output_type':'PRED', 'id_field':'mass_concentration_of_chlorophyll_a_in_sea_water', 'model': 'modelOR.sav', 'working_domain': {'box': [[-5, 31, 36, 45]]}, 'start_time': '2020-01', 'end_time': '2020-08', 'data_source': 'OCEANCOLOUR_MED_CHL_L4_NRT_OBSERVATIONS_009_041', 'mask': 'auto'}
+
+BIC
+
+{ 'id_output_type':'BIC', 'id_field':'mass_concentration_of_chlorophyll_a_in_sea_water', 'nk':20, 'corr_dist':40, 'working_domain': {'box': [[-5, 31, 36, 45]]}, 'start_time': '2020-01', 'end_time': '2020-08', 'data_source':'OCEANCOLOUR_MED_CHL_L4_NRT_OBSERVATIONS_009_041', 'mask': 'auto'}

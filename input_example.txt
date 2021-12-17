@@ -1,0 +1,59 @@
+V2:
+"{ 'id_output_type':'FIT_PRED', 'id_field':'sea_water_potential_temperature', 'k':6, 'working_domain': {'box': [[-5, 31, 36, 45]], 'depth_layers': [[10,300]]}, 'start_time': '2018-01', 'end_time': '2018-12', 'data_source': 'MEDSEA_MULTIYEAR_PHY_006_004' }"
+
+"{ 'id_output_type':'FIT', 'id_field':'sea_water_potential_temperature', 'k':6, 'working_domain': {'box': [[-5, 31, 36, 45]], 'depth_layers': [[10,300]]}, 'start_time': '2018-01', 'end_time': '2018-12', 'data_source': 'MEDSEA_MULTIYEAR_PHY_006_004' }"
+
+"{ 'id_output_type':'BIC', 'id_field':'sea_water_potential_temperature', 'nk':20, 'corr_dist':50, 'working_domain': {'box': [[-5, 31, 36, 45]], 'depth_layers': [[10,300]]}, 'start_time': '2018-01', 'end_time': '2018-12', 'data_source': 'MEDSEA_MULTIYEAR_PHY_006_004' }"
+
+"{ 'id_output_type':'PRED', 'id_field':'sea_water_potential_temperature', 'model':'4f41709c-af1b-4370-98e3-2a1926190dae', 'working_domain': {'box': [[-5, 31, 36, 45]], 'depth_layers': [[10,300]]}, 'start_time': '2018-01', 'end_time': '2018-12', 'data_source': 'MEDSEA_MULTIYEAR_PHY_006_004' }"
+
+
+
+######################## Ocean regimes ###########################
+
+../datasets/oceancolour_glo_chl_l4_rep_observations_009_082_2019.nc
+../datasets/Mediterranean_mask.nc
+20
+CHL
+40
+
+
+Fit Predict
+{ 'id_output_type':'FIT_PRED', 'id_field':'mass_concentration_of_chlorophyll_a_in_sea_water', 'k':8, 'working_domain': {'box': [[-5, 31, 36, 45]]}, 'start_time': '2020-01', 'end_time': '2020-08', 'data_source': 'OCEANCOLOUR_MED_CHL_L4_NRT_OBSERVATIONS_009_041', 'mask': 'auto'}
+
+Fit
+{ 'id_output_type':'FIT', 'id_field':'mass_concentration_of_chlorophyll_a_in_sea_water', 'k':8, 'working_domain': {'box': [[-5, 31, 36, 45]]}, 'start_time': '2020-01', 'end_time': '2020-08', 'data_source': 'OCEANCOLOUR_MED_CHL_L4_NRT_OBSERVATIONS_009_041', 'mask': 'auto'}
+
+
+Predict
+{ 'id_output_type':'PRED', 'id_field':'mass_concentration_of_chlorophyll_a_in_sea_water', 'model': '4cd0429f-aeb0-414d-b4f8-a1b6b67989d1', 'working_domain': {'box': [[-5, 31, 36, 45]]}, 'start_time': '2020-01', 'end_time': '2020-08', 'data_source': 'OCEANCOLOUR_MED_CHL_L4_NRT_OBSERVATIONS_009_041', 'mask': 'auto'}
+
+BIC
+{ 'id_output_type':'BIC', 'id_field':'mass_concentration_of_chlorophyll_a_in_sea_water', 'nk':20, 'corr_dist':40, 'working_domain': {'box': [[-5, 31, 36, 45]]}, 'start_time': '2020-01', 'end_time': '2020-08', 'data_source':'OCEANCOLOUR_MED_CHL_L4_NRT_OBSERVATIONS_009_041', 'mask': 'auto'}
+
+list files: bic.png, tseries_struc.png, tseries_struc_comp.png, spatial_dist.png, robustness.png, pie_chart.png, scatter_PDF.png, predicted_dataset.nc, modelOR.sav
+
+
+
+
+
+
+
+Old input for DM mockup:
+
+{ 'id_method':'FIT_PRED', 'id_field':'sea_water_potential_temperature', 'k':6, 'working_domain': {'lon': [-5, 36], 'lat': [31,45] , 'd': [10,500]}, 'start_time': '2018-01', 'end_time': '2018-12', 'data_source': 'MEDSEA_MULTIYEAR_PHY_006_004' }
+
+{ 'id_method':'FIT', 'id_field':'sea_water_potential_temperature', 'k':6, 'working_domain': {'lon': [-5, 36], 'lat': [31,45] , 'd': [10,300]}, 'start_time': '2018-01', 'end_time': '2018-12', 'data_source': 'MEDSEA_MULTIYEAR_PHY_006_004' }
+
+{ 'id_method':'BIC', 'id_field':'sea_water_potential_temperature', 'nk':20, 'corr_dist':50, 'working_domain': {'lon': [-5, 36], 'lat': [31,45] , 'd': [10,300]}, 'start_time': '2018-01', 'end_time': '2018-03', 'data_source': 'MEDSEA_MULTIYEAR_PHY_006_004' }
+
+{ 'id_method':'PRED', 'id_field':'sea_water_potential_temperature', 'model':'model.nc', 'working_domain': {'lon': [-5, 36], 'lat': [31,45] , 'd': [10,300]}, 'start_time': '2018-01', 'end_time': '2018-12', 'data_source': 'MEDSEA_MULTIYEAR_PHY_006_004' }
+
+
+{ 'id_method':'FIT_PRED', 'id_field':'sea_water_potential_temperature', 'k':6, 'working_domain': {'lon': [-5, 36], 'lat': [31,45] , 'd': [10,500]}, 'start_time': '2019-02', 'end_time': '2020-01', 'data_source': 'GLOBAL_ANALYSIS_FORECAST_PHY_001_024' }
+
+Test import model.nc
+
+{ 'id_method':'PRED', 'id_field':'sea_water_potential_temperature', 'model':'02a6a8de-ed25-453b-ab84-09f790d605cc/model_mockup.nc', 'working_domain': {'lon': [-5, 36], 'lat': [31,45] , 'd': [10,300]}, 'start_time': '2018-01', 'end_time': '2018-12', 'data_source': 'MEDSEA_MULTIYEAR_PHY_006_004' }
+
+
