@@ -1,5 +1,6 @@
 {
-    "MEDSEA_STHUB": {
+    "MEDSEA_MULTIYEAR_PHY_006_004_116_STHUB": {
+        "dir_id": "eba166b2-c182-4dde-a2ce-b9bdf7f9edf3",
         "dataset_variable": {
             "TEMP": ["votemper"],
             "PSAL": ["vosaline"],
@@ -19,9 +20,111 @@
                 "vomecrty"
             ]
         },
-        "lon": [-6, 36.3],
-        "lat": [30.18, 45.98],
-        "depth": [1.01, 5334.648],
-        "time": ["1987-01-01", "1989-12-31"]
+        "lon_coverage": [-6, 36.28125],
+        "lat_coverage": [30.15625, 45.96875],
+        "depth_coverage": [0, 5503.4013671875],
+        "time": ["1987-01", "1989-12"]
+    },
+    "MEDSEA_MULTIYEAR_PHY_006_004_STHUB": {
+        "dir_id": "4406ac81-53e1-4ed6-96a4-c565ace51b21",
+        "dataset_variable": {
+            "TEMP": ["thetao"],
+            "PSAL": ["so"],
+            "RFVL": ["uo", "vo"]
+        },
+        "cf-standard-name_variable": {
+            "sea_water_potential_temperature": [
+                "thetao"
+            ],
+            "sea_water_salinity": [
+                "so"
+            ],
+            "eastward_sea_water_velocity": [
+                "uo"
+            ],
+            "northward_sea_water_velocity": [
+                "vo"
+            ]
+        },
+        "lon_coverage": [-6.0208330154418945, 36.312501192092896],
+        "lat_coverage": [30.166667938232422, 46.000000953674316],
+        "depth_coverage": [0, 5808.19189453125],
+        "time": ["1987-01", "1989-12"]
+    },
+    "MEDSEA_MULTIYEAR_PHY_006_004_STHUB_30Y": {
+        "dir_id": "24f67afa-c647-4278-bcbf-a700ad60c610",
+        "dataset_variable": {
+            "TEMP": ["thetao"],
+            "PSAL": ["so"],
+            "RFVL": ["uo", "vo"]
+        },
+        "cf-standard-name_variable": {
+            "sea_water_potential_temperature": [
+                "thetao"
+            ],
+            "sea_water_salinity": [
+                "so"
+            ],
+            "eastward_sea_water_velocity": [
+                "uo"
+            ],
+            "northward_sea_water_velocity": [
+                "vo"
+            ]
+        },
+        "lon_coverage": [-6.0208330154418945, 36.312501192092896],
+        "lat_coverage": [30.166667938232422, 46.000000953674316],
+        "depth_coverage": [0, 5808.19189453125],
+        "time": ["1987-01", "2015-12"]
+    },
+    "GLOBAL_REANALYSIS_PHY_001_030_STHUB": {
+        "dir_id": "d7eb7eee-aa3c-4ec9-8564-60d8554e4409",
+        "dataset_variable": {
+            "mercatorglorys12v1_gl12": ["thetao", "so", "uo", "vo"]
+        },
+        "cf-standard-name_variable": {
+            "sea_water_potential_temperature": [
+                "thetao"
+            ],
+            "sea_water_salinity": [
+                "so"
+            ],
+            "eastward_sea_water_velocity": [
+                "uo"
+            ],
+            "northward_sea_water_velocity": [
+                "vo"
+            ]
+        },
+        "lon_coverage": [-180, 179.95833587646484],
+        "lat_coverage": [-80.04167175292969, 90.04166793823242],
+        "depth_coverage": [0, 5957.1953125],
+        "time": ["2017-01, 2019-12"]
+    },
+    "GLOBAL_REANALYSIS_PHY_001_030_STHUB_30Y_VAR": {
+        "dir_id": "901d2285-6e87-49a3-8e8a-cac9cea8187c",
+        "dataset_variable": {
+            "TEMP": ["thetao"],
+            "PSAL": ["so"],
+            "RFVL": ["uo", "vo"]
+        },
+        "cf-standard-name_variable": {
+            "sea_water_potential_temperature": [
+                "thetao"
+            ],
+            "sea_water_salinity": [
+                "so"
+            ],
+            "eastward_sea_water_velocity": [
+                "uo"
+            ],
+            "northward_sea_water_velocity": [
+                "vo"
+            ]
+        },
+        "lon_coverage": [-180, 179.95833587646484],
+        "lat_coverage": [-80.04167175292969, 90.04166793823242],
+        "depth_coverage": [0, 5957.1953125],
+        "time": ["1993-01, 2015-12"]
     }
 }

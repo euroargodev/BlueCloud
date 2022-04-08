@@ -1,5 +1,3 @@
-import logging
-
 from download.context import DownloadContext, InputContext
 import os
 import json
@@ -22,7 +20,8 @@ def wd_validation(workingDomain):
             raise Exception("Can't find " + wd_attr + ' in workingDomain: ' + str(workingDomain))
     for wd_attr_opt in workingDomain_attrs_optional:
         if wd_attr_opt not in workingDomain:
-            logging.info(f"attribute {wd_attr_opt},  not found")
+            print("WARNING: ", wd_attr_opt, ' not found')
+
     # lonLat check
     lonLat = workingDomain['lonLat']
     if len(lonLat) != 4:
@@ -54,8 +53,7 @@ def float_int_check(elements):
 
 
 class Daccess:
-    def __init__(self, dataset: str, fields: list, outDir=None, hdaKey="",
-                 dirID="eba166b2-c182-4dde-a2ce-b9bdf7f9edf3"):
+    def __init__(self, dataset: str, fields: list, outDir=None, hdaKey=""):
         """
         @param dataset: source dataset
         @param fields: cf standard name used to represent a variable
@@ -65,7 +63,6 @@ class Daccess:
         self.fields = fields
         self.outDir = outDir
         self.hdaKey = hdaKey
-        self.dirID = dirID
 
         # select the right strategy in according to the selected dataset
         self.dataset = dataset
@@ -82,14 +79,14 @@ class Daccess:
         # select the right input/download strategies
         if self._infrastructure == 'WEKEO':
             from download.wekeo import in_hda, hda
-            logging.info("Downloading from wekeo")
+            print("Downloading from MEDSEA_MULTIYEAR_PHY_006_004")
             self.icontext = InputContext(in_hda.InHDA())
             self.dcontext = DownloadContext(hda.HDA(self.hdaKey, self.outDir))
         elif self._infrastructure == 'STHUB':
             from download.storagehubfacility import in_sthub, sthub
-            logging.info("Downloading from Storage Hub Facility")
+            print("Downloading from Storage Hub Facility")
             self.icontext = InputContext(in_sthub.InStHub())
-            self.dcontext = DownloadContext(sthub.StHub(self.dirID, self.outDir))
+            self.dcontext = DownloadContext(sthub.StHub(self.dataset, self.outDir))
         else:
             raise Exception('Infrastructure: ' + self._infrastructure + ' not supported')
 

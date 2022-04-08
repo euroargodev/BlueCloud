@@ -37,3 +37,6 @@ class Dataset:
         for dataset_field, d_vars in self.data[dataset]['dataset_variable'].items():
             if var in d_vars:
                 return dataset_field
+
+    def get_dir_id(self, dataset):
+        return self.data[dataset]['dir_id']

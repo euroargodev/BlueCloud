@@ -1,10 +1,10 @@
 import base64
-import logging
 import os
 import time
 import json
 import re
 import requests
+
 from download import utils
 
 
@@ -79,7 +79,6 @@ def get_access_token(hda_dict, bluecloud_proxy=True):
     """
 
     if bluecloud_proxy:
-        logging.info('using blue-cloud proxy')
         hda_dict['access_token'] = get_token_from_bluecloud_proxy()
     else:
         hda_dict['access_token'] = get_token_from_wekeo(hda_dict)
@@ -91,30 +90,29 @@ def get_token_from_wekeo(hda_dict):
     headers = {
         'Authorization': 'Basic ' + hda_dict['api_key']
     }
-    logging.info("Getting an access token. This token is valid for one hour only.")
+    print("Getting an access token. This token is valid for one hour only.")
     response = requests.get(hda_dict['accessToken_address'], headers=headers, verify=False)
 
     # If the HTTP response code is 200 (i.e. success), then retrive the
     # token from the response
     if response.status_code == hda_dict["CONST_HTTP_SUCCESS_CODE"]:
         access_token = json.loads(response.text)['access_token']
-        logging.info("Success: Access token is " + access_token)
+        print("Success: Access token is " + access_token)
         return access_token
     else:
-        logging.info(response.headers)
+        print(response.headers)
         raise Exception("Error: Unexpected response {}".format(response))
 
 
 def get_token_from_bluecloud_proxy():
     from download import utils
-    from requests.auth import HTTPBasicAuth
 
     globalVariablesFile = os.path.dirname(__file__).split('download')[0] + '/globalvariables.csv'
     gcubeToken = utils.get_gcube_token(globalVariablesFile)
 
     hprops = {"Accept": "application/json"}
-    urlString = "https://data.d4science.org/wekeo/gettoken"
-    r = requests.get(urlString, headers=hprops, auth=HTTPBasicAuth("gcube-token", gcubeToken))
+    urlString = "https://data.d4science.org/wekeo/gettoken?gcube-token=" + gcubeToken
+    r = requests.get(urlString, headers=hprops)
     if r.status_code != 200:
         error = "Error in Get Token {} {}".format(r.status_code, r.text)
         print(error)
@@ -140,18 +138,18 @@ def query_metadata(hda_dict):
                             '/querymetadata/' + hda_dict['dataset_id'], \
                             headers=hda_dict['headers'])
 
-    logging.info('Getting query metadata, URL Is ' + hda_dict['broker_endpoint'] \
+    print('Getting query metadata, URL Is ' + hda_dict['broker_endpoint'] \
           + '/querymetadata/' + hda_dict['dataset_id'] \
           + "?access_token=" + hda_dict['access_token'])
-    logging.info("************** Query Metadata for " + hda_dict['dataset_id'] \
+    print("************** Query Metadata for " + hda_dict['dataset_id'] \
           + " **************")
 
     if (response.status_code == hda_dict['CONST_HTTP_SUCCESS_CODE']):
         parsedResponse = json.loads(response.text)
-        logging.info(json.dumps(parsedResponse, indent=4, sort_keys=True))
-        logging.info("**************************************************")
+        print(json.dumps(parsedResponse, indent=4, sort_keys=True))
+        print("**************************************************")
     else:
-        logging.info("Error: Unexpected response {}".format(response))
+        print("Error: Unexpected response {}".format(response))
 
     hda_dict['parsedResponse'] = parsedResponse
     return hda_dict
@@ -179,10 +177,10 @@ def acceptTandC(hda_dict):
     isTandCAccepted = json.loads(response.text)['accepted']
 
     if isTandCAccepted is False:
-        logging.info(msg1)
+        print(msg1)
         response = requests.put(hda_dict['acceptTandC_address'], headers=hda_dict['headers'])
     else:
-        logging.info(msg2)
+        print(msg2)
     isTandCAccepted = json.loads(response.text)['accepted']
     hda_dict['isTandCAccepted'] = isTandCAccepted
     return hda_dict
@@ -206,10 +204,10 @@ def get_job_id(hda_dict, data):
 
     if response.status_code == hda_dict['CONST_HTTP_SUCCESS_CODE']:
         job_id = json.loads(response.text)['jobId']
-        logging.info("Query successfully submitted. Job ID is " + job_id)
+        print("Query successfully submitted. Job ID is " + job_id)
     else:
         job_id = ""
-        logging.info("Error: Unexpected response {}".format(response))
+        print("Error: Unexpected response {}".format(response))
 
     hda_dict['job_id'] = job_id
     get_request_status(hda_dict)
@@ -231,15 +229,15 @@ def get_request_status(hda_dict):
     count = 0
     while status != "completed":
         count = count + 1
-        if count > 1:
-            logging.info('Waiting 5 seconds...')
+        if count > 20:
+            print('Waiting 5 seconds...')
             time.sleep(5)
         response = requests.get(hda_dict['broker_endpoint'] + '/datarequest/status/' + hda_dict['job_id'],
                                 headers=hda_dict['headers'])
         if response.status_code == hda_dict['CONST_HTTP_SUCCESS_CODE']:
             status = json.loads(response.text)['status']
             if 'fail' not in status:
-                logging.info("Query successfully submitted. Status is " + status)
+                print("Query successfully submitted. Status is " + status)
             else:
                 message = json.loads(response.text)['message']
                 raise Exception("Query has failed with message: ", message)
@@ -270,9 +268,9 @@ def get_results_list(hda_dict):
     results = json.loads(response.text)
     hda_dict['results'] = results
 
-    logging.info("************** Results *******************************")
-    logging.info(json.dumps(results, indent=4, sort_keys=True))
-    logging.info("*******************************************")
+    print("************** Results *******************************")
+    print(json.dumps(results, indent=4, sort_keys=True))
+    print("*******************************************")
 
     return hda_dict
 
@@ -309,7 +307,7 @@ def get_order_ids(hda_dict):
 
         if (response.status_code == hda_dict['CONST_HTTP_SUCCESS_CODE']):
             order_ids.append(json.loads(response.text)['orderId'])
-            logging.info("Query successfully submitted. Order ID is " + \
+            print("Query successfully submitted. Order ID is " + \
                   order_ids[i])
             response = get_order_status(hda_dict, order_ids[i])
         else:
@@ -340,7 +338,7 @@ def get_order_status(hda_dict, order_id):
     while (status != "completed"):
         count = count + 1
         if count > 20:
-            logging.info('Waiting 5 seconds...')
+            print('Waiting 5 seconds...')
             time.sleep(5)
         response = requests.get(hda_dict['broker_endpoint'] + \
                                 '/dataorder/status/' + order_id, \
@@ -348,7 +346,7 @@ def get_order_status(hda_dict, order_id):
 
         if (response.status_code == hda_dict['CONST_HTTP_SUCCESS_CODE']):
             status = json.loads(response.text)['status']
-            logging.info("Query successfully submitted. Status is " + status)
+            print("Query successfully submitted. Status is " + status)
         else:
             print("Error: Unexpected response {}".format(response))
 
@@ -382,10 +380,10 @@ def downloadFile(url, headers, directory, file_name, total_length=0, dl_status=F
     r = requests.get(url, headers=headers, stream=True)
     if r.status_code == 200:
         filename = os.path.join(directory, file_name)
-        logging.info("Downloading " + filename)
+        print("Downloading " + filename)
         with open(filename, 'wb') as f:
             start = time.process_time()
-            logging.info("File size is: %8.2f MB" % (total_length / (1024 * 1024)))
+            print("File size is: %8.2f MB" % (total_length / (1024 * 1024)))
             dl = 0
             for chunk in r.iter_content(64738):
                 dl += len(chunk)
@@ -393,13 +391,13 @@ def downloadFile(url, headers, directory, file_name, total_length=0, dl_status=F
                 if dl_status:
                     utils.show_dl_percentage(dl, start, total_length)
             try:
-                logging.info("[%8.2f] MB downloaded, %8.2f kbps" \
+                print("[%8.2f] MB downloaded, %8.2f kbps" \
                       % (dl / (1024 * 1024), (dl / (time.process_time() - start)) / 1024))
             except:
                 pass
-        logging.info("File downloaded")
-        logging.info("Apply mask to nan value")
-        mask_nc_file(filename=filename)
+        print("File downloaded")
+        print("Apply mask to nan value")
+        # mask_nc_file(filename=filename)
 
         return time.process_time() - start
 
@@ -508,17 +506,17 @@ def download_data(hda_dict, file_extension=None, user_filename=None, in_memory=N
 
         fileNames.append(os.path.join(hda_dict['download_dir_path'], file_name))
 
-        logging.info("Download/Request complete...")
-        logging.info("Time Elapsed: " + str(time_elapsed) + " seconds")
+        print("Download/Request complete...")
+        print("Time Elapsed: " + str(time_elapsed) + " seconds")
         response = hda_dict['order_status_response']
 
         if response.status_code == hda_dict['CONST_HTTP_SUCCESS_CODE']:
             order_file = "./" + file_name
             if os.path.isfile(order_file):
-                logging.info("Query successfully submitted. Response is {}" \
+                print("Query successfully submitted. Response is {}" \
                       .format(response))
         else:
-            logging.info("Error: Unexpected response {}".format(response))
+            print("Error: Unexpected response {}".format(response))
 
         i += 1
 

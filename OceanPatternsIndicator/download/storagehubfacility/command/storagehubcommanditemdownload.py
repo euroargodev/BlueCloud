@@ -21,14 +21,17 @@ class StorageHubCommandItemDownload(StorageHubCommand):
 
     def execute(self, in_memory=False, dl_status=False):
         print("Execute StorageHubCommandItemDownload")
-        print(self.storageHubUrl + "/items/" + self.itemId + "/download?");
+        # print(self.storageHubUrl + "/items/" + self.itemId + "/download?");
 
         urlString = self.storageHubUrl + "/items/" + self.itemId + "/download?gcube-token=" + self.gcubeToken
-        r = requests.get(urlString, stream=True)
+        try:
+            r = requests.get(urlString, stream=True, timeout=10, allow_redirects=False)
+        except:
+            raise Exception("ERROR Connection timeout")
         print(r.status_code)
         if r.status_code != 200:
-            print("Error in execute StorageHubCommandItemDownload: " + r.status_code)
-            raise Exception("Error in execute StorageHubCommandItemDownload: " + r.status_code)
+            print("Download error: " + str(r.status_code))
+            raise Exception("Error in execute StorageHubCommandItemDownload: " + str(r.status_code))
         if not in_memory:
             with open(self.destinationFile, 'wb') as file:
                 if self.itemSize == 0:

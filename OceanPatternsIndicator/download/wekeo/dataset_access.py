@@ -1,4 +1,3 @@
-import logging
 import os
 import json
 
@@ -114,7 +113,7 @@ class Dataset:
             endDepth['value'] = depth[1]
             dataTemplate['stringChoiceValues'].append(endDepth)
 
-        logging.info('Your JSON request:')
-        logging.info(json.dumps(dataTemplate, indent=4))
+        print('Your JSON request:')
+        print(json.dumps(dataTemplate, indent=4))
 
         return dataTemplate

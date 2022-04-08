@@ -22,22 +22,22 @@ class ISSupport:
     def discoverStorageHub(self, gcubeToken):
         print("Discover StorageHub")
         urlString = self.serviceUrl + "/icproxy/gcube/service/GCoreEndpoint/" + self.storageHubServiceClass + "/" + self.storageHubServiceName + "?gcube-token=" + gcubeToken
-        r = requests.get(urlString)
+        r = requests.get(urlString, timeout=10)
         print(r.status_code)
-        print(r.text)
+        #print(r.text)
         if r.status_code != 200:
             print("Error discovering StorageHub: " + r.status_code)
             raise Exception("Error retrieving StorageHub url info: " + r.status_code)
         else:
             root = ElementTree.fromstring(r.text)
-            print(root)
+            # print(root)
             gcoreEndpoint = root.findall("Result/Resource/Profile/AccessPoint/RunningInstanceInterfaces/Endpoint")
-            print(gcoreEndpoint)
+            # print(gcoreEndpoint)
             for child in gcoreEndpoint:
-                print(child.tag, child.attrib)
+                # print(child.tag, child.attrib)
                 if child.attrib["EntryName"] == "org.gcube.data.access.storagehub.StorageHub":
-                    print("Endpoint Found")
-                    print(child.text)
+                    # print("Endpoint Found")
+                    # print(child.text)
                     return child.text
 
         print("Error discovering StorageHub url not found")

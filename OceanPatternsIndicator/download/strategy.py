@@ -10,11 +10,14 @@ class DownloadStrategy(ABC):
     """
 
     @abstractmethod
-    def download(self, dataset, working_domain, fields):
+    def download(self, dataset, working_domain, fields, in_memory=False, rm_file=False, max_attempt=5):
         """
         @param dataset: source dataset
         @param working_domain: dict with spatial/time information, each strategy defines its own format
         @param fields: field/s desired
+        @param in_memory: if True, try to download the file directly in memory
+        @param rm_file: if True, remove file from disk after load it in memory
+        @param max_attempt: maximum number of download attempt in case of errors
         """
         pass
 

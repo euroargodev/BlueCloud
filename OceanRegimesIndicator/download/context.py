@@ -32,8 +32,8 @@ class DownloadContext:
 
         self._strategy = strategy
 
-    def download(self, dataset, working_domain, fields, in_memory=False):
-        return self._strategy.download(dataset, working_domain, fields, in_memory)
+    def download(self, dataset, working_domain, fields, in_memory=False, rm_file=False, max_attempt=5):
+        return self._strategy.download(dataset, working_domain, fields, in_memory, rm_file, max_attempt=max_attempt)
 
 
 class InputContext:

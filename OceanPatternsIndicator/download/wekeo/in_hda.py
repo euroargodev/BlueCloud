@@ -1,5 +1,3 @@
-import logging
-
 from download.strategy import InputStrategy
 from download.wekeo import dataset_access as db
 import copy
@@ -62,7 +60,7 @@ class InHDA(InputStrategy):
         """
         depth_dataset = self.dataset.get_depth(dataset)
         if depth_dataset is None:
-            logging.info(f"Dataset: {dataset} doesn't have depth attribute")
+            print("Dataset: ", dataset, " doesn't have depth attribute")
             return None
         depth = copy.deepcopy(workingDomain['depth'])
         depth_dataset.sort()

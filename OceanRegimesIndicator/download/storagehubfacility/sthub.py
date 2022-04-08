@@ -1,9 +1,26 @@
+import sys
+import time
+
 from download.storagehubfacility import storagehubfacility as sthubf, check_json
 from download.strategy import DownloadStrategy
 from download.storagehubfacility import dataset_access as db
 import json
 from download import utils
 import os
+
+
+def wait_to_restart_connection(attempt, output_file):
+    print("A network error occurred, download attempt number {} failed, try to download again within 60 seconds..."
+          .format(attempt), file=sys.stderr)
+    rm(output_file)
+    time.sleep(60)
+
+
+def handle_network_error(output_file, attempt, max_attempt):
+    if attempt >= max_attempt:
+        raise ConnectionError("ERROR An error occurs while download input file")
+    else:
+        wait_to_restart_connection(attempt, output_file)
 
 
 def get_outfile(field, date):
@@ -29,34 +46,109 @@ def get_filename_from_string_template(string_template):
     return get_outfile(field[0], time)
 
 
+def rm(filename):
+    if os.path.exists(filename):
+        os.remove(filename)
+
+
+def download_from_sthub(file_to_download, output_file, in_memory, max_attempt, dl_status):
+    import netCDF4
+    item_id = file_to_download[0]
+    item_size = file_to_download[2]
+    myshfo = sthubf.StorageHubFacility(operation="Download", ItemId=item_id,
+                                       localFile=output_file, itemSize=item_size)
+    attempt = 0
+    file_is_downloaded = False
+    while attempt < max_attempt and not file_is_downloaded:
+        try:
+            nc_file = myshfo.main(in_memory=in_memory, dl_status=dl_status)
+            if not in_memory:  # myshfo.main only download output_file on disk and doesn't return anything
+                nc_file = netCDF4.Dataset(output_file, mode='r')
+            file_is_downloaded = True
+        except Exception as e:
+            import sys
+            print(e, file=sys.stderr)
+            attempt += 1
+            handle_network_error(output_file, attempt, max_attempt)
+    return nc_file
+
+
 class StHub(DownloadStrategy):
-    def __init__(self, dirID: str, outdir=None):
+    def __init__(self, dataset_id, outdir=None):
         """
-        @param dirID: id of the directory from which to download data
         @param outdir: directory where store the output
         """
-        if outdir is None:
-            self.outdir = utils.init_dl_dir()
-
-        if len(dirID) == 0:
-            raise Exception("dirID not valid")
-        else:
-            self.dirID = dirID
-
-        self.complete_list = self.load_complete_list()  # list of (id, name_file) pairs
+        self.outdir = utils.init_dl_dir(outdir)
+        self.dataset_id = dataset_id
         self.dataset = db.Dataset()
+        self.dataset_files = self.retrieve_file_available_on_workspace()  # list of (id, name_file) pairs
 
-    def load_complete_list(self):
+    def retrieve_file_available_on_workspace(self, attempt=0, max_attempt=5):
+        if attempt < max_attempt:
+            try:
+                # create ouFile that contains all the file of the selected dataset on sthub
+                self.generate_dataset_outfile()
+                dataset_outfile = json.load(open('outFile'))
+                complete_list = check_json.get_id(dataset_outfile)
+            except:
+                attempt += 1
+                print("A network error occurred,"
+                      "storage hub information retrieval attempt {}, try again within 60 seconds..."
+                      .format(attempt), file=sys.stderr)
+                time.sleep(60)
+                complete_list = self.retrieve_file_available_on_workspace(attempt=attempt)
+            return complete_list
+        else:
+            raise ConnectionError("ERROR An error occurs while download input file")
+
+    def generate_dataset_outfile(self):
         print("START ItemChildren")
-        myshfo = sthubf.StorageHubFacility(operation="ItemChildren", ItemId=self.dirID)
+        dir_id = self.dataset.get_dir_id(self.dataset_id)
+        myshfo = sthubf.StorageHubFacility(operation="ItemChildren", ItemId=dir_id)
         myshfo.main()
 
-        mobj = json.load(open('outFile'))
-        return check_json.get_id(mobj)
+    def find_files_to_download(self, dataset, fields, working_domain):
+        file_types = self.find_file_types_associated_to_dataset(dataset, fields)
+        files_to_download = filter_dataset(self.dataset_files, working_domain, file_types)
+        if len(files_to_download) == 0:
+            raise Exception("No file available to download in the selected domain")
+        else:
+            return files_to_download
 
-    def download(self, dataset, working_domain, fields, in_memory=False):
+    def find_file_types_associated_to_dataset(self, dataset, field_list):
+        file_type_list = list()
+        for field in field_list:
+            var_name_list = self.dataset.get_var_from_cf_std_name(dataset, field)
+            for var_name in var_name_list:
+                file_type = self.dataset.get_dataset_field_from_variable(dataset, var_name)
+                if file_type not in file_type_list:
+                    file_type_list.append(file_type)
+        if len(file_type_list) == 0:
+            raise Exception("Can't find a file type associated to the dataset: {} for the fields: {}"
+                            .format(dataset, ','.join(field_list)))
+        return file_type_list
+
+    def get_file_from_sthub_workspace(self, file_to_download, in_memory, rm_file, max_attempt, dl_status=False):
+        import netCDF4
+
+        output_file = self.get_output_file(file_to_download)
+        if os.path.exists(output_file):  # if downloaded previously and rm_file == False
+            nc_file = netCDF4.Dataset(output_file, mode='r')
+        else:
+            nc_file = download_from_sthub(file_to_download, output_file, in_memory, max_attempt, dl_status)
+        if rm_file:
+            rm(output_file)
+        return nc_file
+
+    def get_output_file(self, file_to_download):
+        filename = file_to_download[1]
+        output_file = self.outdir + "/" + filename
+        return output_file
+
+    def download(self, dataset, working_domain, fields, in_memory=False, rm_file=True, max_attempt=5):
         """
         @param in_memory: if True the function return a netCDF4.Dataset in memory
+        @param rm_file: if True the downloaded files will be deleted once they are loaded into memory
         @param dataset: source dataset
         @param working_domain: dict with
             lonLat: not used
@@ -65,34 +157,16 @@ class StHub(DownloadStrategy):
         @param fields: cf standard name used to represent a variable
         @return: download in outdir the correct netCDF file/s
         """
-        import netCDF4
-
-        file_types = list()
-        for field in fields:
-            field_var = self.dataset.get_var_from_cf_std_name(dataset, field)
-            for var in field_var:
-                file_type = self.dataset.get_dataset_field_from_variable(dataset, var)
-                if file_type not in file_types:
-                    file_types.append(file_type)
-        filtered_list = filter_list(self.complete_list, working_domain, file_types)
-
         nc_files = list()
-        for item in filtered_list:
-            nc_filename = self.outdir + "/" + item[1]
-            if os.path.exists(nc_filename):
-                nc_files.append(netCDF4.Dataset(nc_filename, mode='r'))
-            else:
-                myshfo = sthubf.StorageHubFacility(operation="Download", ItemId=item[0],
-                                                   localFile=nc_filename, itemSize=item[2])
-                nc_file = myshfo.main(in_memory=in_memory, dl_status=False)
-                if in_memory:
-                    nc_files.append(nc_file)
-                else:
-                    nc_files.append(netCDF4.Dataset(nc_filename, mode='r'))
+        file_to_download_list = self.find_files_to_download(dataset, fields, working_domain)
+        for file_to_download in file_to_download_list:
+            nc_file = self.get_file_from_sthub_workspace(file_to_download, in_memory, rm_file, max_attempt)
+            nc_files.append(nc_file)
+
         return nc_files
 
 
-def filter_list(file_list, working_domain, file_types):
+def filter_dataset(file_list, working_domain, file_types):
     """
     This function filters the input list and return a new list with the file with
     the type of files desired
@@ -109,7 +183,7 @@ def filter_list(file_list, working_domain, file_types):
         for file_type in file_types:
             if file_type in file[1]:
                 for t in time:
-                    if t in file[1]:
+                    if t + '01_m' in file[1] or t + '.nc' in file[1]:  # med or glo
                         filtered_list.append(file)
                         break
 

@@ -1,7 +1,18 @@
 {
     "MEDSEA_MULTIYEAR_PHY_006_004": {
         "infrastructure": "WEKEO"
-
+    },
+    "MEDSEA_MULTIYEAR_PHY_006_004_STHUB": {
+        "infrastructure": "STHUB"
+    },
+    "MEDSEA_MULTIYEAR_PHY_006_004_STHUB_30Y": {
+        "infrastructure": "STHUB"
+    },
+    "GLOBAL_REANALYSIS_PHY_001_030_STHUB": {
+        "infrastructure": "STHUB"
+    },
+    "GLOBAL_REANALYSIS_PHY_001_030_STHUB_30Y_VAR": {
+        "infrastructure": "STHUB"
     },
     "GLOBAL_ANALYSIS_FORECAST_PHY_001_024": {
         "infrastructure": "WEKEO"
@@ -9,7 +20,7 @@
     "OCEANCOLOUR_MED_CHL_L4_NRT_OBSERVATIONS_009_041": {
         "infrastructure": "WEKEO"
     },
-    "MEDSEA_STHUB": {
+    "MEDSEA_MULTIYEAR_PHY_006_004_116_STHUB": {
         "infrastructure": "STHUB"
     }
 }

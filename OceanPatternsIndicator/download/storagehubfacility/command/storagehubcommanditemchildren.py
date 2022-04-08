@@ -20,14 +20,14 @@ class StorageHubCommandItemChildren(StorageHubCommand):
         
     def execute(self):
         print("Execute StorageHubCommandItemChildren")
-        print(self.storageHubUrl + "/items/" + self.itemId + "/children?exclude=hl:accounting");
+        # print(self.storageHubUrl + "/items/" + self.itemId + "/children?exclude=hl:accounting");
         
         urlString = self.storageHubUrl + "/items/" + self.itemId + "/children?exclude=hl:accounting&gcube-token=" + self.gcubeToken
         r = requests.get(urlString)
         print(r.status_code)
         if r.status_code != 200:
-            print("Error in execute StorageHubCommandItemChildren: " + r.status_code)
-            raise Exception("Error in execute StorageHubCommandItemChildren: " + r.status_code)
+            print("Error in execute StorageHubCommandItemChildren: " + str(r.status_code))
+            raise Exception("Error in execute StorageHubCommandItemChildren: " + str(r.status_code))
         with open(self.destinationFile, 'w') as file:
             file.write(r.text)
     

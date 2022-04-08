@@ -31,10 +31,10 @@ class StorageHubFacility:
         self.globalVariablesFile = "globalvariables.csv"
         self.gcubeToken = None
         self.storageHubUrl = None
-        print("SHF DOING : ", self.operation, self.ItemId, self.destinationFile)
+        # print("SHF DOING : ", self.operation, self.ItemId, self.destinationFile)
 
     def main(self, in_memory=False, dl_status=False):
-        print(self)
+        # print(self)
         self.retrieveToken()
         issup = issupport.ISSupport()
         self.storageHubUrl = issup.discoverStorageHub(self.gcubeToken)
@@ -42,14 +42,14 @@ class StorageHubFacility:
 
     def retrieveToken(self):
         from download import utils
-        print("Retrieve gcubeToken")
+        # print("Retrieve gcubeToken")
         if not os.path.isfile(self.globalVariablesFile):
             print("File does not exist: " + self.globalVariablesFile)
             raise Exception("File does not exist: " + self.globalVariablesFile)
         self.gcubeToken = utils.get_gcube_token(self.globalVariablesFile)
 
     def executeOperation(self, in_memory=False, dl_status=False):
-        print("Execute Operation")
+        # print("Execute Operation")
         if self.operation == 'RootInfo':
             opRootInfo = command.StorageHubCommandRootInfo(self.gcubeToken, self.storageHubUrl, self.destinationFile)
             opRootInfo.execute()
@@ -70,8 +70,9 @@ class StorageHubFacility:
                                                                self.destinationFile, self.itemSize)
             return opDownload.execute(in_memory=in_memory, dl_status=dl_status)
         elif self.operation == 'Upload':
+            filename = os.path.basename(self.destinationFile)
             opUpload = command.StorageHubCommandItemUpload(self.ItemId, self.gcubeToken, self.storageHubUrl,
-                                                           self.destinationFile, sys.argv[4], sys.argv[4],
+                                                           self.destinationFile, filename, "",
                                                            self.destinationFile + ".log")
             opUpload.execute()
         else:
