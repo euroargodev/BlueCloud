@@ -93,7 +93,14 @@ def get_var_name(source, cf_std_name):
     string: name of the variable in dataset
     """
     actual_dir = os.path.dirname(__file__)
-    with open('./download/config/wekeo_dataset.json') as json_file:
+    with open('./download/config/dataset_infrastructures.json') as json_infra:
+        infra = json.load(json_infra)
+        if infra[source]['infrastructure'] == "WEKEO" :
+            config_path = './download/config/wekeo_dataset.json'
+        elif infra[source]['infrastructure'] == "STHUB" :
+            config_path = './download/config/sthub_dataset.json'
+
+    with open(config_path) as json_file:
         data = json.load(json_file)
     return data[source]['cf-standard-name_variable'][cf_std_name][0]
 

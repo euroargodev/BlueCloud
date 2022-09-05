@@ -17,7 +17,10 @@
     "GLOBAL_ANALYSIS_FORECAST_PHY_001_024": {
         "infrastructure": "WEKEO"
     },
-    "OCEANCOLOUR_MED_CHL_L4_NRT_OBSERVATIONS_009_041": {
+    "OCEANCOLOUR_MED_CHL_L4_REP_OBSERVATIONS_009_078": {
+        "infrastructure": "WEKEO"
+    },
+    "OCEANCOLOUR_MED_BGC_L4_MY_009_144": {
         "infrastructure": "WEKEO"
     },
     "MEDSEA_MULTIYEAR_PHY_006_004_116_STHUB": {
